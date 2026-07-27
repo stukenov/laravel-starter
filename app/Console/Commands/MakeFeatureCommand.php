@@ -610,11 +610,22 @@ PHP;
     private function tableCells(): string
     {
         return $this->lines(
-            fn (array $f) => $f['type'] === 'belongsTo'
+            fn (array $f) => match (true) {
+                // RULE(time): the server sends ISO 8601 and the client
+                // formats it in the reader's zone — AGENTS.md. The
+                // generated list printed the raw string, so a date came
+                // out as 2026-07-28T00:00:00+00:00 in every language.
+                in_array($f['type'], ['date', 'datetime'], true) => sprintf(
+                    '<span className="flex-1 truncate">{%s(record.%s, timezone, locale)}</span>',
+                    $f['type'] === 'date' ? 'formatDate' : 'formatDateTime',
+                    $f['name'],
+                ),
+                default => null,
+            } ?? ($f['type'] === 'belongsTo'
                 // The label, not the key: a column of uuids tells the
                 // reader nothing.
                 ? "<span className=\"flex-1 truncate\">{record.{$f['name']}?.name ?? '—'}</span>"
-                : "<span className=\"flex-1 truncate\">{String(record.{$f['name']} ?? '')}</span>",
+                : "<span className=\"flex-1 truncate\">{String(record.{$f['name']} ?? '')}</span>"),
             indent: 32,
         );
     }
