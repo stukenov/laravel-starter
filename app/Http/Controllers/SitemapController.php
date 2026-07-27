@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\Locale\Locales;
+use App\Support\Seo\HasSitemapEntries;
 use Illuminate\Http\Response;
 
 /**
@@ -25,27 +26,38 @@ class SitemapController extends Controller
         ['name' => 'legal.terms', 'priority' => '0.3'],
     ];
 
+    /**
+     * Every model that implements HasSitemapEntries adds itself here.
+     *
+     * A content site's sitemap is mostly its content, and a controller
+     * that only knows about static pages leaves the majority of the site
+     * out — silently, which is the worst way for a sitemap to be wrong.
+     *
+     * @var array<int, class-string<HasSitemapEntries>>
+     */
+    private const MODELS = [];
+
     public function __invoke(): Response
     {
         $lines = ['<?xml version="1.0" encoding="UTF-8"?>'];
         $lines[] = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">';
 
-        foreach (self::PAGES as $page) {
+        foreach ($this->pages() as $page) {
             foreach (Locales::SUPPORTED as $locale) {
                 $lines[] = '  <url>';
-                $lines[] = '    <loc>'.e(route($page['name'], ['locale' => $locale])).'</loc>';
+                $lines[] = '    <loc>'.e($this->url($page, $locale)).'</loc>';
 
                 foreach (Locales::SUPPORTED as $alternate) {
                     $lines[] = sprintf(
                         '    <xhtml:link rel="alternate" hreflang="%s" href="%s"/>',
                         $alternate,
-                        e(route($page['name'], ['locale' => $alternate])),
+                        e($this->url($page, $alternate)),
                     );
                 }
 
                 $lines[] = sprintf(
                     '    <xhtml:link rel="alternate" hreflang="x-default" href="%s"/>',
-                    e(route($page['name'], ['locale' => Locales::FALLBACK])),
+                    e($this->url($page, Locales::FALLBACK)),
                 );
 
                 $lines[] = '    <priority>'.$page['priority'].'</priority>';
@@ -56,5 +68,38 @@ class SitemapController extends Controller
         $lines[] = '</urlset>';
 
         return response(implode("\n", $lines), 200, ['Content-Type' => 'application/xml']);
+    }
+
+    /**
+     * The static pages plus whatever the models contribute.
+     *
+     * @return array<int, array{name: string, priority: string, parameters?: array<string, mixed>}>
+     */
+    private function pages(): array
+    {
+        $pages = self::PAGES;
+
+        foreach (self::MODELS as $model) {
+            foreach ($model::sitemapEntries() as $entry) {
+                $pages[] = [
+                    'name' => $entry['route'],
+                    'priority' => $entry['priority'] ?? '0.6',
+                    'parameters' => $entry['parameters'],
+                ];
+            }
+        }
+
+        return $pages;
+    }
+
+    /**
+     * @param  array{name: string, priority: string, parameters?: array<string, mixed>}  $page
+     */
+    private function url(array $page, string $locale): string
+    {
+        return route($page['name'], array_merge(
+            $page['parameters'] ?? [],
+            ['locale' => $locale],
+        ));
     }
 }

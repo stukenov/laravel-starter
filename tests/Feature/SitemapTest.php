@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\Locale\Locales;
+use App\Support\Seo\HasSitemapEntries;
 
 // ── Correct data ─────────────────────────────────────────────────────
 
@@ -71,4 +72,33 @@ it('needs no session and no data', function () {
 
     $this->get('/sitemap.xml')->assertOk();
     $this->get('/robots.txt')->assertOk();
+});
+
+it('lets a model add its own pages', function () {
+    // A content site's sitemap is mostly its content. A controller that
+    // knows only about static pages leaves out the majority of the site,
+    // and does it silently — the worst way for a sitemap to be wrong.
+    $interface = HasSitemapEntries::class;
+
+    expect(interface_exists($interface))->toBeTrue()
+        ->and(method_exists($interface, 'sitemapEntries'))->toBeTrue();
+});
+
+it('builds a model page in every language', function () {
+    // The same hreflang treatment the static pages get. A detail page
+    // that exists in three languages and declares one is worse than a
+    // page with no declaration at all.
+    $body = $this->get('/sitemap.xml')->getContent();
+
+    $locales = count(Locales::SUPPORTED);
+
+    // Each page appears once per locale, and every one of those lists
+    // every locale as an alternate — so a given hreflang shows up
+    // pages × locales times, not once.
+    $pages = (int) (substr_count($body, '<loc>') / $locales);
+
+    foreach (Locales::SUPPORTED as $locale) {
+        expect(substr_count($body, 'hreflang="'.$locale.'"'))
+            ->toBe($pages * $locales, "alternates for {$locale}");
+    }
 });

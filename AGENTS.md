@@ -190,6 +190,32 @@ the side that owns a column, and the rest is deliberate work. The generated slic
 comes with 13 backend and 8 rendering tests that pass with no edits.
 `--force` overwrites; without it existing files are left alone.
 
+**These conventions cover `/dash`.** The generator emits an admin CRUD
+slice: a list, a search box, a dialog. That is the right shape for a
+panel and the wrong one for a public page, and pretending otherwise
+would produce a news site whose articles open in a modal.
+
+For public content the convention is smaller and written by hand:
+
+    /{locale}/articles           list, paginated, named `articles.index`
+    /{locale}/articles/{article} detail, bound by slug, named `articles.show`
+
+    Route::prefix('{locale}')->whereIn('locale', Locales::SUPPORTED)->group(...)
+
+Four things a public page owes that a panel page does not:
+
+- **A slug, not a uuid, in the URL.** `getRouteKeyName()` on the model
+  returns `slug`; the uuid stays the key.
+- **A place in the sitemap.** `SitemapController::PAGES` lists the static
+  ones; a model-backed section adds itself through `sitemapEntries()` on
+  the model — see the interface in `app/Support/Seo`.
+- **A title and description per locale**, passed to `<Head>`. A public
+  page that shares the application's title is a page search engines
+  cannot tell apart from every other.
+- **No `auth` middleware, and therefore no assumption of a user.** Shared
+  props carry `auth.user = null`; a page that reads it without checking
+  breaks for exactly the visitors it was built for.
+
 **What is deliberately absent** — this is one big monolith, not a layer
 cake: no repositories (Eloquent is one), no service layer (logic lives in
 models, form requests and policies), no action class per operation, no
