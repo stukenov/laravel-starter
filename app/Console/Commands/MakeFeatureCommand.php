@@ -72,6 +72,7 @@ class MakeFeatureCommand extends Command
 
         $this->registerRoutes();
         $this->registerAbilities();
+        $this->registerNavigation();
 
         $this->components->info("Feature {$this->studly} generated. Run: php artisan migrate && php artisan test");
 
@@ -130,6 +131,10 @@ class MakeFeatureCommand extends Command
             "lang/en/entities/{$this->snakePlural}.php" => 'lang-en',
             "tests/Feature/Dash/{$this->studly}Test.php" => 'test-feature',
             "tests/js/dash-{$this->kebabPlural}.test.tsx" => 'test-js',
+            // The third level. Its own acceptance criterion demands three
+            // and it emitted two, which is how a working action with no
+            // caller kept passing the suite.
+            "tests/e2e/{$this->kebabPlural}.spec.ts" => 'test-e2e',
         ];
     }
 
@@ -707,6 +712,78 @@ PHP;
 
         File::put($path, $patched);
         $this->components->task('app/Support/Access/Ability.php updated', fn () => true);
+    }
+
+    /**
+     * RULE(reachable): a route nobody can reach is a feature nobody has
+     * — AGENTS.md.
+     *
+     * A generated entity had a list page, a form, routes and tests, and
+     * no way to get to any of it: the navigation is a static array and
+     * the generator never touched it. The person who ran the command had
+     * to know to type the URL.
+     */
+    private function registerNavigation(): void
+    {
+        $path = base_path('resources/js/components/app-sidebar.tsx');
+        $contents = File::get($path);
+        $const = Str::upper($this->snakePlural);
+
+        if (str_contains($contents, "{$this->snakePlural}.title")) {
+            return;
+        }
+
+        $entry = <<<TSX
+            {
+                title: '{$this->snakePlural}.title',
+                href: {$this->snakePlural}Index(),
+                icon: Boxes,
+                ability: '{$this->snakePlural}.view',
+            },
+        TSX;
+
+        $patched = preg_replace(
+            '/(\n\];\n)/',
+            "\n".$entry.'$1',
+            $contents,
+            1,
+        );
+
+        $patched = str_replace(
+            "import type { NavItem } from '@/types';",
+            "import { index as {$this->snakePlural}Index } from '@/routes/dash/{$this->kebabPlural}';\nimport type { NavItem } from '@/types';",
+            (string) $patched,
+        );
+
+        // Boxes is the placeholder icon: an entity the generator knows
+        // nothing about has no better one, and a wrong specific icon is
+        // worse than an obviously generic one.
+        //
+        // Checked against the import block, not the whole file — the
+        // entry added just above already contains the word, so looking
+        // for it anywhere finds it and skips the import that makes it
+        // work.
+        $imports = Str::before($patched, "from 'lucide-react'");
+
+        if (! str_contains($imports, 'Boxes')) {
+            $patched = preg_replace(
+                '/(import \\{\\n)(\\s+)/',
+                "\$1\$2Boxes,\n\$2",
+                $patched,
+                1,
+            );
+        }
+
+        if ($patched === null || $patched === $contents) {
+            $this->components->warn(
+                'Could not add a navigation entry. Add it to app-sidebar.tsx by hand, or the page has no way in.'
+            );
+
+            return;
+        }
+
+        File::put($path, $patched);
+        $this->components->task('app-sidebar.tsx updated', fn () => true);
     }
 
     private function registerRoutes(): void

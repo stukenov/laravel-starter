@@ -1,0 +1,84 @@
+import { expect, test } from '@playwright/test';
+import { STATE, artisan } from './helpers';
+
+/**
+ * RULE(tests): three levels, and this is the third — AGENTS.md.
+ *
+ * Pest proves the endpoint behaves and Vitest proves the component draws.
+ * Neither can tell you the button is on screen, enabled, and wired to the
+ * route — and that is exactly the gap this project kept shipping through:
+ * a working action nothing could call.
+ */
+test.use({ storageState: STATE.admin });
+
+test.beforeEach(async ({ page }) => {
+    await page.goto('/dash/{{ kebabPlural }}', { waitUntil: 'domcontentloaded' });
+});
+
+// ── Correct data ─────────────────────────────────────────────────────
+
+test('the section is reachable from the navigation', async ({ page }) => {
+    // Not by typing the URL: the point is that somebody can find it.
+    await page.goto('/dash', { waitUntil: 'domcontentloaded' });
+
+    await page.getByRole('link', { name: /{{ studlyPlural }}/i }).first().click();
+
+    await expect(page).toHaveURL(/\/dash\/{{ kebabPlural }}/);
+});
+
+test('creates a record and shows it in the list', async ({ page }) => {
+    const title = `Проверка ${Date.now()}`;
+
+    await page.getByTestId('{{ snakePlural }}-add').click();
+    await page.getByTestId('{{ snake }}-{{ firstField }}').fill(title);
+    await page.getByTestId('{{ snake }}-save').click();
+
+    await expect(page.getByText(title)).toBeVisible();
+});
+
+test('the page fits a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+
+    const size = await page.evaluate(() => ({
+        document: document.documentElement.scrollWidth,
+        window: window.innerWidth,
+    }));
+
+    expect(size.document).toBeLessThanOrEqual(size.window + 1);
+});
+
+// ── Wrong data ───────────────────────────────────────────────────────
+
+test('refuses an empty form', async ({ page }) => {
+    await page.getByTestId('{{ snakePlural }}-add').click();
+    await page.getByTestId('{{ snake }}-save').click();
+
+    // Either the browser blocks it or the server answers — both are the
+    // guard working. What must not happen is a blank record appearing.
+    await expect(page.getByTestId('{{ snake }}-{{ firstField }}')).toBeVisible();
+});
+
+test('runs every script the page asks for', async ({ page }) => {
+    // CSP once blocked all eighteen bundles: 200, valid markup, and only
+    // the browser console said so.
+    const blocked: string[] = [];
+
+    page.on('console', (message) => {
+        if (/Content Security Policy|Refused to/i.test(message.text())) {
+            blocked.push(message.text());
+        }
+    });
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+
+    expect(blocked).toEqual([]);
+});
+
+// ── Empty data ───────────────────────────────────────────────────────
+
+test('says so when a search matches nothing', async ({ page }) => {
+    await page.getByTestId('{{ snakePlural }}-search').fill('nichego-takogo-net');
+
+    await expect(page.getByTestId('{{ snakePlural }}-empty')).toBeVisible();
+});

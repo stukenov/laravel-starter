@@ -31,6 +31,7 @@ function generatedPaths(string $studly, string $plural, string $snakePlural): ar
         "lang/en/entities/{$snakePlural}.php",
         "tests/Feature/Dash/{$studly}Test.php",
         "tests/js/dash-{$plural}.test.tsx",
+        "tests/e2e/{$plural}.spec.ts",
     ];
 }
 
@@ -79,6 +80,32 @@ function cleanupGenerated(string $studly, string $plural, string $snakePlural): 
     );
 
     File::put($ability, preg_replace("/\n{3,}/", "\n\n", implode("\n", $kept)));
+
+    // The sidebar is shared as well, and the generator adds an entry to
+    // it. The entry is an object, so it has to come out as one: stripping
+    // the lines that name the entity leaves `{ icon: Boxes },` behind, and
+    // every later run adds another empty husk.
+    $sidebar = base_path('resources/js/components/app-sidebar.tsx');
+    $contents = File::get($sidebar);
+
+    $contents = preg_replace(
+        '/\n\s*\{\s*\n\s*title: \x27'.preg_quote($snakePlural, '/').'\.title\x27,[\s\S]*?\n\s*\},/',
+        '',
+        $contents,
+    );
+
+    $contents = preg_replace(
+        '/^import \{ index as '.preg_quote($snakePlural, '/').'Index \}[^\n]*\n/m',
+        '',
+        (string) $contents,
+    );
+
+    // The placeholder icon goes with the last entry that used it.
+    if (! str_contains((string) $contents, 'icon: Boxes')) {
+        $contents = preg_replace('/^\s*Boxes,\n/m', '', (string) $contents);
+    }
+
+    File::put($sidebar, preg_replace("/\n{3,}/", "\n\n", (string) $contents));
 }
 
 beforeEach(function () {
@@ -327,6 +354,27 @@ it('gives a textarea to a text field and a number box to an integer', function (
     expect($form)->toContain('<Textarea')
         ->and($form)->toContain('type="number"')
         ->and($form)->toContain('type="date"');
+});
+
+it('puts the section in the navigation', function () {
+    // A generated entity had a list, a form, routes and tests, and no way
+    // to get to any of it — the navigation is a static array the
+    // generator never touched, so whoever ran the command had to know to
+    // type the URL.
+    $sidebar = File::get(base_path('resources/js/components/app-sidebar.tsx'));
+
+    expect($sidebar)->toContain("title: 'widgets.title'")
+        ->and($sidebar)->toContain("ability: 'widgets.view'")
+        ->and($sidebar)->toContain('widgetsIndex()');
+});
+
+it('emits all three levels of tests, not two', function () {
+    // The acceptance criterion in the command's own docblock demands
+    // three levels. It emitted two, which is precisely how an action with
+    // no caller kept passing the suite.
+    expect(base_path('tests/Feature/Dash/WidgetTest.php'))->toBeFile()
+        ->and(base_path('tests/js/dash-widgets.test.tsx'))->toBeFile()
+        ->and(base_path('tests/e2e/widgets.spec.ts'))->toBeFile();
 });
 
 it('offers a way to delete a record', function () {
