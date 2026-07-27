@@ -45,6 +45,7 @@
     --color-destructive-foreground: var(--destructive-foreground);
 
     --color-border: var(--border);
+    --color-skeleton: var(--skeleton);
     --color-input: var(--input);
     --color-ring: var(--ring);
 
@@ -65,75 +66,76 @@
 }
 
 :root {
+    /*
+     * ПРАВИЛО(оформление): язык системных настроек macOS — AGENTS.md.
+     *
+     * Три решения, принятые на макетах:
+     *   1. Панель плотная (macOS), публичные страницы воздушные (apple.com)
+     *   2. Поверхности разделяются волосками, не тенями
+     *   3. Акцент — системный синий Apple
+     *
+     * Акцент меняется одной строкой ниже, все компоненты подхватят.
+     */
+
+    /* Акцент. Единственная переменная, которую меняют под проект. */
+    --primary: oklch(0.558 0.204 258.5);          /* #0071e3 */
+    --primary-foreground: oklch(1 0 0);
+
+    /* Нейтральная шкала: почти без подтона, как у Apple */
     --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
+    --foreground: oklch(0.21 0.004 285.9);        /* #1d1d1f */
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
+    --card-foreground: var(--foreground);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.87 0 0);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
+    --popover-foreground: var(--foreground);
+    --secondary: oklch(0.968 0 0);
+    --secondary-foreground: var(--foreground);
+    --muted: oklch(0.968 0 0);
+    --muted-foreground: oklch(0.596 0.003 286);   /* #86868b */
+    --accent: oklch(0.968 0 0);
+    --accent-foreground: var(--foreground);
+    --destructive: oklch(0.58 0.216 27.3);
+    /*
+     * Это НЕ цвет текста на красной кнопке — та жёстко использует text-white.
+     * Отсюда красится текст сообщения об ошибке, который лежит на светлом
+     * фоне. Поставишь сюда белый — сообщение станет невидимым, и заметить
+     * это можно только глазами: разметка на месте, тестам не за что зацепиться.
+     */
+    --destructive-foreground: oklch(0.51 0.19 27.3);
+
+    /*
+     * Заглушка загрузки. Отдельный токен, а не muted: тот почти белый и на
+     * белой карточке пропадает совсем. И не primary: тогда заглушка красится
+     * акцентом и читается как активное состояние. Оба промаха видно только
+     * глазами — разметка на месте, тестам не за что зацепиться.
+     */
+    --skeleton: oklch(0.90 0 0);
+
+    /* Волоски. Именно на них держится вся пластика — не на тенях. */
+    --border: oklch(0.918 0 0);
+    --input: oklch(0.878 0 0);
+    --ring: var(--primary);
+
+    /* Скругления: 5-7px в панели, как в системных настройках */
+    --radius: 0.4375rem;                          /* 7px */
+
+    /* Боковая панель: серая подложка, белый контент */
+    --sidebar: oklch(0.965 0 0);                  /* #f5f5f7 */
+    --sidebar-foreground: var(--foreground);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: oklch(0.93 0 0);
+    --sidebar-accent-foreground: var(--foreground);
+    --sidebar-border: oklch(0.918 0 0);
+    --sidebar-ring: var(--primary);
+
+    --chart-1: var(--primary);
+    --chart-2: oklch(0.65 0.14 195);
+    --chart-3: oklch(0.72 0.15 85);
+    --chart-4: oklch(0.62 0.2 300);
+    --chart-5: oklch(0.65 0.2 25);
 }
 
-.dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.145 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
-    --border: oklch(0.269 0 0);
-    --input: oklch(0.269 0 0);
-    --ring: oklch(0.439 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: oklch(0.439 0 0);
-}
 
 @layer base {
     * {
@@ -142,5 +144,29 @@
 
     body {
         @apply bg-background text-foreground;
+    }
+
+    /*
+     * Два масштаба вместо одного. В панели плотно — 13px, как в системных
+     * настройках macOS: на экран помещается больше строк. На публичных
+     * страницах просторно — 17px, как на apple.com.
+     *
+     * Переключает класс на контейнере лэйаута, а не медиазапрос.
+     */
+    .density-panel {
+        font-size: 13px;
+        line-height: 1.4;
+    }
+
+    .density-public {
+        font-size: 17px;
+        line-height: 1.5;
+    }
+
+    /* Волоски должны оставаться волосками и на плотных экранах */
+    @media (min-resolution: 2dppx) {
+        .hairline {
+            border-width: 0.5px;
+        }
     }
 }

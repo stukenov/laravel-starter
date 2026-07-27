@@ -27,4 +27,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
 });
 
+/*
+ * Стайлгайд — рабочий инструмент, а не демо-контент: единственное место,
+ * где видно все компоненты разом под текущими токенами. В прод не попадает.
+ */
+if (app()->environment('local')) {
+    Route::inertia('dev/styleguide', 'dev/styleguide')->name('dev.styleguide');
+}
+
 require __DIR__.'/settings.php';
