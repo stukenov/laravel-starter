@@ -11,7 +11,7 @@ import RecordForm, { type {{ studly }}Row } from './form';
 
 type Props = {
     records: Paginated<{{ studly }}Row>;
-    search: string;{{ relationOptionProps }}
+    search: string;{{ relationOptionProps }}{{ enumOptionProps }}
 };
 
 /**
@@ -20,7 +20,7 @@ type Props = {
  */
 export default function {{ studlyPlural }}Index({
     records,
-    search,{{ relationOptionDestructure }}
+    search,{{ relationOptionDestructure }}{{ enumOptionDestructure }}
 }: Props) {
     const t = useTranslations();
     // RULE(time): the server sends ISO 8601, the client formats it in
@@ -121,7 +121,7 @@ export default function {{ studlyPlural }}Index({
             <RecordForm
                 record={editing}
                 open={creating || editing !== null}
-{{ relationOptionPass }}
+{{ relationOptionPass }}{{ enumOptionPass }}
                 onClose={() => {
                     setCreating(false);
                     setEditing(null);

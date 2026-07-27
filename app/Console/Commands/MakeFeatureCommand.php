@@ -29,7 +29,7 @@ class MakeFeatureCommand extends Command
 
     protected $description = 'Generate a full vertical slice: model, policy, controller, pages, translations and tests';
 
-    /** @var array<int, array{name: string, type: string}> */
+    /** @var array<int, array{name: string, type: string, values: array<int, string>}> */
     private array $fields = [];
 
     private string $studly;      // Post
@@ -80,7 +80,7 @@ class MakeFeatureCommand extends Command
     }
 
     /**
-     * @return array<int, array{name: string, type: string}>
+     * @return array<int, array{name: string, type: string, values: array<int, string>}>
      */
     private function parseFields(string $raw): array
     {
@@ -88,11 +88,38 @@ class MakeFeatureCommand extends Command
         // the side that carries the column. `hasMany` is its inverse and
         // needs no schema here; `belongsToMany` needs a pivot table and a
         // multi-select, and stays hand-written — see AGENTS.md.
-        $allowed = ['string', 'text', 'integer', 'boolean', 'date', 'datetime', 'belongsTo'];
+        $allowed = ['string', 'text', 'integer', 'boolean', 'date', 'datetime', 'belongsTo', 'enum'];
         $fields = [];
+
+        // `status:enum(draft,published)` — the parentheses hold commas,
+        // so the list is lifted out before the fields are split on them.
+        $enums = [];
+
+        $raw = preg_replace_callback(
+            '/enum\(([^)]*)\)/',
+            function (array $match) use (&$enums): string {
+                $enums[] = array_values(array_filter(array_map('trim', explode(',', $match[1]))));
+
+                return 'enum#'.(count($enums) - 1);
+            },
+            $raw,
+        ) ?? $raw;
 
         foreach (array_filter(array_map('trim', explode(',', $raw))) as $pair) {
             [$field, $type] = array_pad(explode(':', $pair, 2), 2, 'string');
+
+            $values = [];
+
+            if (str_starts_with($type, 'enum#')) {
+                $values = $enums[(int) substr($type, 5)] ?? [];
+                $type = 'enum';
+
+                if (count($values) < 2) {
+                    throw new RuntimeException(
+                        "A enum field needs at least two values: {$field}:enum(draft,published)"
+                    );
+                }
+            }
 
             $field = Str::snake(trim($field));
             $type = trim($type);
@@ -105,7 +132,7 @@ class MakeFeatureCommand extends Command
                 throw new RuntimeException("Unsupported type {$type}, allowed: ".implode(', ', $allowed));
             }
 
-            $fields[] = ['name' => $field, 'type' => $type];
+            $fields[] = ['name' => $field, 'type' => $type, 'values' => $values];
         }
 
         return $fields;
@@ -203,6 +230,22 @@ class MakeFeatureCommand extends Command
             '{{ langFields }}' => $this->langFields(),
             '{{ payloadFields }}' => $this->payloadFields(),
             '{{ relations }}' => $this->relations(),
+            '{{ enumConstants }}' => $this->enumConstants(),
+            '{{ enumOptions }}' => $this->enumOptions(),
+            '{{ enumLangSections }}' => $this->enumLangSections(),
+            '{{ enumChecks }}' => $this->enumChecks(),
+            '{{ enumOptionProps }}' => implode('', array_map(
+                fn (array $f) => "\n    {$f['name']}Options: string[];",
+                $this->enumFields(),
+            )),
+            '{{ enumOptionPass }}' => implode('', array_map(
+                fn (array $f) => "\n                {$f['name']}Options={{$f['name']}Options}",
+                $this->enumFields(),
+            )),
+            '{{ enumOptionDestructure }}' => implode('', array_map(
+                fn (array $f) => "\n    {$f['name']}Options,",
+                $this->enumFields(),
+            )),
             '{{ relationImports }}' => $this->relationImports(),
             '{{ eagerLoad }}' => $this->eagerLoad(),
             '{{ relationOptions }}' => $this->relationOptions(),
@@ -216,7 +259,14 @@ class MakeFeatureCommand extends Command
             // `Rule::exists` is only emitted for a relation, so the
             // import follows the same condition — an unused import is a
             // lint error, a missing one is a fatal.
-            '{{ requestImports }}' => $this->hasRelations()
+            // Both a relation and an enum emit `Rule::`, so the import
+            // follows either. Tied to relations alone, an enum-only
+            // entity was a fatal error — found by generating one.
+            // Both a relation and an enum emit `Rule::`, so the import
+            // follows either. Tied to relations alone, an enum-only
+            // entity was a fatal error — found by generating one. The
+            // model itself is already imported by the stub.
+            '{{ requestImports }}' => $this->hasRelations() || $this->enumFields() !== []
                 ? "use Illuminate\\Validation\\Rule;\n"
                 : '',
         ];
@@ -240,7 +290,18 @@ class MakeFeatureCommand extends Command
         ];
 
         return $this->lines(
-            fn (array $f) => $f['type'] === 'belongsTo'
+            fn (array $f) => $f['type'] === 'enum'
+                // A string with a check constraint, not a native enum
+                // type: Postgres enums cannot have a value removed and
+                // adding one takes an exclusive lock. The constraint
+                // gives the same guarantee and can be replaced in a
+                // migration like anything else.
+                ? sprintf(
+                    "\$table->string('%s')->default('%s');",
+                    $f['name'],
+                    $f['values'][0],
+                )
+                : ($f['type'] === 'belongsTo'
                 // Nullable and nullOnDelete: deleting a category should
                 // orphan its articles, not delete them. A project that
                 // wants the opposite says so by hand — that is a
@@ -250,9 +311,37 @@ class MakeFeatureCommand extends Command
                     $this->foreignKey($f['name']),
                     Str::snake(Str::plural($f['name'])),
                 )
-                : sprintf($types[$f['type']], $f['name']),
+                : sprintf($types[$f['type']], $f['name'])),
             indent: 12,
         );
+    }
+
+    /**
+     * The allowed values of each enum field, as constants on the model.
+     *
+     * One place that the migration's check constraint, the validation
+     * rule and the form's select all agree with. A list repeated in three
+     * files drifts apart on the first change.
+     */
+    private function enumConstants(): string
+    {
+        $enums = array_filter($this->fields, fn (array $f) => $f['type'] === 'enum');
+
+        if ($enums === []) {
+            return '';
+        }
+
+        return implode('', array_map(function (array $f): string {
+            $const = Str::upper($f['name']);
+            $values = "'".implode("', '", $f['values'])."'";
+
+            return <<<PHP
+
+    /** @var array<int, string> */
+    public const {$const}_VALUES = [{$values}];
+
+PHP;
+        }, $enums));
     }
 
     /** `use BelongsTo;` when there is a relation, nothing otherwise. */
@@ -341,13 +430,39 @@ PHP;
         ));
     }
 
-    /** @return array<int, array{name: string, type: string}> */
+    /** @return array<int, array{name: string, type: string, values: array<int, string>}> */
     private function relationFields(): array
     {
         return array_values(array_filter(
             $this->fields,
             fn (array $f) => $f['type'] === 'belongsTo',
         ));
+    }
+
+    /** A select over the values the model declares. */
+    private function enumField(string $name): string
+    {
+        return <<<TSX
+        <div className="grid gap-1.5">
+                                <Label htmlFor="{$name}">
+                                    {t('{$this->snakePlural}.fields.{$name}')}
+                                </Label>
+                                <select
+                                    id="{$name}"
+                                    name="{$name}"
+                                    defaultValue={record?.{$name} ?? {$name}Options[0]}
+                                    className="border-input h-11 rounded-md border bg-transparent px-3 text-base sm:h-9 md:text-sm"
+                                    data-test="{$this->snake}-{$name}"
+                                >
+                                    {{$name}Options.map((option) => (
+                                        <option key={option} value={option}>
+                                            {t(`{$this->snakePlural}.{$name}_options.\${option}`)}
+                                        </option>
+                                    ))}
+                                </select>
+                                <InputError message={errors.{$name}} />
+                            </div>
+        TSX;
     }
 
     /** A select over the options the controller supplies. */
@@ -389,6 +504,63 @@ PHP;
     private function relatedModel(string $name): string
     {
         return Str::studly(Str::singular($name));
+    }
+
+    /** @return array<int, array{name: string, type: string, values: array<int, string>}> */
+    private function enumFields(): array
+    {
+        return array_values(array_filter($this->fields, fn (array $f) => $f['type'] === 'enum'));
+    }
+
+    /**
+     * The check constraints for the enum columns.
+     *
+     * A string plus a constraint rather than a native Postgres enum:
+     * that type cannot have a value removed at all, and adding one takes
+     * an exclusive lock on every table using it. A constraint is dropped
+     * and recreated in a migration like anything else.
+     *
+     * Written as a raw statement because `Blueprint` has no `check()` —
+     * checked rather than assumed, after the first version of this
+     * generated a migration that died on `method does not exist`.
+     */
+    private function enumChecks(): string
+    {
+        return implode('', array_map(function (array $f): string {
+            $values = implode("','", $f['values']);
+
+            return "\n        DB::statement(\"alter table {$this->snakePlural} add constraint {$this->snakePlural}_{$f['name']}_check check ({$f['name']} in ('{$values}'))\");";
+        }, $this->enumFields()));
+    }
+
+    /**
+     * A translated label per value, in its own section.
+     *
+     * Without it the screen shows `draft` — a database word leaking into
+     * the interface, untranslatable and identical in all three locales.
+     */
+    private function enumLangSections(): string
+    {
+        return implode('', array_map(function (array $f): string {
+            $lines = implode("\n", array_map(
+                fn (string $value) => "        '{$value}' => '".Str::headline($value)."',",
+                $f['values'],
+            ));
+
+            return "\n    '{$f['name']}_options' => [\n{$lines}\n    ],\n";
+        }, $this->enumFields()));
+    }
+
+    /** The option lists the form's enum selects read, for the controller. */
+    private function enumOptions(): string
+    {
+        $enums = array_filter($this->fields, fn (array $f) => $f['type'] === 'enum');
+
+        return implode('', array_map(function (array $f): string {
+            $const = Str::upper($f['name']);
+
+            return "\n            '{$f['name']}Options' => {$this->studly}::{$const}_VALUES,";
+        }, $enums));
     }
 
     /** The relation methods the model needs, or an empty string. */
@@ -436,13 +608,22 @@ PHP;
         ];
 
         return $this->lines(
-            fn (array $f) => $f['type'] === 'belongsTo'
+            fn (array $f) => $f['type'] === 'enum'
+                // Named after the field, not the model: two enum
+                // fields on one entity would otherwise share a constant.
+                ? sprintf(
+                    "'%s' => ['required', Rule::in(%s::%s_VALUES)],",
+                    $f['name'],
+                    $this->studly,
+                    Str::upper($f['name']),
+                )
+                : ($f['type'] === 'belongsTo'
                 ? sprintf(
                     "'%s' => ['nullable', 'uuid', Rule::exists('%s', 'id')],",
                     $this->foreignKey($f['name']),
                     Str::snake(Str::plural($f['name'])),
                 )
-                : "'{$f['name']}' => {$types[$f['type']]},",
+                : "'{$f['name']}' => {$types[$f['type']]},"),
             indent: 12,
         );
     }
@@ -459,13 +640,15 @@ PHP;
         ];
 
         return $this->lines(
-            fn (array $f) => $f['type'] === 'belongsTo'
+            fn (array $f) => $f['type'] === 'enum'
+                ? "'{$f['name']}' => fake()->randomElement({$this->studly}::".Str::upper($f['name']).'_VALUES),'
+                : ($f['type'] === 'belongsTo'
                 // Null by default: a factory that always fills the key
                 // makes "no category" untestable, and one that never
                 // fills it never exercises the relation. The test sets
                 // it when it needs it.
                 ? "'{$this->foreignKey($f['name'])}' => null,"
-                : "'{$f['name']}' => {$types[$f['type']]},",
+                : "'{$f['name']}' => {$types[$f['type']]},"),
             indent: 12,
         );
     }
@@ -482,9 +665,11 @@ PHP;
         ];
 
         return $this->lines(
-            fn (array $f) => $f['type'] === 'belongsTo'
+            fn (array $f) => $f['type'] === 'enum'
+                ? "'{$f['name']}' => '{$f['values'][0]}',"
+                : ($f['type'] === 'belongsTo'
                 ? "'{$this->foreignKey($f['name'])}' => null,"
-                : "'{$f['name']}' => {$types[$f['type']]},",
+                : "'{$f['name']}' => {$types[$f['type']]},"),
             indent: 8,
         );
     }
@@ -498,11 +683,13 @@ PHP;
         ];
 
         return $this->lines(
-            fn (array $f) => $f['type'] === 'belongsTo'
+            fn (array $f) => $f['type'] === 'enum'
+                ? "{$f['name']}: string;"
+                : ($f['type'] === 'belongsTo'
                 // Both: the key is what the form submits, the object is
                 // what the list shows.
                 ? "{$this->foreignKey($f['name'])}: string | null;\n    {$f['name']}: { id: string; name: string } | null;"
-                : "{$f['name']}: {$types[$f['type']]};",
+                : "{$f['name']}: {$types[$f['type']]};"),
             indent: 4,
         );
     }
@@ -524,6 +711,7 @@ PHP;
             // the controller — there is nothing sensible to type into a
             // free-text box for a foreign key.
             'belongsTo' => $this->relationField($f['name']),
+            'enum' => $this->enumField($f['name']),
             'text' => $this->field($f['name'], <<<TSX
         <Textarea
                                     id="{$f['name']}"
@@ -616,6 +804,15 @@ PHP;
     {
         return $this->lines(
             fn (array $f) => match (true) {
+                // The label, not the stored word: `draft` on screen is a
+                // database value leaking into the interface, and it
+                // cannot be translated.
+                $f['type'] === 'enum' => sprintf(
+                    '<span className="flex-1 truncate">{t(`%s.%s_options.${record.%s}`)}</span>',
+                    $this->snakePlural,
+                    $f['name'],
+                    $f['name'],
+                ),
                 // RULE(time): the server sends ISO 8601 and the client
                 // formats it in the reader's zone — AGENTS.md. The
                 // generated list printed the raw string, so a date came
@@ -645,6 +842,15 @@ PHP;
 
     /**
      * @param  callable(array{name: string, type: string}): string  $format
+     */
+    /**
+     * Formats one line per field, indenting all but the first.
+     *
+     * The callback shape is spelled out so static analysis keeps it:
+     * without it, a branch on `type === 'enum'` narrows the array to the
+     * two keys it saw and forgets `values` exists.
+     *
+     * @param  callable(array{name: string, type: string, values: array<int, string>}): string  $format
      */
     private function lines(callable $format, int $indent): string
     {

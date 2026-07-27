@@ -26,7 +26,7 @@ class {{ studly }}Controller extends Controller
 {{ eagerLoad }}
                 ->paginate(20)
                 ->withQueryString(),
-            'search' => $search,{{ relationOptions }}
+            'search' => $search,{{ relationOptions }}{{ enumOptions }}
         ]);
     }
 

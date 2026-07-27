@@ -181,7 +181,17 @@ and the Inertia page path mirrors the URL.
     php artisan test && npm run test:js
 
 Field types: `string`, `text`, `integer`, `boolean`, `date`, `datetime`,
-and `belongsTo`.
+`belongsTo`, and `enum(a,b,c)`.
+
+    php artisan make:feature Ticket --fields=title:string,status:enum(open,closed)
+
+An `enum` is a string with a check constraint, not a native Postgres
+enum: that type cannot have a value removed at all, and adding one takes
+an exclusive lock on every table using it. The allowed values live once
+on the model as `STATUS_VALUES`, which the migration, the validation rule
+and the form's select all read. Each value gets a label in all three
+locales — `draft` on screen is a database word leaking into the
+interface.
 
     php artisan make:feature Post --fields=title:string,category:belongsTo
 

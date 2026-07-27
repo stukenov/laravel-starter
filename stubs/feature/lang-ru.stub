@@ -24,6 +24,7 @@ return [
      * called `add`, `search` or `empty` would have done the same to its
      * neighbour, silently, because PHP keeps the last key.
      */
+{{ enumLangSections }}
     'fields' => [
         {{ langFields }}
     ],

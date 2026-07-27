@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 #[Fillable([{{ fillable }}])]
 class {{ studly }} extends Model
 {
-    /** @use HasFactory<{{ studly }}Factory> */
+{{ enumConstants }}    /** @use HasFactory<{{ studly }}Factory> */
     use HasFactory, HasUuids;
 
     /*

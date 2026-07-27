@@ -536,3 +536,79 @@ it('running the suite does not edit the source it tests', function () {
         ->and($ability)->not->toContain('TAGS')
         ->and($ability)->not->toContain('NOTES');
 })->skip('runs inside the suite that generates them; see the afterEach');
+
+describe('a field with a fixed set of values', function () {
+    // Counted across the three ported projects: eleven status/type/stage
+    // columns, every one a bare string with the allowed values living in
+    // somebody's head. The generator could not express it at all.
+
+    beforeEach(function () {
+        cleanupGenerated('Ticket', 'tickets', 'tickets');
+
+        Artisan::call('make:feature', [
+            'name' => 'Ticket',
+            '--fields' => 'title:string,status:enum(open,in_progress,closed)',
+            '--force' => true,
+        ]);
+    });
+
+    afterEach(fn () => cleanupGenerated('Ticket', 'tickets', 'tickets'));
+
+    // Correct data
+    it('constrains the column in the database', function () {
+        // Not a native Postgres enum: that type cannot have a value
+        // removed, and adding one takes an exclusive lock. A constraint
+        // is dropped and recreated like anything else.
+        $migration = glob(database_path('migrations/*_create_tickets_table.php'))[0];
+        $definition = File::get($migration);
+
+        expect($definition)->toContain("string('status')->default('open')")
+            ->and($definition)->toContain("check (status in ('open','in_progress','closed'))");
+    });
+
+    it('declares the values once, on the model', function () {
+        // The migration, the rule and the select all read the same list.
+        // Three copies of it drift apart on the first change.
+        expect(File::get(base_path('app/Models/Ticket.php')))
+            ->toContain("STATUS_VALUES = ['open', 'in_progress', 'closed']");
+    });
+
+    it('validates against that list', function () {
+        $rules = File::get(base_path('app/Http/Requests/Ticket/StoreRequest.php'));
+
+        expect($rules)->toContain('Rule::in(Ticket::STATUS_VALUES)')
+            ->and($rules)->toContain('use Illuminate\Validation\Rule;');
+    });
+
+    it('offers a select, not a box to type a status into', function () {
+        expect(File::get(base_path('resources/js/pages/dash/tickets/form.tsx')))
+            ->toContain('statusOptions.map');
+    });
+
+    it('gives every value a label in all three locales', function () {
+        // `draft` on screen is a database word leaking into the
+        // interface, and it cannot be translated.
+        foreach (['ru', 'kk', 'en'] as $locale) {
+            $lang = require lang_path("{$locale}/entities/tickets.php");
+
+            expect($lang['status_options'])->toHaveKeys(['open', 'in_progress', 'closed']);
+        }
+    });
+
+    // Wrong data
+    it('refuses a list with only one value', function () {
+        expect(fn () => Artisan::call('make:feature', [
+            'name' => 'Broken',
+            '--fields' => 'state:enum(only)',
+            '--force' => true,
+        ]))->toThrow(RuntimeException::class);
+    });
+
+    // Empty data
+    it('leaves an entity without enums untouched', function () {
+        // The imports are conditional; an unused one is a lint error and
+        // a missing one is fatal.
+        expect(File::get(base_path('app/Models/Widget.php')))
+            ->not->toContain('_VALUES');
+    });
+});
