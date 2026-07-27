@@ -456,10 +456,18 @@ nothing errors, the work simply stops happening.
     php artisan health:check        queue, schedule, backups, disk, database
     /dash/health                    the same results, gated by health.view
     /health.json                    for a monitor; needs HEALTH_JSON_SECRET
+                                    and the secret in X-Health-Secret, never
+                                    in the URL — see below
 
 **Health checks are not run by the page.** `health:check` writes results on
 the schedule and the page reads them. A page that ran them would fire a disk
 and database check on every refresh, and hang on a check that hangs.
+
+**The health secret goes in a header, never in the URL.** `?secret=…` is
+written to the access log of every proxy the request passes, so a monitor
+polling once a minute files its own credential away half a million times
+a year, into logs that get rotated, shipped and backed up. The controller
+accepts `X-Health-Secret` and nothing else.
 
 **Spatie's own health dashboard is unusable here** — it opens with a
 stylesheet from `rsms.me`, which the CSP blocks. Hence our own page.

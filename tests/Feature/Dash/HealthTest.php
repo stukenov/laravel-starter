@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HealthJsonController;
 use App\Models\User;
 use App\Support\Access\Ability;
 use Illuminate\Support\Facades\DB;
@@ -93,6 +94,23 @@ it('keeps the json endpoint unregistered without a secret', function () {
         ->and(Route::has('health.json'))->toBeFalse();
 
     $this->get('/health.json')->assertNotFound();
+});
+
+it('will not take the secret from the url', function () {
+    // `?secret=…` writes the credential into the access log of every
+    // proxy the request passes. A monitor checking once a minute would
+    // file it away half a million times a year.
+    config(['health.json_secret' => 'a-long-random-string']);
+
+    Route::get('health.json', HealthJsonController::class)->name('health.json');
+
+    $this->get('/health.json?secret=a-long-random-string')->assertNotFound();
+
+    storeResult('Database', Status::ok(), 'Ok');
+
+    $this->withHeader('X-Health-Secret', 'a-long-random-string')
+        ->get('/health.json')
+        ->assertOk();
 });
 
 // ── Empty data ───────────────────────────────────────────────────────
