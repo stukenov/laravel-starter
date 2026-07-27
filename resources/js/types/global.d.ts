@@ -12,6 +12,12 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             auth: Auth;
+            /** Текущий язык интерфейса: ru | kk | en */
+            locale: string;
+            /** Все поддерживаемые языки — для переключателя */
+            locales: string[];
+            /** Плоский словарь переводов: ключ 'nav.dashboard' */
+            translations: Record<string, string>;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };
