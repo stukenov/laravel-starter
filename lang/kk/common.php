@@ -94,6 +94,7 @@ return [
     ],
 
     'nav' => [
+        'section' => 'Бөлімдер',
         'sessions' => 'Құрылғылар',
         'dashboard' => 'Басқару тақтасы',
         'settings' => 'Баптаулар',

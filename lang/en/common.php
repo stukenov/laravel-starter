@@ -94,6 +94,7 @@ return [
     ],
 
     'nav' => [
+        'section' => 'Sections',
         'sessions' => 'Devices',
         'dashboard' => 'Dashboard',
         'settings' => 'Settings',

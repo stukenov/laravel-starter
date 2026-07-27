@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'title' => 'Users',
+    'description' => 'Who has access to the system',
+    'search' => 'Search by name or email',
+    'add' => 'Add user',
+    'edit' => 'Edit user',
+    'empty' => 'No users yet',
+    'empty_search' => 'Nothing found',
+    'name' => 'Name',
+    'email' => 'Email',
+    'password' => 'Password',
+    'password_hint' => 'Leave empty to keep the current one',
+    'locale' => 'Language',
+    'timezone' => 'Timezone',
+    'created_at' => 'Created',
+    'verified' => 'Verified',
+    'unverified' => 'Not verified',
+    'save' => 'Save',
+    'cancel' => 'Cancel',
+    'delete' => 'Delete',
+    'delete_confirm' => 'Delete this user?',
+    'delete_explain' => 'The account will be removed permanently.',
+    'created' => 'User created.',
+    'updated' => 'Changes saved.',
+    'deleted' => 'User deleted.',
+];

@@ -18,6 +18,11 @@
         </include>
     </source>
     <php>
+        <!-- RULE(tests): 128M is not enough. matomo/device-detector loads
+             large rule tables, and the suite exhausts the default limit
+             with a fatal error mid-run — which reads like a broken test
+             rather than a memory ceiling. Same fix as phpstan. -->
+        <ini name="memory_limit" value="1G"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

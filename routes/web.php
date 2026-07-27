@@ -35,4 +35,5 @@ if (app()->environment('local')) {
     Route::inertia('dev/styleguide', 'dev/styleguide')->name('dev.styleguide');
 }
 
+require __DIR__.'/dash.php';
 require __DIR__.'/settings.php';

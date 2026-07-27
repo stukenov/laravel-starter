@@ -46,7 +46,16 @@ class HandleInertiaRequests extends Middleware
             'locales' => SetLocale::SUPPORTED,
             // Плоский словарь: ключ 'nav.dashboard' вместо вложенных объектов.
             // Так хелпер t() остаётся в двадцать строк без обхода дерева.
-            'translations' => Arr::dot(trans('common')),
+            // Словари сущностей приходят с префиксом: ключ 'users.title'
+            // не сталкивается с 'nav.title' из общего словаря.
+            'translations' => array_merge(
+                Arr::dot(trans('common')),
+                collect(glob(lang_path(app()->getLocale().'/entities/*.php')))
+                    ->mapWithKeys(fn (string $file) => Arr::dot(
+                        [basename($file, '.php') => require $file],
+                    ))
+                    ->all(),
+            ),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

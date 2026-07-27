@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -44,6 +45,45 @@ class User extends Authenticatable implements MustVerifyEmail
      * Уберёшь значение по умолчанию — сломаются вставки мимо моделей.
      * См. AGENTS.md
      */
+
+    /**
+     * RULE(search): two mechanisms, and both are needed — AGENTS.md.
+     *
+     * Full-text search matches whole words only, and it tokenises
+     * "nurlan@example.kz" as a single email token — so searching for
+     * "nurlan" finds nothing. People search exactly like that.
+     *
+     * So: tsvector handles whole words in names, ILIKE over the pg_trgm
+     * index handles fragments and emails. Drop either one and a whole
+     * class of searches silently returns nothing.
+     *
+     * @param  Builder<User>  $query
+     * @return Builder<User>
+     */
+    public function scopeSearch($query, string $term)
+    {
+        $term = trim($term);
+
+        if ($term === '') {
+            return $query;
+        }
+
+        $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%';
+
+        return $query->where(function ($q) use ($term, $like) {
+            $q->where('name', 'ilike', $like)
+                ->orWhere('email', 'ilike', $like);
+
+            // plainto_tsquery on a fragment yields an empty query that
+            // matches nothing, so only add it for real words.
+            if (mb_strlen($term) >= 4) {
+                $q->orWhereRaw(
+                    "search_vector @@ plainto_tsquery('simple', ?)",
+                    [$term],
+                );
+            }
+        });
+    }
 
     /**
      * Get the attributes that should be cast.

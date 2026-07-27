@@ -99,6 +99,7 @@ return [
     ],
 
     'nav' => [
+        'section' => 'Разделы',
         'sessions' => 'Устройства',
         'dashboard' => 'Панель',
         'settings' => 'Настройки',
