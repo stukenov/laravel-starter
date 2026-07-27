@@ -193,6 +193,12 @@ hand-written one should too.
                            # so backend tests 500 until the build exists
     php artisan test && npm run test:js
 
+**The generator cannot translate.** `lang/ru` and `lang/kk` receive the
+same English labels as `lang/en` — a name derived from the field. That
+reads like a finished translation and is not one, so the command says so
+every time. Translating them is part of generating the entity, not a
+later tidy-up.
+
 Field types: `string`, `text`, `integer`, `boolean`, `date`, `datetime`,
 `belongsTo`, and `enum(a,b,c)`.
 

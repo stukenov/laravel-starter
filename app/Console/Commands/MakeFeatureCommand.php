@@ -74,6 +74,15 @@ class MakeFeatureCommand extends Command
         $this->registerAbilities();
         $this->registerNavigation();
 
+        // The generator cannot translate, and pretending otherwise is
+        // worse than saying so: `lang/ru` and `lang/kk` receive the same
+        // English labels as `lang/en`, which reads like a finished
+        // translation and is not one.
+        $this->components->warn(sprintf(
+            'Field labels in lang/ru and lang/kk are English placeholders — %s and the rest. Translate them before this ships.',
+            $this->fields[0]['name'],
+        ));
+
         // RULE(ui): a short form may be a dialog, a long one gets its own
         // page — AGENTS.md. The generator only knows how to make the
         // dialog, so where the rule says otherwise it says so out loud
