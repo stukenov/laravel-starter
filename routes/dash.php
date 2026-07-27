@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Dash\ActivityController;
 use App\Http\Controllers\Dash\RoleController;
 use App\Http\Controllers\Dash\UserController;
 use Illuminate\Support\Facades\Route;
@@ -26,4 +27,7 @@ Route::middleware(['auth', 'verified'])
         Route::get('roles/{role}', [RoleController::class, 'edit'])->name('roles.edit');
         Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
         Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+
+        // Read only on purpose: an audit log that can be edited is not one.
+        Route::get('activity', [ActivityController::class, 'index'])->name('activity.index');
     });

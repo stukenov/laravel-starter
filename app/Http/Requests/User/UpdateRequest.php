@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\User;
 
-use App\Http\Middleware\SetLocale;
 use App\Models\User;
+use App\Support\Locale\Locales;
 use DateTimeZone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -46,7 +46,7 @@ class UpdateRequest extends FormRequest
             // Password is optional when editing: an empty field means
             // "keep the current one", not "wipe it".
             'password' => ['nullable', 'string', Password::defaults()],
-            'locale' => ['required', 'string', Rule::in(SetLocale::SUPPORTED)],
+            'locale' => ['required', 'string', Rule::in(Locales::SUPPORTED)],
             'timezone' => ['required', 'string', Rule::in(DateTimeZone::listIdentifiers())],
         ];
     }

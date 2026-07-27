@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\User;
 
-use App\Http\Middleware\SetLocale;
 use App\Models\User;
+use App\Support\Locale\Locales;
 use DateTimeZone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -28,7 +28,7 @@ class StoreRequest extends FormRequest
             // does it with an exception.
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)],
             'password' => ['required', 'string', Password::defaults()],
-            'locale' => ['required', 'string', Rule::in(SetLocale::SUPPORTED)],
+            'locale' => ['required', 'string', Rule::in(Locales::SUPPORTED)],
             'timezone' => ['required', 'string', Rule::in(DateTimeZone::listIdentifiers())],
         ];
     }

@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -31,7 +33,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, HasUuids, Notifiable;
+    use HasFactory, HasRoles, HasUuids, LogsActivity, Notifiable;
 
     /*
      * RULE(db): UUIDv7 keys, generated in two places on purpose.
@@ -84,6 +86,22 @@ class User extends Authenticatable implements MustVerifyEmail
                 );
             }
         });
+    }
+
+    /**
+     * RULE(activity): log what changed, never the password.
+     *
+     * The hash is useless in a log and dangerous in a backup of one.
+     * dontSubmitEmptyLogs keeps the feed free of entries recording that
+     * nothing happened.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'email', 'locale', 'timezone'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->useLogName('user');
     }
 
     /**

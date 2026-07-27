@@ -17,6 +17,7 @@
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
         "matomo/device-detector": "^6.5",
+        "spatie/laravel-activitylog": "^5.0",
         "spatie/laravel-csp": "^3.26",
         "spatie/laravel-permission": "^8.3"
     },

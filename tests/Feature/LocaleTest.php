@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Middleware\SetLocale;
 use App\Models\User;
+use App\Support\Locale\Locales;
 use Illuminate\Support\Collection;
 
 // Correct data
@@ -52,7 +52,7 @@ it('ignores an unsupported locale stored on the user', function () {
 
     $this->actingAs($user)->get(route('dashboard'));
 
-    expect(app()->getLocale())->toBeIn(SetLocale::SUPPORTED)
+    expect(app()->getLocale())->toBeIn(Locales::SUPPORTED)
         ->and(app()->getLocale())->not->toBe('de');
 });
 
@@ -67,7 +67,7 @@ it('redirects the bare root to a supported locale', function () {
 
     $target = ltrim(parse_url($response->headers->get('Location'), PHP_URL_PATH), '/');
 
-    expect($target)->toBeIn(SetLocale::SUPPORTED);
+    expect($target)->toBeIn(Locales::SUPPORTED);
 });
 
 it('falls back to ru when the browser sends no language', function () {
@@ -102,11 +102,11 @@ it('keeps every locale file in sync', function () {
 // Кука локали: страницы вне префикса — вход и регистрация — иначе всегда
 // открываются на запасном языке, каким бы ни был выбор пользователя.
 it('remembers the locale chosen through the url', function () {
-    $this->get('/kk')->assertCookie(SetLocale::COOKIE, 'kk', encrypted: false);
+    $this->get('/kk')->assertCookie(Locales::COOKIE, 'kk', encrypted: false);
 });
 
 it('uses the remembered locale on pages outside the prefix', function () {
-    $this->withUnencryptedCookie(SetLocale::COOKIE, 'kk')
+    $this->withUnencryptedCookie(Locales::COOKIE, 'kk')
         ->get(route('login'))
         ->assertInertia(fn ($page) => $page->where('locale', 'kk'));
 });
@@ -115,13 +115,13 @@ it('lets the profile win over the cookie', function () {
     $user = User::factory()->create(['locale' => 'en']);
 
     $this->actingAs($user)
-        ->withUnencryptedCookie(SetLocale::COOKIE, 'kk')
+        ->withUnencryptedCookie(Locales::COOKIE, 'kk')
         ->get(route('profile.edit'))
         ->assertInertia(fn ($page) => $page->where('locale', 'en'));
 });
 
 it('ignores a broken cookie value', function () {
-    $this->withUnencryptedCookie(SetLocale::COOKIE, 'de')
+    $this->withUnencryptedCookie(Locales::COOKIE, 'de')
         ->get(route('login'))
         ->assertInertia(fn ($page) => $page->where('locale', fn ($l) => in_array($l, ['ru', 'kk', 'en'], true)));
 });

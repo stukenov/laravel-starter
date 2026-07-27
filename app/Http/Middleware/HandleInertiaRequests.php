@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Locale\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Inertia\Middleware;
@@ -43,7 +44,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'locale' => app()->getLocale(),
-            'locales' => SetLocale::SUPPORTED,
+            'locales' => Locales::SUPPORTED,
             // Flat dictionary: key 'nav.dashboard' instead of nested
             // objects, which keeps t() at twenty lines with no tree walk.
             // Entity dictionaries are prefixed, so 'users.title' cannot

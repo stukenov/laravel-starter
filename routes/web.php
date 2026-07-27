@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Middleware\SetLocale;
+use App\Support\Locale\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -13,11 +13,11 @@ use Illuminate\Support\Facades\Route;
  * changes.
  */
 
-Route::get('/', fn (Request $request) => redirect('/'.SetLocale::fromBrowser($request)))
+Route::get('/', fn (Request $request) => redirect('/'.Locales::fromBrowser($request)))
     ->name('root');
 
 Route::prefix('{locale}')
-    ->whereIn('locale', SetLocale::SUPPORTED)
+    ->whereIn('locale', Locales::SUPPORTED)
     ->group(function () {
         Route::inertia('/', 'home')->name('home');
         Route::inertia('privacy', 'legal/privacy')->name('legal.privacy');

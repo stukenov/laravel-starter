@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\User;
+use App\Support\Locale\Locales;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -31,6 +32,12 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            // Explicit, not left to the database default: a freshly created
+            // model does not re-read the row, so these would be null in
+            // memory — and the activity log would then record a change from
+            // null to the real value, which never happened.
+            'locale' => Locales::FALLBACK,
+            'timezone' => 'Asia/Almaty',
         ];
     }
 

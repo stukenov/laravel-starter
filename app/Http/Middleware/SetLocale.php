@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Locale\Locales;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
@@ -10,19 +11,16 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * RULE(i18n): three languages, hybrid URLs — AGENTS.md.
  *
- * Public pages live under /{locale}/ for correct hreflang; the cabinet
- * has no prefix and takes the language from the profile. So the source
- * of the locale depends on where the request landed, and the order below
- * matters.
+ * Public pages live under /{locale}/ for correct hreflang; the cabinet has
+ * no prefix and takes the language from the profile. So the source of the
+ * locale depends on where the request landed, and the order below matters.
+ *
+ * The list of languages itself lives in App\Support\Locale\Locales —
+ * everything else needs it too, and reaching into HTTP for a constant is
+ * the coupling ArchitectureTest exists to prevent.
  */
 class SetLocale
 {
-    public const SUPPORTED = ['ru', 'kk', 'en'];
-
-    public const FALLBACK = 'ru';
-
-    public const COOKIE = 'locale';
-
     public function handle(Request $request, Closure $next): Response
     {
         $locale = self::resolve($request);
@@ -39,7 +37,7 @@ class SetLocale
         // language came from the URL. Otherwise the cookie would pin down an
         // accidental fallback forever.
         if ($request->route('locale') === $locale) {
-            $response->headers->setCookie(cookie()->forever(self::COOKIE, $locale));
+            $response->headers->setCookie(cookie()->forever(Locales::COOKIE, $locale));
         }
 
         return $response;
@@ -49,7 +47,7 @@ class SetLocale
      * Order: URL → profile → cookie → browser → fallback.
      *
      * The cookie exists for pages outside the prefix — login and register.
-     * Without it, somebody reading the site in Kazakh clicks "Кіру" and
+     * Without it, somebody reading the site in Kazakh clicks through and
      * gets a Russian form: they have no profile yet, so there is nothing
      * else to read the language from.
      */
@@ -57,52 +55,22 @@ class SetLocale
     {
         $fromPath = $request->route('locale');
 
-        if (is_string($fromPath) && self::supports($fromPath)) {
+        if (is_string($fromPath) && Locales::supports($fromPath)) {
             return $fromPath;
         }
 
         $userLocale = $request->user()?->locale;
 
-        if (is_string($userLocale) && self::supports($userLocale)) {
+        if (is_string($userLocale) && Locales::supports($userLocale)) {
             return $userLocale;
         }
 
-        $fromCookie = $request->cookie(self::COOKIE);
+        $fromCookie = $request->cookie(Locales::COOKIE);
 
-        if (is_string($fromCookie) && self::supports($fromCookie)) {
+        if (is_string($fromCookie) && Locales::supports($fromCookie)) {
             return $fromCookie;
         }
 
-        return self::fromBrowser($request);
-    }
-
-    /**
-     * Reads the language from the browser header — root URL only.
-     */
-    public static function fromBrowser(Request $request): string
-    {
-        // Symfony substitutes the app locale when the header is absent,
-        // making "the browser said nothing" indistinguishable from "the
-        // browser asked for English". So trust a real header only.
-        $header = $request->headers->get('Accept-Language');
-
-        if ($header === null || trim($header) === '') {
-            return self::FALLBACK;
-        }
-
-        foreach ($request->getLanguages() as $language) {
-            $short = strtolower(substr($language, 0, 2));
-
-            if (self::supports($short)) {
-                return $short;
-            }
-        }
-
-        return self::FALLBACK;
-    }
-
-    public static function supports(string $locale): bool
-    {
-        return in_array($locale, self::SUPPORTED, true);
+        return Locales::fromBrowser($request);
     }
 }
