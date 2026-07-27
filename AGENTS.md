@@ -90,7 +90,18 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     `/entity/new` creates, `/entity/:id` edits. A short form may be a
     dialog, a long one gets its own page. Never both on one route.
 
-11. **No demo content.** Everything that ships is working functionality.
+11. **Access is gated by permissions, never by a flag.** Permissions are
+    declared in `App\Support\Access\Ability` because a permission means
+    something only when code checks it; inventing one through the UI
+    produces a name nothing enforces. Which permissions a role carries is
+    a business decision and lives in the panel.
+
+    `RoleSeeder` is idempotent and runs on every deploy, so a permission
+    added in code appears without anyone creating it by hand. Tests seed
+    it too — roles are infrastructure, not fixtures, and without them
+    every policy denies everything for the wrong reason.
+
+12. **No demo content.** Everything that ships is working functionality.
 
 ## Conventions over configuration
 
@@ -184,6 +195,7 @@ Mail in development is Mailpit on `127.0.0.1:1025`, web UI on `:8025`.
 
     app/Http/Middleware/SetLocale.php        locale resolution
     app/Http/Middleware/SecurityHeaders.php  security headers
+    app/Support/Access/Ability.php           permission names, declared in code
     app/Support/Csp/AppPreset.php            CSP policy
     app/Support/Sessions/SessionList.php     active sessions and devices
     app/Exceptions/UnsupportedDatabaseDriver.php  database driver guard

@@ -152,12 +152,12 @@ it('covers all three data states in the generated tests', function () {
         ->and($feature)->toContain('Empty data');
 });
 
-it('gates the generated policy on administrators', function () {
+it('gates the generated policy on permissions', function () {
     // Registration is open, so a policy returning true everywhere hands
-    // the panel to anyone who signs up.
+    // the panel to anyone who signs up. Every verb must check something.
     $policy = File::get(base_path('app/Policies/WidgetPolicy.php'));
 
-    expect(substr_count($policy, 'is_admin'))->toBe(5)
+    expect(substr_count($policy, 'Ability::'))->toBe(5)
         ->and($policy)->not->toContain('return true;');
 });
 

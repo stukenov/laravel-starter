@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property string $id
@@ -21,7 +22,6 @@ use Illuminate\Support\Carbon;
  * @property string $password
  * @property string $locale
  * @property string $timezone
- * @property bool $is_admin
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -31,7 +31,7 @@ use Illuminate\Support\Carbon;
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasUuids, Notifiable;
+    use HasFactory, HasRoles, HasUuids, Notifiable;
 
     /*
      * RULE(db): UUIDv7 keys, generated in two places on purpose.
@@ -96,9 +96,6 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            // Not fillable on purpose: nobody grants themselves admin
-            // through a mass assignment.
-            'is_admin' => 'boolean',
         ];
     }
 }

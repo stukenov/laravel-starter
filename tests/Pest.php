@@ -1,6 +1,8 @@
 <?php
 
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /*
@@ -14,8 +16,19 @@ use Tests\TestCase;
 |
 */
 
+/*
+ * Roles and permissions are infrastructure, not fixtures: without them the
+ * policies deny everything and every panel test fails for the wrong reason.
+ * The registrar is reset first because it caches the permission list for
+ * the whole process, and the process outlives a single test database.
+ */
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
+    ->beforeEach(function () {
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $this->seed(RoleSeeder::class);
+    })
     ->in('Feature');
 
 /*

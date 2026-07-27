@@ -4,37 +4,39 @@ namespace App\Policies;
 
 use App\Models\{{ studly }};
 use App\Models\User;
+use App\Support\Access\Ability;
 
 /**
- * RULE(access): managing entities is for administrators — AGENTS.md.
+ * RULE(access): gated by permissions — AGENTS.md.
  *
- * Registration is open by default, so a policy that returns true for every
- * verb hands the panel to anyone who signs up.
+ * Registration is open by default, so a policy returning true for every
+ * verb hands the panel to anyone who signs up. Add the two constants to
+ * App\Support\Access\Ability and re-run the RoleSeeder.
  */
 class {{ studly }}Policy
 {
     public function viewAny(User $user): bool
     {
-        return (bool) $user->is_admin;
+        return $user->can(Ability::VIEW_{{ snakePlural }});
     }
 
     public function view(User $user, {{ studly }} ${{ snake }}): bool
     {
-        return (bool) $user->is_admin;
+        return $user->can(Ability::VIEW_{{ snakePlural }});
     }
 
     public function create(User $user): bool
     {
-        return (bool) $user->is_admin;
+        return $user->can(Ability::VIEW_{{ snakePlural }});
     }
 
     public function update(User $user, {{ studly }} ${{ snake }}): bool
     {
-        return (bool) $user->is_admin;
+        return $user->can(Ability::VIEW_{{ snakePlural }});
     }
 
     public function delete(User $user, {{ studly }} ${{ snake }}): bool
     {
-        return (bool) $user->is_admin;
+        return $user->can(Ability::VIEW_{{ snakePlural }});
     }
 }

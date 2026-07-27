@@ -3,52 +3,52 @@
 namespace App\Policies;
 
 use App\Models\User;
+use App\Support\Access\Ability;
 
 /**
- * RULE(access): managing users is for administrators only — AGENTS.md.
+ * RULE(access): the panel is gated by permissions, not by a flag.
  *
- * This policy used to return true everywhere, with a comment saying real
- * roles arrive in stage 3. That was a genuine hole: registration is open
- * by default, so anyone could sign up and then change any account's email
- * and password — including an administrator's. "Roles come later" is not
- * a reason to ship an open door.
+ * This policy once returned true everywhere with a note saying real roles
+ * would arrive later. Registration is open by default, so that was an open
+ * door: anyone could sign up and change any account's credentials. The
+ * lesson stays even though the flag is gone — a permission check is not
+ * something to defer.
  *
- * `is_admin` is a stopgap. When spatie/laravel-permission lands, this
- * file and the column go together.
+ * See AGENTS.md.
  */
 class UserPolicy
 {
     /**
-     * The list exposes every user's email — that is a data leak on its
-     * own, not just a management concern.
+     * The list exposes every user's email, so viewing is a permission of
+     * its own rather than a free side effect of being signed in.
      */
     public function viewAny(User $user): bool
     {
-        return (bool) $user->is_admin;
+        return $user->can(Ability::VIEW_USERS);
     }
 
     public function view(User $user, User $target): bool
     {
-        return (bool) $user->is_admin || $user->id === $target->id;
+        return $user->can(Ability::VIEW_USERS) || $user->id === $target->id;
     }
 
     public function create(User $user): bool
     {
-        return (bool) $user->is_admin;
+        return $user->can(Ability::MANAGE_USERS);
     }
 
     public function update(User $user, User $target): bool
     {
-        return (bool) $user->is_admin;
+        return $user->can(Ability::MANAGE_USERS);
     }
 
     /**
-     * Even an administrator may not delete themselves: one click would
-     * strip the system of its last way in. Leaving is a separate,
-     * deliberate flow behind a password confirmation.
+     * Nobody deletes themselves here, permission or not: one click would
+     * strip the system of its last way in. Leaving is a separate flow
+     * behind a password confirmation.
      */
     public function delete(User $user, User $target): bool
     {
-        return (bool) $user->is_admin && $user->id !== $target->id;
+        return $user->can(Ability::MANAGE_USERS) && $user->id !== $target->id;
     }
 }

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -30,22 +31,20 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            // Explicit, not left to the database default: a freshly
-            // created model does not re-read the row, so the attribute
-            // would be null in memory and every policy check would
-            // explode on a null return.
-            'is_admin' => false,
         ];
     }
 
     /**
-     * Administrators may manage other users. Stopgap until real roles.
+     * Administrators may manage the panel.
+     *
+     * afterCreating, not a state: a role is a relation, and the row must
+     * exist before it can be attached.
      */
     public function admin(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'is_admin' => true,
-        ]);
+        return $this->afterCreating(
+            fn (User $user) => $user->assignRole(RoleSeeder::ADMIN),
+        );
     }
 
     /**
