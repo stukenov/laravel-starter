@@ -206,9 +206,11 @@ Four things a public page owes that a panel page does not:
 
 - **A slug, not a uuid, in the URL.** `getRouteKeyName()` on the model
   returns `slug`; the uuid stays the key.
-- **A place in the sitemap.** `SitemapController::PAGES` lists the static
-  ones; a model-backed section adds itself through `sitemapEntries()` on
-  the model — see the interface in `app/Support/Seo`.
+- **A place in the sitemap.** The static pages are listed in
+  `SitemapController`; a model-backed section implements
+  `App\Support\Seo\HasSitemapEntries` and is registered in
+  `config/seo.php`. Skip it and the sitemap describes three pages of a
+  site that has a thousand.
 - **A title and description per locale**, passed to `<Head>`. A public
   page that shares the application's title is a page search engines
   cannot tell apart from every other.

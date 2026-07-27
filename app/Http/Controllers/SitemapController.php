@@ -26,17 +26,6 @@ class SitemapController extends Controller
         ['name' => 'legal.terms', 'priority' => '0.3'],
     ];
 
-    /**
-     * Every model that implements HasSitemapEntries adds itself here.
-     *
-     * A content site's sitemap is mostly its content, and a controller
-     * that only knows about static pages leaves the majority of the site
-     * out — silently, which is the worst way for a sitemap to be wrong.
-     *
-     * @var array<int, class-string<HasSitemapEntries>>
-     */
-    private const MODELS = [];
-
     public function __invoke(): Response
     {
         $lines = ['<?xml version="1.0" encoding="UTF-8"?>'];
@@ -79,7 +68,17 @@ class SitemapController extends Controller
     {
         $pages = self::PAGES;
 
-        foreach (self::MODELS as $model) {
+        /*
+         * A content site's sitemap is mostly its content, and a
+         * controller that knows only about static pages leaves out the
+         * majority of the site — silently, which is the worst way for a
+         * sitemap to be wrong.
+         *
+         * @var array<int, class-string<HasSitemapEntries>> $models
+         */
+        $models = config('seo.sitemap_models', []);
+
+        foreach ($models as $model) {
             foreach ($model::sitemapEntries() as $entry) {
                 $pages[] = [
                     'name' => $entry['route'],
