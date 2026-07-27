@@ -54,6 +54,21 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
    `HasUuids` sets the key on the model; the database default covers
    inserts that bypass Eloquent. Both are needed.
 
+   **This rule governs tables this application creates.** A table owned
+   by something else — an existing production database, another service's
+   schema, a system this app only wraps — keeps whatever keys it already
+   has. Its key type was decided elsewhere, possibly years ago, and
+   changing it is not this repository's decision to make.
+
+   Say so where it happens. A model over a foreign table carries a
+   comment naming the owner and why it has no `HasUuids`, and its
+   migration directory holds nothing for that table. Silence reads as an
+   oversight, and the next person spends an afternoon on it — one
+   already has.
+
+   The same applies to `timestamptz` and to `jsonb`: our tables, our
+   rules; somebody else's table, their rules and a note saying whose.
+
 4. **Every timestamp column is `timestamptz`.** The app runs in UTC, the
    user's zone lives in `users.timezone`. **The server never sends a
    preformatted date** — only ISO 8601; the client formats it through
@@ -239,6 +254,22 @@ translatable content are written by hand, and the deviation gets a card
 in `zettel/`.
 
 ## Tests
+
+**A route nobody can reach is a feature nobody has.** Three times in one
+night the same defect got through: a controller action complete, its
+route registered, a backend test asserting it behaved — and nothing on
+any screen able to call it. Roles that could be defined and never
+assigned. A list of 37 showing 20 with no way to the rest. A record that
+could be created and edited and never deleted.
+
+Every one of them passed the whole suite, because the tests asked whether
+the endpoint behaved and none asked whether anything could call it.
+
+`tests/Feature/ReachableTest.php` is the mechanical half: a writing route
+under `dash.` must be named by a page. It cannot tell whether a button is
+visible or a person would find it — that is Playwright's job — but it
+catches an action shipped with no caller at all, which is what actually
+kept happening.
 
 Every feature: **three levels × three data states**.
 
