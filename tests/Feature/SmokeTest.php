@@ -25,6 +25,8 @@ it('runs the application in UTC', function () {
     expect(config('app.timezone'))->toBe('UTC');
 });
 
-it('serves the home page', function () {
-    $this->get('/')->assertOk();
+it('serves the home page under a locale', function () {
+    // Корень теперь перенаправляет на язык, страница живёт под префиксом.
+    $this->get('/')->assertRedirect();
+    $this->get('/ru')->assertOk();
 });

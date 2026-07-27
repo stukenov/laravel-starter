@@ -14,7 +14,7 @@ it('keeps only the auth features we asked for', function () {
 });
 
 it('serves the home page from our own component', function () {
-    $this->get('/')
+    $this->get('/ru')
         ->assertOk()
         ->assertInertia(fn ($page) => $page->component('home'));
 });

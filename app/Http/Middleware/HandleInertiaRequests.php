@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -41,6 +42,11 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'locale' => app()->getLocale(),
+            'locales' => SetLocale::SUPPORTED,
+            // Плоский словарь: ключ 'nav.dashboard' вместо вложенных объектов.
+            // Так хелпер t() остаётся в двадцать строк без обхода дерева.
+            'translations' => Arr::dot(trans('common')),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }
