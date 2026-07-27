@@ -11,32 +11,33 @@ use App\Support\Access\Ability;
  *
  * Registration is open by default, so a policy returning true for every
  * verb hands the panel to anyone who signs up. Add the two constants to
- * App\Support\Access\Ability and re-run the RoleSeeder.
+ * The generator adds both constants to App\Support\Access\Ability and
+ * RoleSeeder grants them to the admin role on the next deploy.
  */
 class {{ studly }}Policy
 {
     public function viewAny(User $user): bool
     {
-        return $user->can(Ability::VIEW_{{ snakePlural }});
+        return $user->can(Ability::VIEW_{{ constPlural }});
     }
 
     public function view(User $user, {{ studly }} ${{ snake }}): bool
     {
-        return $user->can(Ability::VIEW_{{ snakePlural }});
+        return $user->can(Ability::VIEW_{{ constPlural }});
     }
 
     public function create(User $user): bool
     {
-        return $user->can(Ability::VIEW_{{ snakePlural }});
+        return $user->can(Ability::MANAGE_{{ constPlural }});
     }
 
     public function update(User $user, {{ studly }} ${{ snake }}): bool
     {
-        return $user->can(Ability::VIEW_{{ snakePlural }});
+        return $user->can(Ability::MANAGE_{{ constPlural }});
     }
 
     public function delete(User $user, {{ studly }} ${{ snake }}): bool
     {
-        return $user->can(Ability::VIEW_{{ snakePlural }});
+        return $user->can(Ability::MANAGE_{{ constPlural }});
     }
 }

@@ -71,6 +71,7 @@ class MakeFeatureCommand extends Command
         }
 
         $this->registerRoutes();
+        $this->registerAbilities();
 
         $this->components->info("Feature {$this->studly} generated. Run: php artisan migrate && php artisan test");
 
@@ -110,10 +111,8 @@ class MakeFeatureCommand extends Command
      */
     private function plan(): array
     {
-        $timestamp = now()->format('Y_m_d_His');
-
         return [
-            "database/migrations/{$timestamp}_create_{$this->snakePlural}_table.php" => 'migration',
+            $this->migrationPath() => 'migration',
             "app/Models/{$this->studly}.php" => 'model',
             "database/factories/{$this->studly}Factory.php" => 'factory',
             "app/Policies/{$this->studly}Policy.php" => 'policy',
@@ -128,6 +127,26 @@ class MakeFeatureCommand extends Command
             "tests/Feature/Dash/{$this->studly}Test.php" => 'test-feature',
             "tests/js/dash-{$this->kebabPlural}.test.tsx" => 'test-js',
         ];
+    }
+
+    /**
+     * Reuses the existing migration for this table if there is one.
+     *
+     * The name carries a timestamp, so a second `--force` run used to
+     * write a second `create_widgets_table` beside the first. `--force`
+     * looked like it had overwritten everything; the next `php artisan
+     * test` died on "relation already exists", from a file the person had
+     * not touched and would not think to look for.
+     */
+    private function migrationPath(): string
+    {
+        $existing = glob(base_path("database/migrations/*_create_{$this->snakePlural}_table.php")) ?: [];
+
+        if ($existing !== []) {
+            return 'database/migrations/'.basename($existing[0]);
+        }
+
+        return 'database/migrations/'.now()->format('Y_m_d_His')."_create_{$this->snakePlural}_table.php";
     }
 
     private function render(string $stub, string $target): void
@@ -161,6 +180,7 @@ class MakeFeatureCommand extends Command
             '{{ studlyPlural }}' => $this->studlyPlural,
             '{{ snake }}' => $this->snake,
             '{{ snakePlural }}' => $this->snakePlural,
+            '{{ constPlural }}' => Str::upper($this->snakePlural),
             '{{ kebabPlural }}' => $this->kebabPlural,
             '{{ firstField }}' => $first,
             '{{ migrationColumns }}' => $this->migrationColumns(),
@@ -317,6 +337,63 @@ class MakeFeatureCommand extends Command
             $this->fields,
             array_keys($this->fields),
         ));
+    }
+
+    /**
+     * RULE(access): a permission exists because code checks it — AGENTS.md.
+     *
+     * The generated policy asks for `Ability::VIEW_POSTS`. Without this
+     * the constant does not exist and every generated slice is a fatal
+     * error the moment anything loads the policy — `php artisan test`
+     * included. The generator shipped that way and the acceptance
+     * criterion in this very file ("tests pass with no edits") was never
+     * true for anybody who ran it.
+     *
+     * RoleSeeder is idempotent and reads Ability::all(), so the admin role
+     * picks the new permissions up on the next deploy without anyone
+     * creating them by hand.
+     */
+    private function registerAbilities(): void
+    {
+        $path = base_path('app/Support/Access/Ability.php');
+        $contents = File::get($path);
+        $const = Str::upper($this->snakePlural);
+
+        if (str_contains($contents, "VIEW_{$const} =")) {
+            return;
+        }
+
+        $declarations = <<<PHP
+
+    public const VIEW_{$const} = '{$this->snakePlural}.view';
+
+    public const MANAGE_{$const} = '{$this->snakePlural}.manage';
+PHP;
+
+        $patched = preg_replace(
+            '/(\n)(\s*\/\*\*\n\s+\* @return array<int, string>)/',
+            $declarations."\n\$1\$2",
+            $contents,
+            1,
+        );
+
+        $patched = preg_replace(
+            '/(\n\s+)(\];\n\s*\}\n\})/',
+            "\$1    self::VIEW_{$const},\$1    self::MANAGE_{$const},\$1\$2",
+            (string) $patched,
+            1,
+        );
+
+        if ($patched === null || $patched === $contents) {
+            $this->components->error(
+                "Could not add VIEW_{$const} to Ability. Add both constants by hand, or the policy will not load."
+            );
+
+            return;
+        }
+
+        File::put($path, $patched);
+        $this->components->task('app/Support/Access/Ability.php updated', fn () => true);
     }
 
     private function registerRoutes(): void

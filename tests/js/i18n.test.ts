@@ -68,3 +68,51 @@ describe('makeTranslator', () => {
         expect(t('greeting', { name: '' })).toBe('Привет, ');
     });
 });
+
+describe('placeholders that share a prefix', () => {
+    // Found while porting a real project: a line with both :grade and
+    // :grade_name came out as "II_name". Replacing key by key, the
+    // shorter placeholder ate the front of the longer one. Nothing
+    // errored — the sentence was simply wrong.
+
+    // Correct data
+    it('does not let one placeholder eat another', () => {
+        const t = makeTranslator({ score: 'Балл :grade — :grade_name' });
+
+        expect(t('score', { grade: 'II', grade_name: 'Выше среднего' })).toBe(
+            'Балл II — Выше среднего',
+        );
+    });
+
+    it('gives the same answer whatever order the keys come in', () => {
+        const t = makeTranslator({ score: ':grade_name (:grade)' });
+
+        expect(t('score', { grade_name: 'Высокий', grade: 'I' })).toBe(
+            'Высокий (I)',
+        );
+        expect(t('score', { grade: 'I', grade_name: 'Высокий' })).toBe(
+            'Высокий (I)',
+        );
+    });
+
+    // Wrong data
+    it('leaves an unknown placeholder visible', () => {
+        // A blank would look like the text was meant to end there.
+        const t = makeTranslator({ line: 'Привет, :name, сейчас :time' });
+
+        expect(t('line', { name: 'Сакен' })).toBe('Привет, Сакен, сейчас :time');
+    });
+
+    it('does not touch a colon that is not a placeholder', () => {
+        const t = makeTranslator({ line: 'Начало в 10:30' });
+
+        expect(t('line', { grade: 'II' })).toBe('Начало в 10:30');
+    });
+
+    // Empty data
+    it('returns the line untouched with no replacements at all', () => {
+        const t = makeTranslator({ line: 'Балл :grade' });
+
+        expect(t('line')).toBe('Балл :grade');
+    });
+});

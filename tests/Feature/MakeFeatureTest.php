@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\User;
+use App\Policies\WidgetPolicy;
+use App\Support\Access\Ability;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 
@@ -159,6 +162,59 @@ it('gates the generated policy on permissions', function () {
 
     expect(substr_count($policy, 'Ability::'))->toBe(5)
         ->and($policy)->not->toContain('return true;');
+});
+
+it('declares the permissions the generated policy asks for', function () {
+    // This is what the count above missed for as long as the generator
+    // existed: the shape was right and the constants did not exist. Every
+    // generated slice was a fatal error the moment anything loaded the
+    // policy — `php artisan test` included.
+    expect(defined(Ability::class.'::VIEW_WIDGETS'))->toBeTrue()
+        ->and(defined(Ability::class.'::MANAGE_WIDGETS'))->toBeTrue()
+        ->and(Ability::VIEW_WIDGETS)->toBe('widgets.view')
+        ->and(Ability::MANAGE_WIDGETS)->toBe('widgets.manage');
+});
+
+it('offers the new permissions to the role seeder', function () {
+    // RoleSeeder reads Ability::all() and runs on every deploy, so a
+    // permission left out of the list is a permission nobody can grant.
+    expect(Ability::all())->toContain(Ability::VIEW_WIDGETS)
+        ->and(Ability::all())->toContain(Ability::MANAGE_WIDGETS);
+});
+
+it('lets the generated policy actually load', function () {
+    // The cheapest possible end to the whole class of bug: if a constant
+    // is missing, this line is a fatal error rather than a failed
+    // assertion.
+    $policy = new WidgetPolicy;
+
+    expect($policy->viewAny(User::factory()->admin()->create()))->toBeTrue();
+});
+
+it('separates reading from changing', function () {
+    // Someone allowed to see a list is not thereby allowed to empty it.
+    $reader = User::factory()->create();
+    $reader->givePermissionTo(Ability::VIEW_WIDGETS);
+
+    $policy = new WidgetPolicy;
+
+    expect($policy->viewAny($reader))->toBeTrue()
+        ->and($policy->create($reader))->toBeFalse();
+});
+
+it('writes one migration however many times it runs', function () {
+    // The name carries a timestamp, so a second --force run used to add a
+    // second create_widgets_table beside the first. --force looked like it
+    // had overwritten everything; the next test run died on "relation
+    // already exists", in a file nobody had touched.
+    Artisan::call('make:feature', [
+        'name' => 'Widget',
+        '--fields' => 'title:string,body:text',
+        '--force' => true,
+    ]);
+
+    expect(glob(database_path('migrations/*_create_widgets_table.php')))
+        ->toHaveCount(1);
 });
 
 it('refuses a lowercase entity name', function () {

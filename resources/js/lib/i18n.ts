@@ -15,12 +15,21 @@ export function makeTranslator(translations: Translations) {
         key: string,
         replacements: Record<string, string | number> = {},
     ): string {
-        let line = translations[key] ?? key;
+        const line = translations[key] ?? key;
 
-        for (const [placeholder, value] of Object.entries(replacements)) {
-            line = line.replaceAll(`:${placeholder}`, String(value));
-        }
-
-        return line;
+        // One pass, longest match wins. Replacing key by key looks
+        // simpler and is wrong the moment one placeholder is a prefix of
+        // another: `:grade` eats the front of `:grade_name` and the line
+        // comes out as "II_name". Nothing errors — the text is just
+        // quietly mangled, and only in the language that happens to have
+        // both placeholders in one sentence.
+        //
+        // An unknown placeholder is left as it is, so a missing value
+        // shows up on screen instead of becoming a blank.
+        return line.replace(/:(\w+)/g, (whole, name: string) =>
+            Object.hasOwn(replacements, name)
+                ? String(replacements[name])
+                : whole,
+        );
     };
 }
