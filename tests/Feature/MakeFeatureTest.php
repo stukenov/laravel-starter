@@ -510,6 +510,55 @@ describe('relations', function () {
     });
 });
 
+it('emits a list that survives a phone', function () {
+    // The reference list was made mobile-first and the template that
+    // stamps out every future one was not, so the fix reached exactly one
+    // page while the generator kept producing the broken shape — once per
+    // entity, for as long as anybody used it.
+    //
+    // What breaks: a row of `flex-1` cells inside `overflow-hidden`. At
+    // 390px four equal shares are four ninety-pixel columns and the text
+    // in them is cut off — no wrapping, no scrollbar, nothing in any log.
+    $index = File::get(base_path('resources/js/pages/dash/widgets/index.tsx'));
+
+    expect($index)->toContain('sm:flex-row')
+        ->and($index)->toContain('sm:flex-1')
+        ->and($index)->toContain('min-h-11');
+});
+
+it('hides the column header where there are no columns', function () {
+    // Below `sm` the row is a card, and a header that labels columns has
+    // nothing left to label.
+    $index = File::get(base_path('resources/js/pages/dash/widgets/index.tsx'));
+
+    expect($index)->toContain('className="hidden bg-muted/40');
+});
+
+it('gives no cell an unprefixed share of the row', function () {
+    // The exact defect: `flex-1` with no breakpoint makes the phone
+    // behave like a desktop. The header keeps it — the header only exists
+    // from `sm` up — so the search is scoped to the record row.
+    $index = File::get(base_path('resources/js/pages/dash/widgets/index.tsx'));
+
+    $row = Str::between($index, 'data-test="widgets-row"', '</button>');
+
+    expect($row)->not->toContain('className="flex-1');
+});
+
+it('gives the dialog buttons a thumb to land on', function () {
+    // shadcn's `sm` is 32px: comfortable for a mouse, a miss for a thumb.
+    // These are the buttons that finish the job.
+    // Named, not counted: a checkbox row already carries the same class,
+    // so a total would pass with one of the three buttons missing it.
+    $form = File::get(base_path('resources/js/pages/dash/widgets/form.tsx'));
+
+    $footer = Str::after($form, '<DialogFooter');
+
+    expect(substr_count($footer, 'min-h-11'))->toBe(3)
+        ->and(Str::between($footer, 'variant="destructive"', '</Button>'))->toContain('min-h-11')
+        ->and(Str::between($footer, 'data-test="widget-save"', '</Button>'))->not->toBeEmpty();
+});
+
 it('searches every text column, not just the first', function () {
     // It used to search one — the first field — so an entity with a name
     // and an email found nothing when searched by email and said

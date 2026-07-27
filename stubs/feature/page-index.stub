@@ -54,7 +54,11 @@ export default function {{ studlyPlural }}Index({
             <Head title={t('{{ snakePlural }}.title')} />
 
             <div className="density-panel space-y-4 p-4">
-                <div className="flex items-center justify-between gap-3">
+                {/* RULE(mobile): the base class is the phone. This row
+                    stacks, and only turns into a row on a wide screen —
+                    written the other way round the title and the search
+                    box fight over 390px and the search box wins. */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-base font-semibold">
                             {t('{{ snakePlural }}.title')}
@@ -64,14 +68,14 @@ export default function {{ studlyPlural }}Index({
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <div className="relative">
+                    <div className="flex w-full items-center gap-2 sm:w-auto">
+                        <div className="relative flex-1 sm:flex-none">
                             <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 value={term}
                                 onChange={(event) => setTerm(event.target.value)}
                                 placeholder={t('{{ snakePlural }}.search')}
-                                className="w-56 pl-7"
+                                className="w-full pl-7 sm:w-56"
                                 data-test="{{ kebabPlural }}-search"
                             />
                         </div>
@@ -97,7 +101,11 @@ export default function {{ studlyPlural }}Index({
                     </div>
                 ) : (
                     <div className="overflow-hidden rounded-md border">
-                        <div className="flex bg-muted/40 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+                        {/* RULE(mobile): a row of fixed columns is a
+                            desktop idea. Below sm the row becomes a card
+                            and the header has nothing left to label, so
+                            it steps out of the way. */}
+                        <div className="hidden bg-muted/40 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase sm:flex">
                             {{ tableHeaders }}
                         </div>
 
@@ -106,7 +114,7 @@ export default function {{ studlyPlural }}Index({
                                 key={record.id}
                                 type="button"
                                 onClick={() => setEditing(record)}
-                                className="flex w-full items-center gap-3 border-t px-3 py-2 text-left hover:bg-muted/40"
+                                className="flex min-h-11 w-full flex-col gap-1 border-t px-3 py-2 text-left hover:bg-muted/40 sm:flex-row sm:items-center sm:gap-3"
                                 data-test="{{ kebabPlural }}-row"
                             >
                                 {{ tableCells }}

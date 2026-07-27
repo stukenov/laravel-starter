@@ -1012,20 +1012,44 @@ PHP;
     private function tableHeaders(): string
     {
         return $this->lines(
+            // The header only exists from `sm` up — below it the row is
+            // a card and there are no columns left to label.
             fn (array $f) => "<span className=\"flex-1\">{t('{$this->snakePlural}.fields.{$f['name']}')}</span>",
             indent: 28,
         );
     }
 
+    /**
+     * RULE(mobile): the base class is the phone — AGENTS.md.
+     *
+     * `flex-1` unprefixed makes every cell an equal share of one row,
+     * which is a desktop idea: at 390px four equal shares are four
+     * columns of about ninety pixels, and everything in them is cut off
+     * inside the container's `overflow-hidden` — no wrapping, no
+     * scrollbar, no trace anywhere. So the share only applies from `sm`
+     * up, and below it each cell is simply a line of a card.
+     *
+     * The first field is the one a person looks for, so it carries the
+     * weight on the narrow screen and gives it back on the wide one,
+     * where the column header already says what it is.
+     */
     private function tableCells(): string
     {
-        return $this->lines(
-            fn (array $f) => match (true) {
+        $first = true;
+
+        return $this->lines(function (array $f) use (&$first) {
+            $class = $first
+                ? 'truncate font-medium sm:flex-1 sm:font-normal'
+                : 'truncate text-muted-foreground sm:flex-1';
+
+            $first = false;
+
+            $body = match (true) {
                 // The label, not the stored word: `draft` on screen is a
                 // database value leaking into the interface, and it
                 // cannot be translated.
                 $f['type'] === 'enum' => sprintf(
-                    '<span className="flex-1 truncate">{t(`%s.%s_options.${record.%s}`)}</span>',
+                    '{t(`%s.%s_options.${record.%s}`)}',
                     $this->snakePlural,
                     $f['name'],
                     $f['name'],
@@ -1035,18 +1059,18 @@ PHP;
                 // generated list printed the raw string, so a date came
                 // out as 2026-07-28T00:00:00+00:00 in every language.
                 in_array($f['type'], ['date', 'datetime'], true) => sprintf(
-                    '<span className="flex-1 truncate">{%s(record.%s, timezone, locale)}</span>',
+                    '{%s(record.%s, timezone, locale)}',
                     $f['type'] === 'date' ? 'formatDate' : 'formatDateTime',
                     $f['name'],
                 ),
-                default => null,
-            } ?? ($f['type'] === 'belongsTo'
                 // The label, not the key: a column of uuids tells the
                 // reader nothing.
-                ? "<span className=\"flex-1 truncate\">{record.{$f['name']}?.name ?? '—'}</span>"
-                : "<span className=\"flex-1 truncate\">{String(record.{$f['name']} ?? '')}</span>"),
-            indent: 32,
-        );
+                $f['type'] === 'belongsTo' => "{record.{$f['name']}?.name ?? '—'}",
+                default => "{String(record.{$f['name']} ?? '')}",
+            };
+
+            return "<span className=\"{$class}\">{$body}</span>";
+        }, indent: 32);
     }
 
     private function langFields(): string

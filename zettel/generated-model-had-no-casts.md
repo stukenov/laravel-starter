@@ -8,7 +8,7 @@ generated entity with a date field answered 500.
 
 Ten of the thirteen backend tests the generator emits failed on such an
 entity — against a stated acceptance criterion that they pass with no edits.
-See [[promise-and-reality-gap]].
+See [[the-promise-in-the-docblock-was-never-true]].
 
 **Why nobody noticed.** A factory holds the Carbon it was handed until the
 row is read back. In memory the object looks right; only a request that
@@ -23,4 +23,4 @@ The guard in `MakeFeatureTest` reads both sides out of the generated file —
 what is called as a Carbon, what is declared as one — rather than listing
 field names, so a seventh field type cannot leave it behind.
 
-Related: [[route-nobody-can-reach]], [[dates-belong-to-the-reader]]
+Related: [[route-nobody-can-reach]], [[store-utc-render-in-the-users-zone]]
