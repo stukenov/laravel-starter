@@ -132,6 +132,12 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     The panel root is `/dash` (route `dash.home`) and every panel
     resource sits under it. Nothing may live at `/dashboard`.
 
+    **`make:feature` only writes the dialog.** It is the right shape for
+    the three or four fields most entities have, and the wrong one past
+    about six — at which point this rule applies and the form is moved to
+    its own page by hand. The command says so when it generates more than
+    six, rather than leaving you to notice.
+
 12. **Access is gated by permissions, never by a flag.** Permissions are
     declared in `App\Support\Access\Ability` because a permission means
     something only when code checks it; inventing one through the UI

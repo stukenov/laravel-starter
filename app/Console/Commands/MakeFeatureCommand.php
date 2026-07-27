@@ -74,6 +74,17 @@ class MakeFeatureCommand extends Command
         $this->registerAbilities();
         $this->registerNavigation();
 
+        // RULE(ui): a short form may be a dialog, a long one gets its own
+        // page — AGENTS.md. The generator only knows how to make the
+        // dialog, so where the rule says otherwise it says so out loud
+        // rather than quietly producing the wrong shape.
+        if (count($this->fields) > 6) {
+            $this->components->warn(sprintf(
+                '%d fields is a lot for a dialog. Rule 10 says a long form gets its own page — the generator only writes the dialog, so this one is worth moving by hand.',
+                count($this->fields),
+            ));
+        }
+
         $this->components->info("Feature {$this->studly} generated. Run: php artisan migrate && php artisan test");
 
         return self::SUCCESS;

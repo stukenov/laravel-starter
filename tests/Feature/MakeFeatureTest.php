@@ -631,3 +631,32 @@ describe('a field with a fixed set of values', function () {
             ->not->toContain('_VALUES');
     });
 });
+
+it('says when a form is too long for the dialog it writes', function () {
+    // Rule 10 says a short form may be a dialog and a long one gets its
+    // own page. The generator only knows the dialog, so where the rule
+    // says otherwise it says so rather than quietly producing the wrong
+    // shape — three ports read the rule, looked at the stub, and could
+    // not tell which was authoritative.
+    Artisan::call('make:feature', [
+        'name' => 'Wide',
+        '--fields' => 'a:string,b:string,c:string,d:string,e:string,f:string,g:string',
+        '--force' => true,
+    ]);
+
+    expect(Artisan::output())->toContain('own page');
+
+    cleanupGenerated('Wide', 'wides', 'wides');
+});
+
+it('says nothing for a form the dialog suits', function () {
+    Artisan::call('make:feature', [
+        'name' => 'Narrow',
+        '--fields' => 'a:string,b:string',
+        '--force' => true,
+    ]);
+
+    expect(Artisan::output())->not->toContain('own page');
+
+    cleanupGenerated('Narrow', 'narrows', 'narrows');
+});
