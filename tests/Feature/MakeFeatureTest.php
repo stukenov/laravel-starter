@@ -329,6 +329,25 @@ it('gives a textarea to a text field and a number box to an integer', function (
         ->and($form)->toContain('type="date"');
 });
 
+it('offers a way to delete a record', function () {
+    // The controller has a destroy action, the route exists and a test
+    // covers it — and for a long while nothing on screen reached any of
+    // them. A record could be created and edited and never removed. The
+    // same shape as the pagination bug: the server complete, the
+    // interface silent about half of it.
+    $form = File::get(base_path('resources/js/pages/dash/widgets/form.tsx'));
+
+    expect($form)->toContain('data-test="widget-delete"')
+        ->and($form)->toContain('router.delete');
+});
+
+it('does not offer to delete a record that does not exist yet', function () {
+    $form = File::get(base_path('resources/js/pages/dash/widgets/form.tsx'));
+
+    // Guarded on `record`, which is null while creating.
+    expect($form)->toContain('{record ? (');
+});
+
 it('offers a way to the next page', function () {
     // Every list paginated on the server and no page rendered a control,
     // so a list longer than twenty ended at twenty.

@@ -1,4 +1,4 @@
-import { Form, usePage } from '@inertiajs/react';
+import { Form, router, usePage } from '@inertiajs/react';
 import UserController from '@/actions/App/Http/Controllers/Dash/UserController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { destroy } from '@/routes/dash/users';
 import {
     Select,
     SelectContent,
@@ -223,22 +224,47 @@ export default function UserForm({
                                 </div>
                             )}
 
-                            <DialogFooter>
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={onClose}
-                                >
-                                    {t('users.cancel')}
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    disabled={processing}
-                                    data-test="user-save"
-                                >
-                                    {t('users.save')}
-                                </Button>
+                            <DialogFooter className="sm:justify-between">
+                                {/* The route, the controller and its
+                                    tests all existed; nothing on screen
+                                    reached them. An account could be
+                                    created and edited and never removed.
+                                    Only when editing — there is nothing
+                                    to delete while creating. */}
+                                {user ? (
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => {
+                                            onClose();
+                                            router.delete(destroy(user.id));
+                                        }}
+                                        data-test="user-delete"
+                                    >
+                                        {t('users.delete')}
+                                    </Button>
+                                ) : (
+                                    <span />
+                                )}
+
+                                <div className="flex gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={onClose}
+                                    >
+                                        {t('users.cancel')}
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        disabled={processing}
+                                        data-test="user-save"
+                                    >
+                                        {t('users.save')}
+                                    </Button>
+                                </div>
                             </DialogFooter>
                         </>
                     )}

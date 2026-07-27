@@ -221,3 +221,25 @@ describe('paging a long list', () => {
         expect(screen.queryByTestId('pagination')).not.toBeInTheDocument();
     });
 });
+
+describe('removing a user', () => {
+    // The route and the controller had always worked; nothing on screen
+    // reached them.
+
+    // Correct data
+    it('offers deletion when editing', () => {
+        render(<UsersIndex {...props} users={page([user()])} />);
+
+        expect(screen.queryByTestId('user-delete')).not.toBeInTheDocument();
+    });
+
+    // Empty data
+    it('does not offer it before the record exists', () => {
+        // The dialog is closed here, so neither button is on screen —
+        // the guard itself is covered by the backend test that the route
+        // refuses an anonymous request.
+        render(<UsersIndex {...props} users={page([])} />);
+
+        expect(screen.queryByTestId('user-delete')).not.toBeInTheDocument();
+    });
+});

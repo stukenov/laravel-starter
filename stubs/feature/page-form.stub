@@ -1,4 +1,4 @@
-import { Form } from '@inertiajs/react';
+import { Form, router } from '@inertiajs/react';
 import {{ studly }}Controller from '@/actions/App/Http/Controllers/Dash/{{ studly }}Controller';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { destroy } from '@/routes/dash/{{ kebabPlural }}';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslations } from '@/hooks/use-translations';
 
@@ -68,7 +69,32 @@ export default function RecordForm({
                         <>
                             {{ formFields }}
 
-                            <DialogFooter>
+                            <DialogFooter className="sm:justify-between">
+                                {/* The generated controller has a
+                                    destroy action, a route and a test
+                                    for it, and nothing on screen reached
+                                    any of them: a record could be made
+                                    and edited and never removed. Only
+                                    when editing — there is nothing to
+                                    delete while creating. */}
+                                {record ? (
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => {
+                                            onClose();
+                                            router.delete(destroy(record.id));
+                                        }}
+                                        data-test="{{ snake }}-delete"
+                                    >
+                                        {t('{{ snakePlural }}.delete')}
+                                    </Button>
+                                ) : (
+                                    <span />
+                                )}
+
+                                <div className="flex gap-2">
                                 <Button
                                     type="button"
                                     variant="secondary"
@@ -84,6 +110,7 @@ export default function RecordForm({
                                 >
                                     {t('{{ snakePlural }}.save')}
                                 </Button>
+                                </div>
                             </DialogFooter>
                         </>
                     )}
