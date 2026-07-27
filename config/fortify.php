@@ -160,18 +160,18 @@ return [
     |
     */
 
+    /*
+     * ПРАВИЛО(авторизация): три возможности, не больше — AGENTS.md.
+     *
+     * Двухфакторка и passkeys приезжают со стартером включёнными, но мы их
+     * не заказывали: это три экрана и восемнадцать тестов сверх объёма.
+     * Включаются обратно одной строкой — вместе с ними придётся вернуть
+     * страницы и тесты.
+     */
     'features' => [
         Features::registration(),
         Features::resetPasswords(),
         Features::emailVerification(),
-        Features::twoFactorAuthentication([
-            'confirm' => true,
-            'confirmPassword' => true,
-            // 'window' => 0
-        ]),
-        Features::passkeys([
-            'confirmPassword' => true,
-        ]),
     ],
 
 ];
