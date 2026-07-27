@@ -38,6 +38,11 @@ class {{ studly }} extends Model
 
         $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%';
 
-        return $query->where('{{ firstField }}', 'ilike', $like);
+        // Grouped, not chained: a bare `orWhere` escapes any condition
+        // the caller already applied, so a scoped list would quietly
+        // return rows it had been filtered away from.
+        return $query->where(function ($query) use ($like) {
+{{ searchColumns }}
+        });
     }
 {{ casts }}{{ panelItem }}{{ relations }}}

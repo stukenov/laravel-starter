@@ -239,6 +239,8 @@ class MakeFeatureCommand extends Command
             '{{ constPlural }}' => Str::upper($this->snakePlural),
             '{{ kebabPlural }}' => $this->kebabPlural,
             '{{ firstField }}' => $first,
+            '{{ searchColumns }}' => $this->searchColumns(),
+            '{{ searchSecondScenario }}' => $this->searchSecondScenario(),
             '{{ migrationColumns }}' => $this->migrationColumns(),
             '{{ fillable }}' => $this->fillable(),
             '{{ rules }}' => $this->rules(),
@@ -615,6 +617,83 @@ PHP;
      * an int and `boolean` as a bool, so their TypeScript types are
      * honest as they stand.
      */
+    /**
+     * Every column a person could plausibly type into the box.
+     *
+     * It used to be one — the first field — so an entity with a name and
+     * an email found nothing when searched by email, and said "nothing
+     * found", which was not true.
+     *
+     * Text columns only, and the reason is not that the others fail.
+     * Laravel's pgsql grammar casts the column to `::text`, so
+     * `ilike` against an integer runs happily — and searching for `3`
+     * then returns everyone aged 3, 13, 30 and 43. That is noise wearing
+     * the shape of a result.
+     *
+     * A date is worse: what is stored is `2026-07-28`, and what the
+     * reader saw was `28 июля`. An enum holds a database word — `draft`,
+     * not its label — so searching it matches a string that appears
+     * nowhere on screen.
+     */
+    private function searchColumns(): string
+    {
+        $columns = array_values(array_filter(
+            $this->fields,
+            fn (array $field) => in_array($field['type'], ['string', 'text'], true),
+        ));
+
+        $lines = [];
+
+        foreach ($columns as $index => $field) {
+            $method = $index === 0 ? 'where' : 'orWhere';
+            $lines[] = "            \$query->{$method}('{$field['name']}', 'ilike', \$like);";
+        }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * The generated suite searched by the first field and stopped there,
+     * so the day search stopped covering the second column, every test
+     * still passed.
+     *
+     * Emitted only when there is a second text column — for a one-field
+     * entity there is nothing to say, and an empty scenario would be a
+     * test that asserts nothing.
+     */
+    private function searchSecondScenario(): string
+    {
+        $columns = array_values(array_filter(
+            $this->fields,
+            fn (array $field) => in_array($field['type'], ['string', 'text'], true),
+        ));
+
+        if (count($columns) < 2) {
+            return '';
+        }
+
+        $first = $columns[0]['name'];
+        $second = $columns[1]['name'];
+
+        return <<<PHP
+
+
+it('finds a record by a column that is not the first', function () {
+    // Searching an entity by its second text column — an email, a code, a
+    // note — used to return nothing and report "nothing found", which was
+    // not true.
+    {$this->studly}::factory()->create([
+        '{$first}' => 'Ничем не примечательное',
+        '{$second}' => 'Иголка в стоге',
+    ]);
+
+    \$this->actingAs({$this->snake}Admin())
+        ->get(route('dash.{$this->snakePlural}.index', ['search' => 'Иголка']))
+        ->assertInertia(fn (\$page) => \$page->has('records.data', 1));
+});
+PHP;
+    }
+
     private function casts(): string
     {
         $casts = [];

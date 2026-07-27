@@ -35,7 +35,7 @@ it('serves the font from our own domain', function () {
         ->and($contents)->toContain('/build/assets/');
 })->skip(
     fn () => ! file_exists(public_path('build/fonts-manifest.json')),
-    'сборка не выполнена: npm run build',
+    'fonts manifest not built: npm run build',
 );
 
 it('covers every kazakh letter across the declared ranges', function () {
@@ -91,7 +91,7 @@ it('covers every kazakh letter across the declared ranges', function () {
     expect($missing)->toBeEmpty();
 })->skip(
     fn () => ! file_exists(public_path('build/fonts-manifest.json')),
-    'сборка не выполнена: npm run build',
+    'fonts manifest not built: npm run build',
 );
 
 // Empty data

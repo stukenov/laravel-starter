@@ -510,6 +510,36 @@ describe('relations', function () {
     });
 });
 
+it('searches every text column, not just the first', function () {
+    // It used to search one — the first field — so an entity with a name
+    // and an email found nothing when searched by email and said
+    // "nothing found", which was untrue.
+    $model = File::get(base_path('app/Models/Widget.php'));
+
+    expect($model)->toContain("\$query->where('title', 'ilike', \$like);")
+        ->and($model)->toContain("\$query->orWhere('body', 'ilike', \$like);");
+});
+
+it('leaves the non-text columns out of the search', function () {
+    // Not because they fail — Laravel casts the column to ::text, so
+    // `ilike` against an integer runs fine and searching `1` returns
+    // everyone aged 1, 10, 21 and 100. Noise in the shape of a result.
+    $model = File::get(base_path('app/Models/Widget.php'));
+
+    expect($model)->not->toContain("'views', 'ilike'")
+        ->and($model)->not->toContain("'published_on', 'ilike'")
+        ->and($model)->not->toContain("'active', 'ilike'");
+});
+
+it('groups the search so it cannot escape an outer condition', function () {
+    // A bare chain of `orWhere` widens whatever the caller had already
+    // narrowed: a list scoped to one owner would start returning rows
+    // belonging to everybody, and look like a working search.
+    $model = File::get(base_path('app/Models/Widget.php'));
+
+    expect($model)->toContain('return $query->where(function ($query) use ($like) {');
+});
+
 it('casts every attribute it later treats as a date', function () {
     // The defect this replaces: the generator wrote no casts at all, so
     // Postgres handed back `2026-07-28` as a plain string and

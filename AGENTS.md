@@ -198,6 +198,12 @@ A file's location follows from the entity name. This is not taste — the
 Tables are plural snake_case, models singular StudlyCase, routes RESTful,
 and the Inertia page path mirrors the URL.
 
+**Search covers every text column, not the first one.** `scopeSearch`
+looks through each `string` and `text` field, grouped so an `orWhere`
+cannot widen a condition the caller already applied. Numbers, dates and
+enums are left out on purpose — see the comment on `searchColumns()` for
+why each one is worse than it looks.
+
 **A model says what may leave it.** Every entity exposed to a page has a
 method naming its fields — `toPanelItem()` on a generated one,
 `toFeedItem()` on `Activity`. Handing a page the model itself sends every

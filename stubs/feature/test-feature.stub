@@ -41,7 +41,7 @@ it('finds a record by a fragment of the first field', function () {
 
     expect($record->fresh())->not->toBeNull();
 });
-
+{{ searchSecondScenario }}
 it('creates a record', function () {
     $this->actingAs({{ snake }}Admin())
         ->post(route('dash.{{ snakePlural }}.store'), {{ snake }}Payload())
