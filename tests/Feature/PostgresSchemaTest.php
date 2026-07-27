@@ -5,7 +5,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
-// Правильные данные
+// Correct data
 it('gives users a uuid primary key defaulted by the database', function () {
     $column = DB::selectOne("
         select data_type, column_default from information_schema.columns
@@ -81,7 +81,7 @@ it('keeps the session user_id type in step with users.id', function () {
     expect($sessions)->toBe('uuid');
 });
 
-// Неправильные данные
+// Wrong data
 it('treats emails differing only in case as duplicates', function () {
     User::factory()->create(['email' => 'Saken@Example.KZ']);
 
@@ -96,7 +96,7 @@ it('refuses a malformed uuid as a primary key', function () {
     ))->toThrow(QueryException::class);
 });
 
-// Пустые данные
+// Empty data
 it('starts from an empty users table', function () {
     expect(User::count())->toBe(0);
 });

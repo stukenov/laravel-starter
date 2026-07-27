@@ -19,7 +19,7 @@ function makeSession(User $user, string $id, ?string $agent, ?string $ip = '127.
 const MAC_CHROME = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const IPHONE_SAFARI = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
 
-// Правильные данные
+// Correct data
 it('shows the sessions page', function () {
     $user = User::factory()->create();
 
@@ -79,7 +79,7 @@ it('logs the user out of every other device but keeps the current one', function
     expect(DB::table('sessions')->where('id', 'session-other')->exists())->toBeFalse();
 });
 
-// Неправильные данные
+// Wrong data
 it('never touches another user sessions', function () {
     $user = User::factory()->create();
     $stranger = User::factory()->create();
@@ -113,7 +113,7 @@ it('demands a password confirmation before logging out other devices', function 
         ->assertRedirect(route('password.confirm'));
 });
 
-// Пустые данные
+// Empty data
 it('returns an empty list when the user has no sessions', function () {
     expect(SessionList::forUser(User::factory()->create(), 'none'))->toBeEmpty();
 });

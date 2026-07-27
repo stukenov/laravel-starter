@@ -18,7 +18,7 @@ function payload(array $overrides = []): array
     ], $overrides);
 }
 
-// ── Правильные данные ────────────────────────────────────────────────
+// ── Correct data ─────────────────────────────────────────────────────
 
 it('shows the users list', function () {
     $user = admin();
@@ -107,7 +107,7 @@ it('deletes a user', function () {
     expect(User::find($target->id))->toBeNull();
 });
 
-// ── Неправильные данные ──────────────────────────────────────────────
+// ── Wrong data ───────────────────────────────────────────────────────
 
 it('rejects a duplicate email', function () {
     User::factory()->create(['email' => 'zanyato@example.kz']);
@@ -170,7 +170,7 @@ it('refuses an anonymous request', function () {
     $this->post(route('dash.users.store'), payload())->assertRedirect(route('login'));
 });
 
-// ── Пустые данные ────────────────────────────────────────────────────
+// ── Empty data ───────────────────────────────────────────────────────
 
 it('shows an empty list when there are no other users', function () {
     $this->actingAs(admin())

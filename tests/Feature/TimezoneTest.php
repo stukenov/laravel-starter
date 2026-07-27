@@ -3,7 +3,7 @@
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
-// Правильные данные
+// Correct data
 it('runs the application in UTC', function () {
     expect(config('app.timezone'))->toBe('UTC');
 });
@@ -75,7 +75,7 @@ it('shows the settings page with a list of timezones', function () {
         );
 });
 
-// Неправильные данные
+// Wrong data
 it('rejects an unknown timezone', function () {
     $user = User::factory()->create();
 
@@ -107,7 +107,7 @@ it('refuses an anonymous request', function () {
         ->assertRedirect(route('login'));
 });
 
-// Пустые данные
+// Empty data
 it('rejects an empty timezone', function () {
     $user = User::factory()->create();
 

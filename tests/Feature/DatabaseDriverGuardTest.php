@@ -3,7 +3,7 @@
 use App\Exceptions\UnsupportedDatabaseDriver;
 use App\Providers\AppServiceProvider;
 
-// Правильные данные
+// Correct data
 // Проверяем на Throwable, а не на конкретный класс: иначе тест зеленеет
 // и без реализации — отсутствующий метод бросает Error, который в
 // not->toThrow(UnsupportedDatabaseDriver) проходит как «не то исключение».
@@ -18,7 +18,7 @@ it('is actually running on pgsql right now', function () {
     ))->not->toThrow(Throwable::class);
 });
 
-// Неправильные данные
+// Wrong data
 it('rejects sqlite and names it in the message', function () {
     expect(fn () => AppServiceProvider::assertSupportedDriver('sqlite'))
         ->toThrow(UnsupportedDatabaseDriver::class, 'sqlite');
@@ -41,7 +41,7 @@ it('tells the developer how to fix it', function () {
     $this->fail('exception was not thrown');
 });
 
-// Пустые данные
+// Empty data
 it('rejects an empty driver', function () {
     expect(fn () => AppServiceProvider::assertSupportedDriver(''))
         ->toThrow(UnsupportedDatabaseDriver::class);

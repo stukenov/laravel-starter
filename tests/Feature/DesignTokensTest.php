@@ -12,7 +12,7 @@ function tokens(): string
     return file_get_contents(resource_path('css/app.css'));
 }
 
-// Правильные данные
+// Correct data
 it('uses the apple system blue as accent', function () {
     expect(tokens())->toContain('#0071e3');
 });
@@ -32,7 +32,7 @@ it('defines both density scales', function () {
         ->and(tokens())->toContain('.density-public');
 });
 
-// Неправильные данные
+// Wrong data
 it('never paints destructive text the colour of the background', function () {
     // Сообщение об ошибке красится через --destructive-foreground и лежит
     // на светлом фоне. Белый здесь делает его невидимым — разметка на месте,
@@ -57,7 +57,7 @@ it('has no dark theme block left', function () {
     expect(tokens())->not->toContain('.dark {');
 });
 
-// Пустые данные
+// Empty data
 it('leaves the accent as a single swappable line', function () {
     // Смысл в том, чтобы смена цвета под проект была правкой одной строки.
     $occurrences = substr_count(tokens(), '#0071e3');

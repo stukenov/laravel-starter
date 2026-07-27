@@ -4,7 +4,7 @@ use App\Http\Middleware\SetLocale;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
-// Правильные данные
+// Correct data
 it('serves each supported locale', function (string $locale) {
     $this->get("/{$locale}")->assertOk();
 
@@ -36,7 +36,7 @@ it('takes the locale from the profile inside the cabinet', function () {
     expect(app()->getLocale())->toBe('kk');
 });
 
-// Неправильные данные
+// Wrong data
 it('returns 404 for an unsupported locale', function () {
     $this->get('/de')->assertNotFound();
 });
@@ -56,7 +56,7 @@ it('ignores an unsupported locale stored on the user', function () {
         ->and(app()->getLocale())->not->toBe('de');
 });
 
-// Пустые данные
+// Empty data
 it('redirects the bare root to a supported locale', function () {
     // Тестовый клиент Laravel по умолчанию шлёт Accept-Language en-us,
     // поэтому конкретный язык здесь зависит от клиента. Важно другое:

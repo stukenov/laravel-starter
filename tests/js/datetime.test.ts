@@ -4,7 +4,7 @@ import { formatDate, formatDateTime } from '@/lib/datetime';
 const NOON_UTC = '2026-07-27T12:00:00Z';
 
 describe('formatDateTime', () => {
-    // Правильные данные
+    // Correct data
     it('shifts UTC into the user timezone', () => {
         // Алматы это UTC+5, значит полдень по UTC — это 17:00 на месте.
         expect(formatDateTime(NOON_UTC, 'Asia/Almaty', 'ru')).toContain('17:00');
@@ -30,7 +30,7 @@ describe('formatDateTime', () => {
         expect(result).not.toContain(':');
     });
 
-    // Неправильные данные
+    // Wrong data
     it('returns a dash for an unparseable value', () => {
         expect(formatDateTime('не дата', 'Asia/Almaty', 'ru')).toBe('—');
     });
@@ -53,7 +53,7 @@ describe('formatDateTime', () => {
         ).not.toThrow();
     });
 
-    // Пустые данные
+    // Empty data
     it('returns a dash for null', () => {
         expect(formatDateTime(null, 'Asia/Almaty', 'ru')).toBe('—');
     });

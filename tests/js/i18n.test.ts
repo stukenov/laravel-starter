@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { makeTranslator } from '@/lib/i18n';
 
 describe('makeTranslator', () => {
-    // Правильные данные
+    // Correct data
     it('returns the translation for a known key', () => {
         const t = makeTranslator({ 'auth.login': 'Войти' });
 
@@ -33,7 +33,7 @@ describe('makeTranslator', () => {
         expect(t('nav.dashboard')).toBe('Басқару тақтасы');
     });
 
-    // Неправильные данные
+    // Wrong data
     it('returns the key itself when the translation is missing', () => {
         // Пропущенный перевод должно быть видно на экране, а не превращаться
         // в пустое место — иначе он доедет до прода незамеченным.
@@ -48,7 +48,7 @@ describe('makeTranslator', () => {
         expect(t('greeting', { other: 'x' })).toBe('Привет, :name');
     });
 
-    // Пустые данные
+    // Empty data
     it('handles an empty dictionary without throwing', () => {
         const t = makeTranslator({});
 

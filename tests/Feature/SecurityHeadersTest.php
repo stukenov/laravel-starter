@@ -1,6 +1,6 @@
 <?php
 
-// Правильные данные
+// Correct data
 it('sends a content security policy', function () {
     $this->get('/ru')->assertHeader('Content-Security-Policy');
 });
@@ -23,7 +23,7 @@ it('sends the hardening headers', function () {
     $response->assertHeader('Permissions-Policy');
 });
 
-// Неправильные данные
+// Wrong data
 it('allows no external host at all', function () {
     // Смысл всей затеи: запрет исполняет браузер, а не договорённость.
     // Появился здесь чужой домен — значит правило обошли.
@@ -71,7 +71,7 @@ it('generates a nonce of usable length', function () {
     expect($matches[1] ?? '')->toHaveLength(32);
 });
 
-// Пустые данные
+// Empty data
 it('still sends the policy on an error page', function () {
     $this->get('/ru/no-such-page')
         ->assertNotFound()

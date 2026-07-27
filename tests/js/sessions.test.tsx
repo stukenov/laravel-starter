@@ -48,7 +48,7 @@ function session(overrides: Record<string, unknown> = {}) {
 }
 
 describe('страница сессий', () => {
-    // Правильные данные
+    // Correct data
     it('shows the browser and platform', () => {
         render(<Sessions sessions={[session()]} />);
 
@@ -83,7 +83,7 @@ describe('страница сессий', () => {
         expect(screen.getByTestId('logout-others')).toBeInTheDocument();
     });
 
-    // Неправильные данные
+    // Wrong data
     it('falls back to a label when the browser is unknown', () => {
         render(<Sessions sessions={[session({ browser: null })]} />);
 
@@ -108,7 +108,7 @@ describe('страница сессий', () => {
         expect(screen.queryByText(/null/)).not.toBeInTheDocument();
     });
 
-    // Пустые данные
+    // Empty data
     it('renders nothing but the heading for an empty list', () => {
         render(<Sessions sessions={[]} />);
 

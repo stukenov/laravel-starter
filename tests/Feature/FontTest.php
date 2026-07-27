@@ -1,6 +1,6 @@
 <?php
 
-// Правильные данные
+// Correct data
 it('uses Inter, not the starter default', function () {
     $config = file_get_contents(base_path('vite.config.ts'));
     $css = file_get_contents(resource_path('css/app.css'));
@@ -21,7 +21,7 @@ it('requests both cyrillic subsets', function () {
         ->and($config)->toContain("'cyrillic-ext'");
 });
 
-// Неправильные данные
+// Wrong data
 it('serves the font from our own domain', function () {
     $manifest = public_path('build/fonts-manifest.json');
 
@@ -94,7 +94,7 @@ it('covers every kazakh letter across the declared ranges', function () {
     'сборка не выполнена: npm run build',
 );
 
-// Пустые данные
+// Empty data
 it('declares a fallback family', function () {
     expect(file_get_contents(resource_path('css/app.css')))
         ->toContain('system-ui');

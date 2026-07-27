@@ -7,7 +7,7 @@ function signedIn(string $locale = 'ru'): User
     return User::factory()->create(['locale' => $locale]);
 }
 
-// Правильные данные
+// Correct data
 it('opens every settings screen', function (string $route) {
     $user = signedIn();
 
@@ -33,7 +33,7 @@ it('saves the profile', function () {
     expect($user->refresh()->name)->toBe('Дәурен');
 });
 
-// Неправильные данные
+// Wrong data
 it('rejects a broken email', function () {
     $this->actingAs(signedIn())
         ->patch(route('profile.update'), ['name' => 'Тест', 'email' => 'не-почта'])
@@ -58,7 +58,7 @@ it('rejects an email that differs only in case', function () {
         ->assertSessionHasErrors('email');
 });
 
-// Пустые данные
+// Empty data
 it('rejects an empty profile form', function () {
     $this->actingAs(signedIn())
         ->patch(route('profile.update'), ['name' => '', 'email' => ''])

@@ -13,7 +13,7 @@ beforeEach(function () {
     });
 });
 
-// Правильные данные
+// Correct data
 it('renders a full inertia page for 404', function () {
     $this->get('/ru/no-such-page')
         ->assertNotFound()
@@ -50,7 +50,7 @@ it('keeps the http status code, not just the look of an error', function () {
         ->assertStatus(404);
 });
 
-// Неправильные данные
+// Wrong data
 it('redirects 419 to login instead of showing an error page', function () {
     // Язык задаётся явно: без куки и профиля он берётся из заголовка
     // браузера, а тестовый клиент по умолчанию просит английский.
@@ -68,7 +68,7 @@ it('leaves api requests alone', function () {
         ->assertHeader('content-type', 'application/json');
 });
 
-// Пустые данные
+// Empty data
 it('has a blade fallback for every handled status', function () {
     foreach ([403, 404, 419, 429, 500, 503] as $status) {
         expect(resource_path("views/errors/{$status}.blade.php"))->toBeFile();

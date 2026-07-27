@@ -18,7 +18,7 @@ function Probe({ k }: { k: string }) {
 }
 
 describe('useTranslations', () => {
-    // Правильные данные
+    // Correct data
     it('reads the dictionary from shared props', () => {
         mockProps.current = { translations: { 'auth.login': 'Войти' } };
 
@@ -35,7 +35,7 @@ describe('useTranslations', () => {
         expect(screen.getByTestId('out')).toHaveTextContent('Кіру');
     });
 
-    // Неправильные данные
+    // Wrong data
     it('falls back to the key when the translation is missing', () => {
         mockProps.current = { translations: { 'auth.login': 'Войти' } };
 
@@ -44,7 +44,7 @@ describe('useTranslations', () => {
         expect(screen.getByTestId('out')).toHaveTextContent('auth.nope');
     });
 
-    // Пустые данные
+    // Empty data
     it('survives an empty dictionary', () => {
         mockProps.current = { translations: {} };
 

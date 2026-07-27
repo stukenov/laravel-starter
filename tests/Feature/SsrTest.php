@@ -1,6 +1,6 @@
 <?php
 
-// Правильные данные
+// Correct data
 it('enables server side rendering', function () {
     expect(config('inertia.ssr.enabled'))->toBeTrue();
 });
@@ -19,7 +19,7 @@ it('has a built bundle on disk', function () {
     'бандл не собран: npm run build:ssr',
 );
 
-// Неправильные данные
+// Wrong data
 it('does not rely on a hand written ssr entry point', function () {
     // В Inertia 3 плагин сам оборачивает точку входа серверным кодом.
     // Наличие ssr.tsx означает, что кто-то принёс подход из Inertia 2.
@@ -27,7 +27,7 @@ it('does not rely on a hand written ssr entry point', function () {
         ->and(resource_path('js/ssr.ts'))->not->toBeFile();
 });
 
-// Пустые данные
+// Empty data
 it('has an ssr url to fall back on', function () {
     expect(config('inertia.ssr.url'))->not->toBeEmpty();
 });

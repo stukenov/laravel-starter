@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
-// Правильные данные
+// Correct data
 it('keeps only the auth features we asked for', function () {
     $enabled = config('fortify.features');
 
@@ -19,7 +19,7 @@ it('serves the home page from our own component', function () {
         ->assertInertia(fn ($page) => $page->component('home'));
 });
 
-// Неправильные данные
+// Wrong data
 it('has no two factor or passkey routes', function () {
     $forbidden = collect(Route::getRoutes())
         ->map(fn ($route) => $route->uri())
@@ -42,7 +42,7 @@ it('has no dark mode logic in the layout', function () {
         ->and($blade)->not->toContain('appearance');
 });
 
-// Пустые данные
+// Empty data
 it('has no leftover demo or theme files', function () {
     $forbidden = [
         'resources/js/pages/welcome.tsx',

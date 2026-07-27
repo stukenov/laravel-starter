@@ -3,7 +3,7 @@
 use App\Models\User;
 use Illuminate\Support\Arr;
 
-// Правильные данные
+// Correct data
 it('serves every auth screen', function (string $route) {
     $this->get($route)->assertOk();
 })->with([
@@ -27,7 +27,7 @@ it('shows the auth screens in the locale from the profile', function () {
         ->assertInertia(fn ($page) => $page->where('locale', 'kk'));
 });
 
-// Неправильные данные
+// Wrong data
 it('has no hardcoded english left on auth screens', function () {
     // Пропущенная строка не ломает сборку и не роняет тест — она просто
     // остаётся английской посреди русского интерфейса. Ловим перечнем.
@@ -80,7 +80,7 @@ it('validates in the active locale', function () {
         ->assertSessionHasErrors(['name', 'email']);
 });
 
-// Пустые данные
+// Empty data
 it('keeps the auth section in sync across locales', function () {
     $ru = Arr::dot(require lang_path('ru/common.php'));
     $kk = Arr::dot(require lang_path('kk/common.php'));
