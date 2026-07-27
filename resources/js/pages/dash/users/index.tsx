@@ -7,15 +7,11 @@ import { Input } from '@/components/ui/input';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatDate } from '@/lib/datetime';
 import { index } from '@/routes/dash/users';
+import { Pagination, type Paginated } from '@/components/pagination';
 import UserForm, { type UserRow } from './form';
 
-type Paginated = {
-    data: UserRow[];
-    total: number;
-};
-
 type Props = {
-    users: Paginated;
+    users: Paginated<UserRow>;
     search: string;
     timezones: string[];
     roles: string[];
@@ -152,6 +148,8 @@ export default function UsersIndex({
                         ))}
                     </div>
                 )}
+
+                <Pagination page={users} />
             </div>
 
             <UserForm

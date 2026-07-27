@@ -177,4 +177,10 @@ return [
             'crashed' => 'Құлады',
         ],
     ],
+
+    'pagination' => [
+        'showing' => ':pages ішінен :page бет, барлығы :total',
+        'previous' => 'Артқа',
+        'next' => 'Әрі қарай',
+    ],
 ];

@@ -177,4 +177,10 @@ return [
             'crashed' => 'Crashed',
         ],
     ],
+
+    'pagination' => [
+        'showing' => 'Page :page of :pages, :total in all',
+        'previous' => 'Back',
+        'next' => 'Next',
+    ],
 ];

@@ -3,12 +3,13 @@ import { Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Pagination, type Paginated } from '@/components/pagination';
 import { useTranslations } from '@/hooks/use-translations';
 import { index } from '@/routes/dash/{{ kebabPlural }}';
 import RecordForm, { type {{ studly }}Row } from './form';
 
 type Props = {
-    records: { data: {{ studly }}Row[] };
+    records: Paginated<{{ studly }}Row>;
     search: string;
 };
 
@@ -105,6 +106,8 @@ export default function {{ studlyPlural }}Index({ records, search }: Props) {
                         ))}
                     </div>
                 )}
+
+                <Pagination page={records} />
             </div>
 
             <RecordForm

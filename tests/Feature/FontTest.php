@@ -99,3 +99,38 @@ it('declares a fallback family', function () {
     expect(file_get_contents(resource_path('css/app.css')))
         ->toContain('system-ui');
 });
+
+it('does not preload the subsets before it knows which are needed', function () {
+    // Preloading is the plugin's default and it defeats `unicode-range`:
+    // the browser is told to fetch all sixteen files before it has seen a
+    // single letter of the page. Measured at 306 KB on every page in
+    // every language, English included — which needs no Cyrillic at all.
+    $config = File::get(base_path('vite.config.ts'));
+
+    expect($config)->toContain('preload: false');
+});
+
+it('ships no font preload links in the page', function () {
+    // The half that would notice if the setting were changed back and the
+    // config comment stayed.
+    $html = $this->get(route('home', ['locale' => 'ru']))->getContent();
+
+    preg_match_all('/<link[^>]*rel="preload"[^>]*>/i', (string) $html, $links);
+
+    $fonts = array_filter($links[0], fn (string $tag) => str_contains($tag, 'woff2'));
+
+    expect($fonts)->toBeEmpty();
+});
+
+it('still declares every subset for the browser to choose from', function () {
+    // Not preloading is only safe because the choice is still offered.
+    // Remove a subset instead and Kazakh letters silently fall back to a
+    // system font.
+    $manifest = json_decode(File::get(public_path('build/fonts-manifest.json')), true);
+
+    // `style` is a list of rules, not one string.
+    expect(json_encode($manifest['style'] ?? []))->toContain('unicode-range');
+})->skip(
+    fn () => ! file_exists(public_path('build/fonts-manifest.json')),
+    'fonts manifest not built: npm run build',
+);

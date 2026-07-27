@@ -182,4 +182,10 @@ return [
             'crashed' => 'Упала',
         ],
     ],
+
+    'pagination' => [
+        'showing' => 'Страница :page из :pages, всего :total',
+        'previous' => 'Назад',
+        'next' => 'Дальше',
+    ],
 ];

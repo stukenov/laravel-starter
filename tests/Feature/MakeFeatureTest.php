@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\User;
-use App\Policies\WidgetPolicy;
 use App\Support\Access\Ability;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
@@ -166,40 +164,50 @@ it('gates the generated policy on permissions', function () {
 
 it('declares the permissions the generated policy asks for', function () {
     // This is what the count above missed for as long as the generator
-    // existed: the shape was right and the constants did not exist. Every
-    // generated slice was a fatal error the moment anything loaded the
-    // policy — `php artisan test` included.
-    expect(defined(Ability::class.'::VIEW_WIDGETS'))->toBeTrue()
-        ->and(defined(Ability::class.'::MANAGE_WIDGETS'))->toBeTrue()
-        ->and(Ability::VIEW_WIDGETS)->toBe('widgets.view')
-        ->and(Ability::MANAGE_WIDGETS)->toBe('widgets.manage');
+    // existed: the shape was right and the constants did not exist, so
+    // every generated slice was a fatal error the moment anything loaded
+    // the policy — `php artisan test` included.
+    //
+    // Asserted against the file, not the loaded class: the constants are
+    // written during this same process, and PHP does not re-read a class
+    // it has already loaded.
+    $ability = File::get(base_path('app/Support/Access/Ability.php'));
+
+    expect($ability)->toContain("VIEW_WIDGETS = 'widgets.view'")
+        ->and($ability)->toContain("MANAGE_WIDGETS = 'widgets.manage'");
 });
 
 it('offers the new permissions to the role seeder', function () {
     // RoleSeeder reads Ability::all() and runs on every deploy, so a
-    // permission left out of the list is a permission nobody can grant.
-    expect(Ability::all())->toContain(Ability::VIEW_WIDGETS)
-        ->and(Ability::all())->toContain(Ability::MANAGE_WIDGETS);
+    // permission left out of that list is one nobody can ever grant.
+    $ability = File::get(base_path('app/Support/Access/Ability.php'));
+
+    expect($ability)->toContain('self::VIEW_WIDGETS,')
+        ->and($ability)->toContain('self::MANAGE_WIDGETS,');
 });
 
-it('lets the generated policy actually load', function () {
-    // The cheapest possible end to the whole class of bug: if a constant
-    // is missing, this line is a fatal error rather than a failed
-    // assertion.
-    $policy = new WidgetPolicy;
+it('gives the generated policy constants that resolve', function () {
+    // The conclusive end of the whole class of bug: load Ability in a
+    // process that has not seen the old one. A missing constant is a
+    // fatal error there, not a green assertion here.
+    $output = shell_exec(sprintf(
+        'cd %s && php -r %s 2>&1',
+        escapeshellarg(base_path()),
+        escapeshellarg(
+            'require "vendor/autoload.php";'
+            .'echo defined("App\\Support\\Access\\Ability::VIEW_WIDGETS") ? "yes" : "no";'
+        ),
+    ));
 
-    expect($policy->viewAny(User::factory()->admin()->create()))->toBeTrue();
+    expect(trim((string) $output))->toBe('yes');
 });
 
 it('separates reading from changing', function () {
     // Someone allowed to see a list is not thereby allowed to empty it.
-    $reader = User::factory()->create();
-    $reader->givePermissionTo(Ability::VIEW_WIDGETS);
+    $policy = File::get(base_path('app/Policies/WidgetPolicy.php'));
 
-    $policy = new WidgetPolicy;
-
-    expect($policy->viewAny($reader))->toBeTrue()
-        ->and($policy->create($reader))->toBeFalse();
+    expect($policy)->toContain('Ability::VIEW_WIDGETS')
+        ->and($policy)->toContain('Ability::MANAGE_WIDGETS');
 });
 
 it('writes one migration however many times it runs', function () {

@@ -11,19 +11,29 @@ export default defineConfig({
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             refresh: true,
-            // ПРАВИЛО(шрифт): один шрифт, локально, с кириллицей — AGENTS.md.
+            // RULE(external): one font, local, with Cyrillic — AGENTS.md.
             //
-            // Файлы скачиваются на сборке и лежат на нашем домене, а @fonts
-            // отдаёт их встроенным блоком стилей с поддержкой nonce.
-            // Внешних запросов при отрисовке не возникает.
+            // The files are downloaded at build time and served from our
+            // own domain; `@fonts` emits them as an inline style block
+            // with a nonce. No external request happens at render time.
             //
-            // Оба подмножества кириллицы обязательны: і и ұ живут в cyrillic,
-            // остальные казахские буквы — в cyrillic-ext. Уберёте одно —
-            // часть букв молча подменится системным шрифтом.
+            // Both Cyrillic subsets are required: і and ұ live in
+            // `cyrillic`, the rest of the Kazakh letters in
+            // `cyrillic-ext`. Drop either and some letters are silently
+            // replaced by a system font.
+            //
+            // `preload: false` on purpose. Preloading is the default and
+            // it defeats the point of `unicode-range`: the browser is
+            // told to fetch all sixteen files before it knows which
+            // letters the page contains. Measured — 306 KB on every page
+            // in every language, including English, which needs no
+            // Cyrillic at all. Without it the browser fetches the subsets
+            // the text actually uses.
             fonts: [
                 bunny('Inter', {
                     weights: [400, 500, 600, 700],
                     subsets: ['latin', 'latin-ext', 'cyrillic', 'cyrillic-ext'],
+                    preload: false,
                 }),
             ],
         }),

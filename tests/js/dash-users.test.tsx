@@ -17,6 +17,9 @@ const mockProps = vi.hoisted(() => ({
             'users.email': 'Почта',
             'users.locale': 'Язык',
             'users.created_at': 'Создан',
+            'pagination.next': 'Дальше',
+            'pagination.previous': 'Назад',
+            'pagination.showing': 'Страница :page из :pages, всего :total',
         },
     } as Record<string, unknown>,
 }));
@@ -24,6 +27,9 @@ const mockProps = vi.hoisted(() => ({
 vi.mock('@inertiajs/react', () => ({
     usePage: () => ({ props: mockProps.current }),
     Head: () => null,
+    Link: ({ children, ...rest }: Record<string, unknown>) => (
+        <a {...rest}>{children as React.ReactNode}</a>
+    ),
     router: { get: vi.fn() },
     Form: ({ children }: { children: (p: unknown) => React.ReactNode }) =>
         children({ errors: {}, processing: false }),
@@ -54,7 +60,25 @@ function user(overrides: Record<string, unknown> = {}) {
     };
 }
 
-const props = { search: '', timezones: ['Asia/Almaty', 'UTC'] };
+const props = {
+    search: '',
+    timezones: ['Asia/Almaty', 'UTC'],
+    roles: ['admin', 'member'],
+    canManageRoles: true,
+};
+
+/** A paginator the way Laravel actually serialises one. */
+function page(rows: unknown[], overrides: Record<string, unknown> = {}) {
+    return {
+        data: rows,
+        current_page: 1,
+        last_page: 1,
+        total: rows.length,
+        prev_page_url: null,
+        next_page_url: null,
+        ...overrides,
+    };
+}
 
 describe('users list', () => {
     // Correct data
@@ -62,10 +86,7 @@ describe('users list', () => {
         render(
             <UsersIndex
                 {...props}
-                users={{
-                    data: [user(), user({ id: 'b', name: 'Айгүл' })],
-                    total: 2,
-                }}
+                users={page([user(), user({ id: 'b', name: 'Айгүл' })])}
             />,
         );
 
@@ -73,20 +94,20 @@ describe('users list', () => {
     });
 
     it('shows names with kazakh letters intact', () => {
-        render(<UsersIndex {...props} users={{ data: [user()], total: 1 }} />);
+        render(<UsersIndex {...props} users={page([user()])} />);
 
         expect(screen.getByText('Дәурен Құрманов')).toBeInTheDocument();
     });
 
     it('renders the created date in the user timezone', () => {
-        render(<UsersIndex {...props} users={{ data: [user()], total: 1 }} />);
+        render(<UsersIndex {...props} users={page([user()])} />);
 
         // Noon UTC is 17:00 in Almaty — still 27 July, so the date holds.
         expect(screen.getByText(/27/)).toBeInTheDocument();
     });
 
     it('offers a way to add a user', () => {
-        render(<UsersIndex {...props} users={{ data: [], total: 0 }} />);
+        render(<UsersIndex {...props} users={page([])} />);
 
         expect(screen.getByTestId('users-add')).toHaveTextContent(
             'Добавить пользователя',
@@ -110,10 +131,7 @@ describe('users list', () => {
             render(
                 <UsersIndex
                     {...props}
-                    users={{
-                        data: [user({ created_at: 'не дата' })],
-                        total: 1,
-                    }}
+                    users={page([user({ created_at: 'не дата' })])}
                 />,
             ),
         ).not.toThrow();
@@ -121,7 +139,7 @@ describe('users list', () => {
 
     // Empty data
     it('shows the empty state when there are no users', () => {
-        render(<UsersIndex {...props} users={{ data: [], total: 0 }} />);
+        render(<UsersIndex {...props} users={page([])} />);
 
         expect(screen.getByTestId('users-empty')).toHaveTextContent(
             'Пользователей пока нет',
@@ -135,7 +153,7 @@ describe('users list', () => {
             <UsersIndex
                 {...props}
                 search="кто-то"
-                users={{ data: [], total: 0 }}
+                users={page([])}
             />,
         );
 
@@ -145,8 +163,61 @@ describe('users list', () => {
     });
 
     it('renders no rows for an empty list', () => {
-        render(<UsersIndex {...props} users={{ data: [], total: 0 }} />);
+        render(<UsersIndex {...props} users={page([])} />);
 
         expect(screen.queryAllByTestId('users-row')).toHaveLength(0);
+    });
+});
+
+describe('paging a long list', () => {
+    // The panel shipped without any of this: every list called
+    // paginate(20), the server sent next_page_url in the props, and no
+    // page rendered it. A list of 37 users showed 20 and offered no way
+    // to reach the rest. Nothing errored and no test looked.
+
+    // Correct data
+    it('offers a way to the next page', () => {
+        render(
+            <UsersIndex
+                {...props}
+                users={page([user()], {
+                    last_page: 2,
+                    total: 37,
+                    next_page_url: '/dash/users?page=2',
+                })}
+            />,
+        );
+
+        expect(screen.getByTestId('pagination-next')).toBeInTheDocument();
+    });
+
+    it('says where the reader is', () => {
+        render(
+            <UsersIndex
+                {...props}
+                users={page([user()], { last_page: 2, total: 37, next_page_url: '/x' })}
+            />,
+        );
+
+        expect(screen.getByTestId('pagination-count')).toHaveTextContent('37');
+    });
+
+    // Wrong data
+    it('offers no way back from the first page', () => {
+        render(
+            <UsersIndex
+                {...props}
+                users={page([user()], { last_page: 2, next_page_url: '/x' })}
+            />,
+        );
+
+        expect(screen.getByTestId('pagination-prev')).toBeDisabled();
+    });
+
+    // Empty data
+    it('shows nothing at all when everything fits on one page', () => {
+        render(<UsersIndex {...props} users={page([user()])} />);
+
+        expect(screen.queryByTestId('pagination')).not.toBeInTheDocument();
     });
 });
