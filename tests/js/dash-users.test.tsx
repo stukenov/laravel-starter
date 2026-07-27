@@ -62,7 +62,10 @@ describe('users list', () => {
         render(
             <UsersIndex
                 {...props}
-                users={{ data: [user(), user({ id: 'b', name: 'Айгүл' })], total: 2 }}
+                users={{
+                    data: [user(), user({ id: 'b', name: 'Айгүл' })],
+                    total: 2,
+                }}
             />,
         );
 
@@ -107,7 +110,10 @@ describe('users list', () => {
             render(
                 <UsersIndex
                     {...props}
-                    users={{ data: [user({ created_at: 'не дата' })], total: 1 }}
+                    users={{
+                        data: [user({ created_at: 'не дата' })],
+                        total: 1,
+                    }}
                 />,
             ),
         ).not.toThrow();
