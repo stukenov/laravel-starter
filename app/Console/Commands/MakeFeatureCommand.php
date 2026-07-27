@@ -231,6 +231,7 @@ class MakeFeatureCommand extends Command
             '{{ payloadFields }}' => $this->payloadFields(),
             '{{ relations }}' => $this->relations(),
             '{{ enumConstants }}' => $this->enumConstants(),
+            '{{ panelItem }}' => $this->panelItem(),
             '{{ enumOptions }}' => $this->enumOptions(),
             '{{ enumLangSections }}' => $this->enumLangSections(),
             '{{ enumChecks }}' => $this->enumChecks(),
@@ -561,6 +562,67 @@ PHP;
 
             return "\n            '{$f['name']}Options' => {$this->studly}::{$const}_VALUES,";
         }, $enums));
+    }
+
+    /**
+     * The shape the panel receives, declared on the model.
+     *
+     * The generated controller used to hand the paginator straight to the
+     * page, so every column went to the front — including whatever a
+     * project adds later: an internal note, a hash, somebody else's
+     * token. Both hand-written controllers already narrowed their
+     * payload; the generator was the one place that did not.
+     *
+     * One method, so the list, the form and any future consumer agree
+     * about what an entity looks like from outside.
+     */
+    private function panelItem(): string
+    {
+        $lines = ["            'id' => \$this->id,"];
+
+        foreach ($this->fields as $field) {
+            $lines[] = match ($field['type']) {
+                'belongsTo' => sprintf(
+                    "            '%s' => \$this->%s,\n            '%s' => \$this->relationLoaded('%s') && \$this->%s\n                ? ['id' => \$this->%s->id, 'name' => (string) \$this->%s->getAttribute(\$this->%s->getFillable()[0] ?? 'id')]\n                : null,",
+                    $this->foreignKey($field['name']), $this->foreignKey($field['name']),
+                    $field['name'], $field['name'], $field['name'],
+                    $field['name'], $field['name'], $field['name'],
+                ),
+                // ISO 8601, never a formatted string: the client decides
+                // how a date looks, in the reader's zone. See AGENTS.md.
+                'date', 'datetime' => sprintf(
+                    "            '%s' => \$this->%s?->toIso8601String(),",
+                    $field['name'], $field['name'],
+                ),
+                default => sprintf(
+                    "            '%s' => \$this->%s,",
+                    $field['name'], $field['name'],
+                ),
+            };
+        }
+
+        $lines[] = "            'created_at' => \$this->created_at?->toIso8601String(),";
+        $body = implode("\n", $lines);
+
+        return <<<PHP
+
+
+    /**
+     * What the panel is allowed to see.
+     *
+     * Named rather than implied: a page that receives the whole model
+     * receives every column added to it afterwards, whether or not
+     * anybody meant it to.
+     *
+     * @return array<string, mixed>
+     */
+    public function toPanelItem(): array
+    {
+        return [
+    {$body}
+        ];
+    }
+PHP;
     }
 
     /** The relation methods the model needs, or an empty string. */

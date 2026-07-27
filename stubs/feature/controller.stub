@@ -25,7 +25,11 @@ class {{ studly }}Controller extends Controller
                 ->orderByDesc('created_at')
 {{ eagerLoad }}
                 ->paginate(20)
-                ->withQueryString(),
+                ->withQueryString()
+                // Not the model itself: a page handed the whole record
+                // receives every column added to it later, meant for it
+                // or not.
+                ->through(fn ({{ studly }} $record) => $record->toPanelItem()),
             'search' => $search,{{ relationOptions }}{{ enumOptions }}
         ]);
     }

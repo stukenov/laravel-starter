@@ -171,6 +171,13 @@ A file's location follows from the entity name. This is not taste — the
 Tables are plural snake_case, models singular StudlyCase, routes RESTful,
 and the Inertia page path mirrors the URL.
 
+**A model says what may leave it.** Every entity exposed to a page has a
+method naming its fields — `toPanelItem()` on a generated one,
+`toFeedItem()` on `Activity`. Handing a page the model itself sends every
+column it has now and every column added to it later, whether or not
+anybody meant that. The generated controller does this for you; a
+hand-written one should too.
+
 **`make:feature` emits all of it.** Do not hand-write a typical entity:
 
     php artisan make:feature Post --fields=title:string,body:text

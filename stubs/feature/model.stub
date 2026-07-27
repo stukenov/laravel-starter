@@ -40,4 +40,4 @@ class {{ studly }} extends Model
 
         return $query->where('{{ firstField }}', 'ilike', $like);
     }
-{{ relations }}}
+{{ panelItem }}{{ relations }}}

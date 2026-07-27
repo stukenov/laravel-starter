@@ -356,6 +356,25 @@ it('gives a textarea to a text field and a number box to an integer', function (
         ->and($form)->toContain('type="date"');
 });
 
+it('names what the panel may see, rather than sending the whole record', function () {
+    // The controller used to hand the paginator straight to the page, so
+    // every column went to the front — including whatever a project adds
+    // afterwards: an internal note, a hash, somebody else's token. Both
+    // hand-written controllers already narrowed their payload; the
+    // generator was the one place that did not.
+    $model = File::get(base_path('app/Models/Widget.php'));
+    $controller = File::get(base_path('app/Http/Controllers/Dash/WidgetController.php'));
+
+    expect($model)->toContain('public function toPanelItem(): array')
+        ->and($controller)->toContain('$record->toPanelItem()');
+});
+
+it('sends dates as ISO 8601, not as formatted strings', function () {
+    // RULE(time): the client formats, in the reader's zone — AGENTS.md.
+    expect(File::get(base_path('app/Models/Widget.php')))
+        ->toContain("'published_on' => \$this->published_on?->toIso8601String()");
+});
+
 it('puts the section in the navigation', function () {
     // A generated entity had a list, a form, routes and tests, and no way
     // to get to any of it — the navigation is a static array the
