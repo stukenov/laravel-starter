@@ -26,18 +26,6 @@ final class Ability
 
     public const VIEW_HEALTH = 'health.view';
 
-    public const VIEW_WIDGETS = 'widgets.view';
-
-    public const MANAGE_WIDGETS = 'widgets.manage';
-
-    public const VIEW_TAGS = 'tags.view';
-
-    public const MANAGE_TAGS = 'tags.manage';
-
-    public const VIEW_NOTES = 'notes.view';
-
-    public const MANAGE_NOTES = 'notes.manage';
-
     /**
      * @return array<int, string>
      */
@@ -50,12 +38,6 @@ final class Ability
             self::MANAGE_ROLES,
             self::VIEW_ACTIVITY,
             self::VIEW_HEALTH,
-            self::VIEW_WIDGETS,
-            self::MANAGE_WIDGETS,
-            self::VIEW_TAGS,
-            self::MANAGE_TAGS,
-            self::VIEW_NOTES,
-            self::MANAGE_NOTES,
         ];
     }
 }
