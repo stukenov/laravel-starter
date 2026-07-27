@@ -29,36 +29,58 @@ class SessionList
             ->orderByDesc('last_activity')
             ->get(['id', 'ip_address', 'user_agent', 'last_activity']);
 
-        return $rows->map(fn ($row) => self::describe($row, $currentSessionId))->all();
+        // Values are read out one by one at the boundary. The query builder
+        // returns stdClass with no shape the analyser can verify, so the
+        // coercion happens here, once, instead of being assumed downstream.
+        return $rows
+            ->map(function (object $row) use ($currentSessionId): array {
+                $data = (array) $row;
+
+                return self::describe(
+                    id: self::text($data['id'] ?? null) ?? '',
+                    agent: self::text($data['user_agent'] ?? null),
+                    ip: self::text($data['ip_address'] ?? null),
+                    lastActivity: (int) ($data['last_activity'] ?? 0),
+                    currentSessionId: $currentSessionId,
+                );
+            })
+            ->all();
     }
 
     /**
      * @return array<string, mixed>
      */
-    private static function describe(object $row, string $currentSessionId): array
-    {
-        $agent = (string) ($row->user_agent ?? '');
-
-        $detector = new DeviceDetector($agent);
+    private static function describe(
+        string $id,
+        ?string $agent,
+        ?string $ip,
+        int $lastActivity,
+        string $currentSessionId,
+    ): array {
+        $detector = new DeviceDetector($agent ?? '');
         $detector->parse();
 
-        $browser = $detector->getClient('name');
-        $platform = $detector->getOs('name');
-        $device = $detector->getDeviceName();
-
         return [
-            'id' => $row->id,
+            'id' => $id,
             // Do not invent values — return null and let the UI supply
             // a label in its own language.
-            'browser' => self::clean($browser),
-            'platform' => self::clean($platform),
-            'device' => self::clean($device),
-            'ip' => $row->ip_address,
+            'browser' => self::clean($detector->getClient('name')),
+            'platform' => self::clean($detector->getOs('name')),
+            'device' => self::clean($detector->getDeviceName()),
+            'ip' => $ip,
             // ISO 8601 (UTC) — the client formats it in the user's zone.
             // See the time rule in AGENTS.md.
-            'last_active_at' => now()->createFromTimestamp($row->last_activity)->toIso8601String(),
-            'is_current' => $row->id === $currentSessionId,
+            'last_active_at' => now()->createFromTimestamp($lastActivity)->toIso8601String(),
+            'is_current' => $id === $currentSessionId,
         ];
+    }
+
+    /**
+     * Narrows a value coming out of the database to a string or null.
+     */
+    private static function text(mixed $value): ?string
+    {
+        return is_string($value) && $value !== '' ? $value : null;
     }
 
     /**

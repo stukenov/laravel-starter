@@ -8,12 +8,28 @@ use DateTimeZone;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
+use RuntimeException;
 
 class UpdateRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->route('user'));
+        return $this->user()->can('update', $this->target());
+    }
+
+    /**
+     * Route model binding gives back object|string as far as the analyser
+     * is concerned. Narrow it once, here, instead of casting at each use.
+     */
+    private function target(): User
+    {
+        $user = $this->route('user');
+
+        if (! $user instanceof User) {
+            throw new RuntimeException('The user route parameter is not bound to a model.');
+        }
+
+        return $user;
     }
 
     /**
@@ -25,7 +41,7 @@ class UpdateRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required', 'string', 'email', 'max:255',
-                Rule::unique(User::class)->ignore($this->route('user')->id),
+                Rule::unique(User::class)->ignore($this->target()->id),
             ],
             // Password is optional when editing: an empty field means
             // "keep the current one", not "wipe it".

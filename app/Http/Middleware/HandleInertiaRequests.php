@@ -50,8 +50,8 @@ class HandleInertiaRequests extends Middleware
             // collide with 'nav.title' from the common one.
             'translations' => array_merge(
                 Arr::dot(trans('common')),
-                collect(glob(lang_path(app()->getLocale().'/entities/*.php')))
-                    ->mapWithKeys(fn (string $file) => Arr::dot(
+                collect(glob(lang_path(app()->getLocale().'/entities/*.php')) ?: [])
+                    ->mapWithKeys(fn (string $file): array => Arr::dot(
                         [basename($file, '.php') => require $file],
                     ))
                     ->all(),
