@@ -42,6 +42,7 @@ export default function Login({ status, canResetPassword }: Props) {
                                 <Label htmlFor="email">{t('auth.email')}</Label>
                                 <Input
                                     id="email"
+                                    data-test="login-email"
                                     type="email"
                                     name="email"
                                     required
@@ -70,6 +71,7 @@ export default function Login({ status, canResetPassword }: Props) {
                                 </div>
                                 <PasswordInput
                                     id="password"
+                                    data-test="login-password"
                                     name="password"
                                     required
                                     tabIndex={2}

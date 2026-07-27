@@ -57,6 +57,15 @@ class ActivityStreamController extends Controller
                 $since = $this->flush(Activity::since($since), $since);
 
                 while (microtime(true) < $deadline) {
+                    // A viewer who closed the tab is gone, but the loop
+                    // would keep its worker until the deadline — twenty
+                    // more seconds of a worker held for nobody. PHP only
+                    // learns the connection died by writing to it, which
+                    // the heartbeat below does.
+                    if (connection_aborted() !== 0) {
+                        break;
+                    }
+
                     $payload = $listener->wait(self::HEARTBEAT_SECONDS);
 
                     if ($payload === null) {

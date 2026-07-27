@@ -285,6 +285,22 @@ mail goes unread too.
 **Run `schedule-monitor:sync` after touching `routes/console.php`,** or the
 monitor keeps watching for a task that no longer exists.
 
+## Sign-in
+
+**Five attempts a minute, per email and address** — the limiter is in
+`FortifyServiceProvider::configureRateLimiting`. It is the reason the
+end-to-end suite signs in once in a setup project and reuses the cookies:
+a suite that logs in per test exhausts it inside the first minute, and
+every test after that waits for a redirect that never comes.
+
+**The cabinet has no locale in its URL,** so the login page is rendered in
+whatever language the browser asks for. Tests select by `data-test`, never
+by copy.
+
+**An already signed-in person opening `/login` goes to `/dash`.** Laravel's
+default sends them to `/`, which here redirects to the public home page —
+following an old bookmark then looks like being signed out.
+
 ## Live feed (SSE)
 
 The activity log streams over Server-Sent Events. Three things about it

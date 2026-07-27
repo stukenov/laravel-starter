@@ -87,8 +87,8 @@ it('keeps agent-facing files free of cyrillic', function () {
 });
 
 it('has no orphaned rule comments in the code', function () {
-    // Комментарий RULE(...) обязан иметь опору в AGENTS.md.
-    // Устаревшее правило опаснее отсутствующего: ему верят.
+    // A RULE(...) comment has to be anchored in AGENTS.md. A stale rule
+    // is more dangerous than a missing one, because people believe it.
     $files = collect(File::allFiles(base_path()))
         ->reject(fn ($file) => str_contains($file->getPathname(), '/vendor/'))
         ->reject(fn ($file) => str_contains($file->getPathname(), '/node_modules/'))

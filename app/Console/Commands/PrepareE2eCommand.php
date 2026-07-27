@@ -89,8 +89,13 @@ class PrepareE2eCommand extends Command
             'password' => self::PASSWORD,
             'locale' => 'ru',
             'timezone' => 'Asia/Almaty',
-            'email_verified_at' => now(),
         ]);
+
+        // Not through create(): email_verified_at is not fillable, so mass
+        // assignment drops it without a word. The account is then made,
+        // signs in, and is bounced straight to /email/verify — which cost
+        // a full end-to-end run to work out.
+        $user->markEmailAsVerified();
 
         $user->syncRoles([$role]);
     }

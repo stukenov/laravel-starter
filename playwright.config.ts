@@ -24,6 +24,15 @@ export default defineConfig({
     reporter: process.env.CI ? 'list' : [['list'], ['html', { open: 'never' }]],
     use: {
         baseURL: `http://127.0.0.1:${PORT}`,
+        // The cabinet has no locale in its URL: an anonymous visitor gets
+        // whatever their browser asks for. Chromium ships en-US, so
+        // without this the login page arrives in English and every
+        // selector written against the Russian copy misses.
+        //
+        // Pinned rather than worked around, because a run whose language
+        // depends on the machine it runs on is not a test.
+        locale: 'ru-RU',
+        extraHTTPHeaders: { 'Accept-Language': 'ru-RU,ru;q=0.9' },
         trace: 'retain-on-failure',
         screenshot: 'only-on-failure',
         // The project marks elements with data-test, and Playwright looks
@@ -31,7 +40,15 @@ export default defineConfig({
         testIdAttribute: 'data-test',
     },
     projects: [
-        { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+        // Signs in once and saves the cookies. Everything else starts from
+        // them, because the login throttle allows five attempts a minute
+        // and a suite that signs in per test exhausts it.
+        { name: 'setup', testMatch: /auth\.setup\.ts/ },
+        {
+            name: 'chromium',
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
     ],
     webServer: {
         // One command on purpose: the build has to finish before the SSR
@@ -55,7 +72,11 @@ export default defineConfig({
         env: {
             APP_ENV: 'local',
             DB_DATABASE: DATABASE,
-            PHP_CLI_SERVER_WORKERS: '6',
+            // Generous on purpose. Every open stream holds a worker for
+            // up to its full lifetime, and the activity spec opens one per
+            // test. Six was enough for three tests and then every further
+            // navigation queued behind a stream nobody was reading.
+            PHP_CLI_SERVER_WORKERS: '24',
         },
     },
 });

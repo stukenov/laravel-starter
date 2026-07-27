@@ -1,8 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { signIn } from './helpers';
+import { STATE } from './helpers';
+
+// Already signed in — see auth.setup.ts.
+test.use({ storageState: STATE.admin });
 
 test.beforeEach(async ({ page }) => {
-    await signIn(page);
     await page.goto('/dash/users');
 });
 
@@ -42,10 +44,13 @@ test.describe('the users list', () => {
         await page.getByTestId('user-password').fill('another-password');
         await page.getByTestId('user-save').click();
 
-        await expect(page.getByText(/уже|занят/i).first()).toBeVisible();
+        await expect(page.getByTestId('input-error').first()).toBeVisible();
     });
 
     test('refuses an address that is not one', async ({ page }) => {
+        // type="email", so the browser rejects it without asking the
+        // server. The rule is enforced on both sides — the form request
+        // has the same rule, and a Pest test covers that half.
         await page.getByTestId('users-add').click();
 
         await page.getByTestId('user-name').fill('Кто-то');
@@ -53,7 +58,10 @@ test.describe('the users list', () => {
         await page.getByTestId('user-password').fill('another-password');
         await page.getByTestId('user-save').click();
 
-        await expect(page.getByText(/почт/i).nth(1)).toBeVisible();
+        await expect(page.getByTestId('user-email')).toHaveJSProperty(
+            'validity.typeMismatch',
+            true,
+        );
     });
 
     // Empty data
@@ -72,6 +80,8 @@ test.describe('the users list', () => {
         await page.getByTestId('users-add').click();
         await page.getByTestId('user-save').click();
 
-        await expect(page.getByText(/обязательн|укажите|введите/i).first()).toBeVisible();
+        // By marker: the message is "Заполните поле.", and guessing copy
+        // is how this test failed the first time.
+        await expect(page.getByTestId('input-error').first()).toBeVisible();
     });
 });
