@@ -42,6 +42,21 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                /*
+                 * RULE(access): the screen shows what the person may
+                 * do — AGENTS.md.
+                 *
+                 * Without this the panel offered every section to
+                 * everybody and let the server say no: a member saw
+                 * Users, Roles, Activity and Health in the navigation and
+                 * got 403 from each. The permission was enforced, which
+                 * is the part that matters, but the interface was lying
+                 * about what it could do.
+                 *
+                 * Names only — the front end never decides anything, it
+                 * only stops offering what it knows will be refused.
+                 */
+                'abilities' => $request->user()?->getAllPermissions()->pluck('name')->all() ?? [],
             ],
             'locale' => app()->getLocale(),
             'locales' => Locales::SUPPORTED,

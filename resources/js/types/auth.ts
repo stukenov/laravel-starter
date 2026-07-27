@@ -12,4 +12,12 @@ export type User = {
 
 export type Auth = {
     user: User;
+    /**
+     * Permission names the signed-in user holds.
+     *
+     * For hiding what would be refused anyway — never for deciding
+     * anything. The server enforces each of these through a policy, and
+     * whatever the browser holds can be edited.
+     */
+    abilities: string[];
 };

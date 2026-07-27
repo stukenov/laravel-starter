@@ -123,6 +123,13 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     produces a name nothing enforces. Which permissions a role carries is
     a business decision and lives in the panel.
 
+    **The screen shows what the person may do.** `auth.abilities` comes
+    down in the shared props and `useCan()` reads it, so the navigation
+    stops offering a section that would answer 403. It decides nothing —
+    anyone can edit what the browser holds — and every route is still
+    gated by its policy. It only stops the interface from lying about
+    what it can do.
+
     `RoleSeeder` is idempotent and runs on every deploy, so a permission
     added in code appears without anyone creating it by hand. Tests seed
     it too — roles are infrastructure, not fixtures, and without them

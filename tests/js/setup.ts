@@ -15,3 +15,20 @@ configure({ testIdAttribute: 'data-test' });
 afterEach(() => {
     cleanup();
 });
+
+// jsdom has no matchMedia, and the sidebar asks it whether the screen is
+// a phone. Without this any test that renders the panel chrome dies
+// before its first assertion.
+Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+    }),
+});
