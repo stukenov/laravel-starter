@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Exceptions\UnsupportedDatabaseDriver;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
+use Illuminate\Http\Middleware\TrustProxies;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -31,12 +33,39 @@ class AppServiceProvider extends ServiceProvider
 
         $this->configureDefaults();
         $this->protectRegistrationFromBots();
+        $this->trustConfiguredProxies();
 
         // Where an already signed-in person goes if they open /login or
         // /register. Laravel's default is `/`, which here redirects to the
         // public home page — so following an old bookmark signs you out of
         // the panel in appearance while leaving you signed in.
         RedirectIfAuthenticated::redirectUsing(fn () => config('fortify.home'));
+    }
+
+    /**
+     * RULE(security): who may say where a request came from — AGENTS.md.
+     *
+     * Configured here rather than in `bootstrap/app.php`, because `env()`
+     * there returns null the moment `php artisan optimize` caches the
+     * config — which is to say, in production, which is the only place
+     * this setting matters. Nothing would have errored; the proxies would
+     * simply have stopped being trusted.
+     */
+    private function trustConfiguredProxies(): void
+    {
+        $proxies = config('security.trusted_proxies');
+
+        if ($proxies === []) {
+            return;
+        }
+
+        TrustProxies::at($proxies === ['*'] ? '*' : $proxies);
+        TrustProxies::withHeaders(
+            Request::HEADER_X_FORWARDED_FOR
+            | Request::HEADER_X_FORWARDED_HOST
+            | Request::HEADER_X_FORWARDED_PORT
+            | Request::HEADER_X_FORWARDED_PROTO
+        );
     }
 
     /**

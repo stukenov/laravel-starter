@@ -99,6 +99,9 @@ class UserController extends Controller
      *
      * Removed from the data either way: `update()` would otherwise try to
      * write a `roles` column that does not exist.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<int, string>|null
      */
     private function rolesFrom(Request $request, array &$data): ?array
     {
@@ -119,6 +122,8 @@ class UserController extends Controller
      * panel closes on the next request and the only way back is the
      * command line. Deleting yourself is already refused by the policy for
      * the same reason; this is the same mistake made more quietly.
+     *
+     * @param  array<int, string>  $roles
      */
     private function assign(Request $request, User $user, array $roles): void
     {
