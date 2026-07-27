@@ -428,10 +428,19 @@ following an old bookmark then looks like being signed out.
 The activity log streams over Server-Sent Events. Three things about it
 are easy to get wrong and impossible to catch with a green test run:
 
-- **An open connection holds a worker.** The built-in dev server is
-  single threaded, so one viewer blocks the whole app. Start it as
-  `PHP_CLI_SERVER_WORKERS=6 php artisan serve`. Under FPM in production
-  the same arithmetic decides how many viewers fit.
+- **An open connection holds a worker, and the arithmetic is knowable.**
+  A viewer costs `lifetime / (lifetime + retry)` workers — 0.9 at the
+  defaults, which is one worker each in all but name. Thirty workers is
+  about twenty-seven viewers before the rest of the site queues behind
+  them. Both numbers are in `config/sse.php`; the stream sends `retry`
+  itself rather than leaving it to the browser, because that is the only
+  lever the server has.
+
+  **In production give the stream its own FPM pool** — README has the
+  recipe. Then a saturated feed costs the feed and nothing else.
+
+  The built-in dev server is single threaded, so one viewer blocks the
+  whole app: start it as `PHP_CLI_SERVER_WORKERS=6 php artisan serve`.
 - **`NOTIFY` is delivered at COMMIT.** Inside an uncommitted transaction
   no listener ever hears it, which is why two tests write through a
   connection of their own.

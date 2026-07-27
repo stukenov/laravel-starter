@@ -136,8 +136,44 @@ when the connection closes:
         fastcgi_pass unix:/run/php/php8.5-fpm.sock;
     }
 
-Each open stream holds an FPM worker for 25 seconds, so `pm.max_children`
-sets the ceiling on how many people can watch the feed at once.
+### The activity feed needs its own pool
+
+Each open stream holds an FPM worker for its whole life. With the default
+25-second life and a 3-second reconnect, one viewer costs about 0.9 of a
+worker — near enough to one, permanently. On a pool of 30 that is roughly
+27 simultaneous viewers before **the whole site** starts queueing behind
+them, panel and public pages alike.
+
+Two levers, and they are independent.
+
+**Raise `SSE_RETRY_SECONDS`.** At 15 seconds a viewer costs 0.63 workers
+instead of 0.9, and the feed lags by up to fifteen seconds after each
+reconnect. Whether that is a bad trade depends on whether anyone watches
+the feed live or merely leaves it open.
+
+**Give the stream a pool of its own,** so a saturated feed cannot take
+the site down with it:
+
+    ; /etc/php/8.5/fpm/pool.d/app-sse.conf
+    [app-sse]
+    user = www-data
+    listen = /run/php/app-sse.sock
+    pm = static
+    pm.max_children = 20          ; the ceiling on simultaneous viewers
+    request_terminate_timeout = 40
+
+    # nginx
+    location = /dash/activity/stream {
+        proxy_buffering off;
+        gzip off;
+        fastcgi_buffering off;
+        include fastcgi_params;
+        fastcgi_read_timeout 40;
+        fastcgi_pass unix:/run/php/app-sse.sock;   # not the main socket
+    }
+
+With that, running out of stream workers costs the feed and nothing else:
+the twenty-first viewer waits, and every other page answers as usual.
 
 ### Checking it works
 

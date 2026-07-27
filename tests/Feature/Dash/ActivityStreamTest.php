@@ -191,3 +191,30 @@ it('keeps the sequence column indexed', function () {
 
     expect($indexes)->toContain('activity_log_seq_idx');
 });
+
+it('tells the browser how long to wait before reconnecting', function () {
+    // The browser's own default is 2-3 seconds and varies between them.
+    // Since a connection holds an FPM worker for its whole life, that
+    // interval is the only lever the server has over what a viewer costs
+    // — leaving it to the client is leaving the arithmetic to chance.
+    expect(config('sse.retry_seconds'))->toBeGreaterThan(0)
+        ->and(config('sse.lifetime_seconds'))->toBeGreaterThan(0);
+});
+
+it('costs less than one worker per viewer', function () {
+    // lifetime / (lifetime + retry). At the defaults this is 0.89 — one
+    // worker each in all but name, which is the number that decides how
+    // many people can watch at once.
+    $lifetime = (int) config('sse.lifetime_seconds');
+    $retry = (int) config('sse.retry_seconds');
+
+    expect($lifetime / ($lifetime + $retry))->toBeLessThan(1.0);
+});
+
+it('does not hold the connection past the pool timeout', function () {
+    // README suggests request_terminate_timeout 40 for the stream pool.
+    // A lifetime above it means FPM kills the worker mid-stream instead
+    // of the loop ending cleanly, and the browser sees an error rather
+    // than a close.
+    expect((int) config('sse.lifetime_seconds'))->toBeLessThan(40);
+});

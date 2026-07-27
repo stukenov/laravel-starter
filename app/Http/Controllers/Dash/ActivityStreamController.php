@@ -23,11 +23,35 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class ActivityStreamController extends Controller
 {
-    /** Long enough to feel live, short enough to free the worker. */
-    private const LIFETIME_SECONDS = 25;
-
     /** A comment every few seconds keeps proxies from buffering the stream. */
     private const HEARTBEAT_SECONDS = 5;
+
+    /**
+     * How long the connection lives, and how long the browser waits
+     * before opening the next one.
+     *
+     * The arithmetic matters and it is worth stating: a connection holds
+     * an FPM worker for its whole life. With a 25-second life and the
+     * browser's default reconnect of 2-3 seconds, one open tab occupies a
+     * worker about 90% of the time — near enough to permanently.
+     *
+     * Which is why `retry` is sent explicitly rather than left to the
+     * browser: it is the only lever the server has over the duty cycle.
+     * Raise it and each viewer costs less; raise it too far and the feed
+     * stops feeling live after a reconnect.
+     *
+     * Both are configurable because the right numbers depend on the pool
+     * size, and the pool size depends on the project.
+     */
+    private function lifetime(): int
+    {
+        return (int) config('sse.lifetime_seconds', 25);
+    }
+
+    private function retry(): int
+    {
+        return (int) config('sse.retry_seconds', 3);
+    }
 
     public function __invoke(Request $request): StreamedResponse
     {
@@ -43,13 +67,17 @@ class ActivityStreamController extends Controller
 
         $response = new StreamedResponse(function () use ($since) {
             $listener = new PostgresListener('activity_log');
-            $deadline = microtime(true) + self::LIFETIME_SECONDS;
+            $deadline = microtime(true) + $this->lifetime();
 
             try {
                 // A byte right away. EventSource does not fire `open` until
                 // something arrives, so without this the page sits five
                 // seconds — until the first heartbeat — showing no live
                 // badge on every connection, and it reconnects every 25.
+                // The browser's own default is 2-3 seconds and varies.
+                // Saying it out loud is the only control the server has
+                // over how often a worker is taken.
+                $this->write('retry: '.($this->retry() * 1000)."\n\n");
                 $this->write(": open\n\n");
 
                 // Anything written while the browser was reconnecting is
