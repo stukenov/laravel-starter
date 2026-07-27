@@ -20,10 +20,13 @@ class RoleController extends Controller
         $this->authorize('viewAny', Role::class);
 
         return Inertia::render('dash/roles/index', [
+            // Paginated like every other list. Roles are few in most
+            // projects and unbounded in principle: a list with no ceiling
+            // is a page that works until the day it does not.
             'roles' => Role::withCount(['permissions', 'users'])
                 ->orderBy('name')
-                ->get()
-                ->map(fn (Role $role) => [
+                ->paginate(30)
+                ->through(fn (Role $role) => [
                     'id' => $role->id,
                     'name' => $role->name,
                     'permissions_count' => $role->permissions_count,

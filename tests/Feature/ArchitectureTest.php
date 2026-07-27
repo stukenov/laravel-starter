@@ -10,18 +10,32 @@
 arch()->preset()->laravel();
 arch()->preset()->security();
 
-arch('репозиториев и сервисного слоя у нас нет')
+/*
+ * RULE(architecture): one monolith, not a layer cake — AGENTS.md.
+ *
+ * The ban is on the *habit*, not on the idea. Logic belongs in models,
+ * form requests and policies, and a `UserService` wrapping four Eloquent
+ * calls is a file that exists to be a file.
+ *
+ * Work that genuinely is not a model's — talking to another system,
+ * generating a document, driving a subprocess — goes in `App\Support`
+ * with the rest of the plumbing. That is where `Locale`, `Sessions`,
+ * `Access` and `Sse` live. Porting a project with eight service classes
+ * found this rule enforced and unexplained: it says where not to put
+ * things and never says where to.
+ */
+arch('no repositories, and no service layer by that name')
     ->expect('App')
     ->not->toUse([
         'App\Repositories',
         'App\Services',
     ]);
 
-// App\Actions в запрет не входит: Fortify требует CreateNewUser
-// и ResetUserPassword по контракту. Но своих классов-действий
-// на каждую операцию мы не заводим — логика живёт в моделях,
-// form requests и политиках.
-arch('классы-действия только те, что требует Fortify')
+// App\Actions is not banned: Fortify requires CreateNewUser and
+// ResetUserPassword by contract. We do not add an action class per
+// operation of our own — the logic lives in models, form requests and
+// policies.
+arch('only the action classes Fortify demands')
     ->expect('App\Actions')
     ->toBeClasses()
     ->toOnlyBeUsedIn('App\Providers');

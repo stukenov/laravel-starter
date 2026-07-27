@@ -19,6 +19,14 @@ class ActivityController extends Controller
 
         return Inertia::render('dash/activity/index', [
             'entries' => Activity::query()
+                // Named columns, not `select *`. `properties` is a jsonb
+                // blob the feed never shows, and fifty rows of it travel
+                // from the database for nothing on every page.
+                ->select([
+                    'id', 'log_name', 'description', 'event',
+                    'subject_type', 'subject_id', 'causer_type', 'causer_id',
+                    'attribute_changes', 'created_at', 'seq',
+                ])
                 ->with('causer:id,name,email')
                 ->filter($log, $event)
                 ->orderByDesc('created_at')

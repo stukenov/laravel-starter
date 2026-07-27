@@ -50,6 +50,19 @@ vi.mock('@/actions/App/Http/Controllers/Dash/RoleController', () => ({
 const { default: RolesIndex } = await import('@/pages/dash/roles/index');
 const { default: RoleEdit } = await import('@/pages/dash/roles/edit');
 
+/** A paginator the way Laravel serialises one. */
+function page(rows: unknown[], overrides: Record<string, unknown> = {}) {
+    return {
+        data: rows,
+        current_page: 1,
+        last_page: 1,
+        total: rows.length,
+        prev_page_url: null,
+        next_page_url: null,
+        ...overrides,
+    };
+}
+
 function role(overrides: Record<string, unknown> = {}) {
     return {
         id: 'r1',
@@ -66,10 +79,8 @@ describe('roles list', () => {
     it('renders a row per role', () => {
         render(
             <RolesIndex
-                roles={[
-                    role(),
-                    role({ id: 'r2', name: 'member', is_protected: false }),
-                ]}
+                roles={page([role(),
+                    role({ id: 'r2', name: 'member', is_protected: false }),])}
             />,
         );
 
@@ -77,7 +88,7 @@ describe('roles list', () => {
     });
 
     it('marks the protected role', () => {
-        render(<RolesIndex roles={[role()]} />);
+        render(<RolesIndex roles={page([role()])} />);
 
         expect(screen.getByText('Защищена')).toBeInTheDocument();
     });
@@ -85,7 +96,7 @@ describe('roles list', () => {
     it('shows the counts', () => {
         render(
             <RolesIndex
-                roles={[role({ permissions_count: 3, users_count: 7 })]}
+                roles={page([role({ permissions_count: 3, users_count: 7 })])}
             />,
         );
 
@@ -95,14 +106,14 @@ describe('roles list', () => {
 
     // Wrong data
     it('does not offer a protected badge to an ordinary role', () => {
-        render(<RolesIndex roles={[role({ is_protected: false })]} />);
+        render(<RolesIndex roles={page([role({ is_protected: false })])} />);
 
         expect(screen.queryByText('Защищена')).not.toBeInTheDocument();
     });
 
     // Empty data
     it('shows the empty state', () => {
-        render(<RolesIndex roles={[]} />);
+        render(<RolesIndex roles={page([])} />);
 
         expect(screen.getByTestId('roles-empty')).toHaveTextContent(
             'Ролей пока нет',

@@ -223,6 +223,13 @@ cake: no repositories (Eloquent is one), no service layer (logic lives in
 models, form requests and policies), no action class per operation, no
 interfaces with a single implementation, no CQRS.
 
+The ban is on the habit, not on the idea. Work that genuinely is not a
+model's — talking to another system, generating a document, driving a
+subprocess — goes in **`App\Support`**, next to `Locale`, `Sessions`,
+`Access`, `Seo` and `Sse`. What is forbidden is the reflex of wrapping
+four Eloquent calls in a `UserService` because a layer diagram says
+there should be one.
+
 `tests/Feature/ArchitectureTest.php` enforces this. Controllers may not
 touch the database directly — put the query on the model or in
 `app/Support`.

@@ -12,6 +12,7 @@ use Database\Seeders\RoleSeeder;
 use DateTimeZone;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -41,7 +42,14 @@ class UserController extends Controller
                     'roles' => $user->roles->pluck('name')->all(),
                 ]),
             'search' => $search,
-            'timezones' => DateTimeZone::listIdentifiers(),
+            // 419 names, 8 KB of JSON, and the list changes when the
+            // tzdata package does — which is to say a few times a year.
+            // Rebuilding it per request is pure waste.
+            'timezones' => Cache::remember(
+                'timezones',
+                now()->addDay(),
+                fn () => DateTimeZone::listIdentifiers(),
+            ),
             'roles' => Role::orderBy('name')->pluck('name')->all(),
             // Handing out a role is a different decision from editing a
             // name, so the form only offers it to somebody who may make

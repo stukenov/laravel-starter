@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Pagination, type Paginated } from '@/components/pagination';
 import { useTranslations } from '@/hooks/use-translations';
 import { edit, index } from '@/routes/dash/roles';
 import { useState } from 'react';
@@ -26,7 +27,7 @@ type Role = {
 };
 
 type Props = {
-    roles: Role[];
+    roles: Paginated<Role>;
 };
 
 /**
@@ -61,7 +62,7 @@ export default function RolesIndex({ roles }: Props) {
                     </Button>
                 </div>
 
-                {roles.length === 0 ? (
+                {roles.data.length === 0 ? (
                     <div
                         className="rounded-md border py-12 text-center text-muted-foreground"
                         data-test="roles-empty"
@@ -80,7 +81,7 @@ export default function RolesIndex({ roles }: Props) {
                             </span>
                         </div>
 
-                        {roles.map((role) => (
+                        {roles.data.map((role) => (
                             <Link
                                 key={role.id}
                                 href={edit(role.id)}
@@ -105,6 +106,8 @@ export default function RolesIndex({ roles }: Props) {
                         ))}
                     </div>
                 )}
+
+                <Pagination page={roles} />
             </div>
 
             <Dialog

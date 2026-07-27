@@ -13,7 +13,7 @@ it('shows the roles list', function () {
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('dash/roles/index')
-            ->has('roles', 2),
+            ->has('roles.data', 2),
         );
 });
 
@@ -23,8 +23,8 @@ it('counts permissions and users per role', function () {
     $this->actingAs($admin)
         ->get(route('dash.roles.index'))
         ->assertInertia(fn ($page) => $page
-            ->where('roles.0.permissions_count', count(Ability::all()))
-            ->where('roles.0.users_count', 1),
+            ->where('roles.data.0.permissions_count', count(Ability::all()))
+            ->where('roles.data.0.users_count', 1),
         );
 });
 
