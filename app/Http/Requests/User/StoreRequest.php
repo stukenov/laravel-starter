@@ -30,6 +30,10 @@ class StoreRequest extends FormRequest
             'password' => ['required', 'string', Password::defaults()],
             'locale' => ['required', 'string', Rule::in(Locales::SUPPORTED)],
             'timezone' => ['required', 'string', Rule::in(DateTimeZone::listIdentifiers())],
+            // Only names that exist. A role invented through the
+            // form would grant nothing and look like it granted something.
+            'roles' => ['sometimes', 'array'],
+            'roles.*' => ['string', Rule::exists('roles', 'name')],
         ];
     }
 }

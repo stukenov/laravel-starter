@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Support\Facades\Cache;
 use Spatie\Activitylog\Models\Activity as SpatieActivity;
 
 /**
@@ -70,16 +71,32 @@ class Activity extends SpatieActivity
     }
 
     /**
+     * The values offered in the two filter dropdowns.
+     *
+     * Cached, because `distinct` over this table is a full scan and it ran
+     * twice on every visit to the page. Measured against 200 000 rows:
+     * 36 ms for the log names, 15 ms for the events — fifty milliseconds
+     * of database time to fill two dropdowns whose contents change when a
+     * new kind of event is logged, which is to say almost never.
+     *
+     * Five minutes is short enough that a new log name shows up while
+     * somebody is still looking for it, and long enough that the scan
+     * stops being per-request.
+     *
      * @return array<int, string>
      */
     public static function distinctLogNames(): array
     {
-        return static::query()
-            ->whereNotNull('log_name')
-            ->distinct()
-            ->orderBy('log_name')
-            ->pluck('log_name')
-            ->all();
+        return Cache::remember(
+            'activity.log_names',
+            now()->addMinutes(5),
+            fn () => static::query()
+                ->whereNotNull('log_name')
+                ->distinct()
+                ->orderBy('log_name')
+                ->pluck('log_name')
+                ->all(),
+        );
     }
 
     /**
@@ -87,12 +104,23 @@ class Activity extends SpatieActivity
      */
     public static function distinctEvents(): array
     {
-        return static::query()
-            ->whereNotNull('event')
-            ->distinct()
-            ->orderBy('event')
-            ->pluck('event')
-            ->all();
+        return Cache::remember(
+            'activity.events',
+            now()->addMinutes(5),
+            fn () => static::query()
+                ->whereNotNull('event')
+                ->distinct()
+                ->orderBy('event')
+                ->pluck('event')
+                ->all(),
+        );
+    }
+
+    /** Both lists at once, for a test or a command that needs them fresh. */
+    public static function forgetFilterOptions(): void
+    {
+        Cache::forget('activity.log_names');
+        Cache::forget('activity.events');
     }
 
     /**

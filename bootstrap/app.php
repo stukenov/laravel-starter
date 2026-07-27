@@ -20,6 +20,40 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['sidebar_state', 'locale']);
 
+        /*
+         * RULE(security): who is allowed to say where a request came from.
+         *
+         * With the deployment in README — nginx talking to PHP-FPM on the
+         * same host — nothing is needed here: nginx passes the real client
+         * address as REMOTE_ADDR and sets HTTPS itself, so `$request->ip()`
+         * and `$request->secure()` are already right.
+         *
+         * Put a CDN or a load balancer in front and both become wrong at
+         * once, silently. Every visitor then shares one address, so the
+         * login limiter ("five a minute per email and address") turns into
+         * one bucket for the whole internet; the sessions page shows that
+         * same address for everybody; and HSTS disappears, because
+         * SecurityHeaders only sends it when the request looks secure.
+         *
+         * So it is env-driven and empty by default: set TRUSTED_PROXIES to
+         * the balancer's addresses, or to `*` when they are not knowable
+         * and the app is unreachable except through it. Trusting `*` on an
+         * app that can be reached directly lets anyone forge their own IP.
+         */
+        $proxies = array_values(array_filter(
+            array_map('trim', explode(',', (string) env('TRUSTED_PROXIES', ''))),
+        ));
+
+        if ($proxies !== []) {
+            $middleware->trustProxies(
+                at: $proxies === ['*'] ? '*' : $proxies,
+                headers: Request::HEADER_X_FORWARDED_FOR
+                    | Request::HEADER_X_FORWARDED_HOST
+                    | Request::HEADER_X_FORWARDED_PORT
+                    | Request::HEADER_X_FORWARDED_PROTO,
+            );
+        }
+
         // SetLocale runs before HandleInertiaRequests: that one ships the
         // translations as shared props and needs the language decided.
         // Security headers go global, not into the web group: an unknown

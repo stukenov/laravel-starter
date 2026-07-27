@@ -167,10 +167,25 @@ return [
      * never asked for: three screens and eighteen tests beyond scope.
      * One line brings them back — along with their pages and tests.
      */
-    'features' => [
-        Features::registration(),
+    'features' => array_values(array_filter([
+        /*
+         * RULE(security): a switch that does nothing is worse than no
+         * switch — AGENTS.md.
+         *
+         * `.env.example` has advertised REGISTRATION_ENABLED since the
+         * first commit and nothing read it. Anybody who set it to false
+         * believed the door was shut; it was not, and the page said
+         * nothing to the contrary.
+         *
+         * Most projects built on this starter want registration closed:
+         * accounts are made by an administrator. So it is a real switch
+         * now, and it defaults to open only because that is what the
+         * starter has always done.
+         */
+        env('REGISTRATION_ENABLED', true) ? Features::registration() : null,
+
         Features::resetPasswords(),
         Features::emailVerification(),
-    ],
+    ])),
 
 ];

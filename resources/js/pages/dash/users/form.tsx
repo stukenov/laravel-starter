@@ -11,6 +11,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -29,12 +30,15 @@ export type UserRow = {
     timezone: string;
     email_verified_at: string | null;
     created_at: string | null;
+    roles: string[];
 };
 
 type Props = {
     user: UserRow | null;
     open: boolean;
     timezones: string[];
+    roles: string[];
+    canManageRoles: boolean;
     onClose: () => void;
 };
 
@@ -43,7 +47,14 @@ type Props = {
  * two near-copies would drift apart. Which action runs is decided by
  * whether a user was passed in.
  */
-export default function UserForm({ user, open, timezones, onClose }: Props) {
+export default function UserForm({
+    user,
+    open,
+    timezones,
+    roles,
+    canManageRoles,
+    onClose,
+}: Props) {
     const t = useTranslations();
     const { locales } = usePage().props;
 
@@ -168,6 +179,49 @@ export default function UserForm({ user, open, timezones, onClose }: Props) {
                                     <InputError message={errors.timezone} />
                                 </div>
                             </div>
+
+                            {/* Handing out a role is a different decision
+                                from editing a name, so the field only
+                                appears for somebody who may make it. The
+                                server checks the same thing — this is
+                                only the half a person can see. */}
+                            {canManageRoles && roles.length > 0 && (
+                                <div className="grid gap-2">
+                                    {/* Says the field was on screen.
+                                        Unchecked boxes send nothing, so
+                                        without this "no roles" and "no
+                                        roles field" look the same and
+                                        editing a name would strip
+                                        somebody's access. */}
+                                    <input
+                                        type="hidden"
+                                        name="roles_submitted"
+                                        value="1"
+                                    />
+                                    <Label>{t('users.roles')}</Label>
+                                    <div className="flex flex-wrap gap-x-4 gap-y-2">
+                                        {roles.map((role) => (
+                                            <label
+                                                key={role}
+                                                className="flex min-h-11 items-center gap-2"
+                                                data-test="user-role"
+                                            >
+                                                <Checkbox
+                                                    name="roles[]"
+                                                    value={role}
+                                                    defaultChecked={
+                                                        user?.roles?.includes(
+                                                            role,
+                                                        ) ?? false
+                                                    }
+                                                />
+                                                {role}
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <InputError message={errors.roles} />
+                                </div>
+                            )}
 
                             <DialogFooter>
                                 <Button

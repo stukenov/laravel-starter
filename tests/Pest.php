@@ -2,6 +2,7 @@
 
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Spatie\Honeypot\EncryptedTime;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -27,6 +28,10 @@ pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->beforeEach(function () {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+        // The cache outlives the transaction that RefreshDatabase rolls
+        // back, so a value cached by one test would be served to the next
+        // one as if the rows behind it still existed.
+        Cache::flush();
 
         $this->seed(RoleSeeder::class);
     })

@@ -18,6 +18,8 @@ type Props = {
     users: Paginated;
     search: string;
     timezones: string[];
+    roles: string[];
+    canManageRoles: boolean;
 };
 
 /**
@@ -25,7 +27,13 @@ type Props = {
  * because the form is short. A long form would get its own page instead.
  * See AGENTS.md.
  */
-export default function UsersIndex({ users, search, timezones }: Props) {
+export default function UsersIndex({
+    users,
+    search,
+    timezones,
+    roles,
+    canManageRoles,
+}: Props) {
     const t = useTranslations();
     const { auth, locale } = usePage().props;
     const timezone = (auth.user.timezone as string) ?? 'UTC';
@@ -144,6 +152,8 @@ export default function UsersIndex({ users, search, timezones }: Props) {
                 user={editing}
                 open={creating || editing !== null}
                 timezones={timezones}
+                roles={roles}
+                canManageRoles={canManageRoles}
                 onClose={() => {
                     setCreating(false);
                     setEditing(null);

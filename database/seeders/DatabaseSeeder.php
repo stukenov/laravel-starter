@@ -2,26 +2,26 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+/**
+ * RULE(demo): nothing that ships is demo content — AGENTS.md.
+ *
+ * The upstream starter seeded a "Test User" here. It reached every clone
+ * that ran `migrate --seed`, including production: a real account, a
+ * known address, and no role — so it could not even open the panel.
+ *
+ * Roles are infrastructure and are seeded on every deploy. People are
+ * not: the first administrator is created deliberately, with
+ * `php artisan user:admin`.
+ */
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
         $this->call(RoleSeeder::class);
-
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
     }
 }

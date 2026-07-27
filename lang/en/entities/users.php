@@ -25,4 +25,7 @@ return [
     'created' => 'User created.',
     'updated' => 'Changes saved.',
     'deleted' => 'User deleted.',
+    'roles' => 'Roles',
+    'cannot_demote_self' => 'You cannot take the admin role off yourself — the panel would close.',
+    'no_roles' => 'No role',
 ];

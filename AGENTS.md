@@ -256,11 +256,35 @@ its own pages come back empty. A browser hides this, because the client
 bundle hydrates anyway. `SsrTest` asks the running server for a page only
 this project has, which is what catches it.
 
+## Speed
+
+**An index is added after a measurement, never before one.** `explain
+analyze` against a realistic number of rows, and `pg_stat_user_indexes`
+afterwards to see whether the planner actually took it. Two composite
+indexes were written for the activity page on perfectly sound reasoning
+and then measured: `idx_scan = 0` for both. They would have slowed every
+write to buy nothing.
+
+**A few rows prove nothing.** On a small table Postgres prefers a
+sequential scan whatever indexes exist, so a plan taken against an empty
+development database says only that the database is empty.
+
+**Application caching is allowed and is the last resort, not the first.**
+Fix the query, then the index, then cache. Where it is used, say in the
+comment what was measured and how long the entry lives — see
+`Activity::distinctLogNames()`, where two `distinct` scans cost 51 ms on
+every page load and now cost nothing.
+
+**Tests flush the cache between cases.** It outlives the transaction
+`RefreshDatabase` rolls back, so a value cached by one test would be
+served to the next as though the rows behind it still existed.
+
 ## Operations
 
 Five things run outside the request cycle, and every one fails silently:
 nothing errors, the work simply stops happening.
 
+    php artisan user:admin <email>  the first administrator — see below
     php artisan health:check        queue, schedule, backups, disk, database
     /dash/health                    the same results, gated by health.view
     /health.json                    for a monitor; needs HEALTH_JSON_SECRET
@@ -284,6 +308,23 @@ mail goes unread too.
 
 **Run `schedule-monitor:sync` after touching `routes/console.php`,** or the
 monitor keeps watching for a task that no longer exists.
+
+**`php artisan user:admin <email>` on every fresh install.** Roles are
+seeded and permissions are declared in code, but nothing hands a role to
+a person: without this every policy denies, `/dash` answers 403, and the
+only way in is tinker. The command creates the account or promotes it,
+and is safe to run twice.
+
+**`REGISTRATION_ENABLED=false` closes registration** — the routes stop
+existing. Most projects built on this want that: accounts are made by an
+administrator. It defaults to open only because the starter always has.
+
+**`TRUSTED_PROXIES` is empty by default and should stay that way** under
+the nginx→PHP-FPM deployment in README: nginx already passes the real
+client address and marks the request secure. Put a CDN or a balancer in
+front and it must be set, or every visitor shares one address — the login
+limiter becomes one bucket for the internet, the sessions page shows the
+same address for everybody, and HSTS silently stops being sent.
 
 ## Sign-in
 

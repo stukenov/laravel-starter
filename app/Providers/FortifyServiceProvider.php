@@ -7,6 +7,7 @@ use App\Actions\Fortify\ResetUserPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
@@ -33,6 +34,7 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+        $this->throttlePasswordReset();
     }
 
     /**
@@ -85,9 +87,53 @@ class FortifyServiceProvider extends ServiceProvider
     private function configureRateLimiting(): void
     {
         RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
+            return Limit::perMinute(5)->by($this->throttleKey($request));
+        });
 
-            return Limit::perMinute(5)->by($throttleKey);
+        /*
+         * RULE(security): every public form that sends mail is limited.
+         *
+         * Fortify declares the password-reset routes with `guest` and
+         * nothing else. Laravel's own `passwords.users.throttle` only
+         * stops a second token being issued for the same address within a
+         * minute — it does not stop the requests, so the form still
+         * accepts as many as anyone cares to send.
+         *
+         * That is enough to fill somebody's inbox with password-reset mail
+         * indefinitely, and enough to keep the mail queue busy with made-up
+         * addresses. The sign-in form has had a limiter from the start;
+         * this is the other half of the same door.
+         */
+        RateLimiter::for('password-reset', function (Request $request) {
+            return Limit::perMinute(5)->by($this->throttleKey($request));
+        });
+    }
+
+    /** Per address and per email, so one noisy sender cannot lock out a street. */
+    private function throttleKey(Request $request): string
+    {
+        return Str::transliterate(
+            Str::lower((string) $request->input(Fortify::username())).'|'.$request->ip(),
+        );
+    }
+
+    /**
+     * Fortify hard-codes the password-reset routes without a limiter and
+     * offers no hook, so it is attached afterwards — the same way the
+     * honeypot is attached to registration in AppServiceProvider.
+     *
+     * `booted`, and by scanning rather than getByName(): the name index is
+     * rebuilt in a booted callback of its own, so a lookup here finds
+     * nothing and leaves the routes unguarded with no sign of it.
+     */
+    private function throttlePasswordReset(): void
+    {
+        $this->app->booted(function (): void {
+            foreach (Route::getRoutes()->getRoutes() as $route) {
+                if (in_array($route->getName(), ['password.email', 'password.update'], true)) {
+                    $route->middleware('throttle:password-reset');
+                }
+            }
         });
     }
 }
