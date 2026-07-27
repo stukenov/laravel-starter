@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Http\Requests\{{ studly }};
+
+use App\Models\{{ studly }};
+use Illuminate\Foundation\Http\FormRequest;
+use RuntimeException;
+
+class UpdateRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return $this->user()->can('update', $this->target());
+    }
+
+    /**
+     * @return array<string, array<int, mixed>>
+     */
+    public function rules(): array
+    {
+        return [
+            {{ rules }}
+        ];
+    }
+
+    /**
+     * Route model binding is typed object|string as far as the analyser is
+     * concerned. Narrow it once here instead of casting at every use.
+     */
+    private function target(): {{ studly }}
+    {
+        $record = $this->route('{{ snake }}');
+
+        if (! $record instanceof {{ studly }}) {
+            throw new RuntimeException('The {{ snake }} route parameter is not bound to a model.');
+        }
+
+        return $record;
+    }
+}

@@ -1,0 +1,87 @@
+import { Form } from '@inertiajs/react';
+import {{ studly }}Controller from '@/actions/App/Http/Controllers/Dash/{{ studly }}Controller';
+import InputError from '@/components/input-error';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useTranslations } from '@/hooks/use-translations';
+
+export type {{ studly }}Row = {
+    id: string;
+    {{ tsFields }}
+    created_at: string | null;
+};
+
+type Props = {
+    record: {{ studly }}Row | null;
+    open: boolean;
+    onClose: () => void;
+};
+
+/**
+ * One dialog for both creating and editing: the fields are identical and
+ * two near-copies would drift apart.
+ */
+export default function RecordForm({ record, open, onClose }: Props) {
+    const t = useTranslations();
+
+    const action = record
+        ? {{ studly }}Controller.update.form(record.id)
+        : {{ studly }}Controller.store.form();
+
+    return (
+        <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+            <DialogContent className="density-panel">
+                <DialogHeader>
+                    <DialogTitle>
+                        {record
+                            ? t('{{ snakePlural }}.edit')
+                            : t('{{ snakePlural }}.add')}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {t('{{ snakePlural }}.description')}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <Form
+                    {...action}
+                    options={{ preserveScroll: true }}
+                    onSuccess={onClose}
+                    className="space-y-4"
+                >
+                    {({ errors, processing }) => (
+                        <>
+                            {{ formFields }}
+
+                            <DialogFooter>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={onClose}
+                                >
+                                    {t('{{ snakePlural }}.cancel')}
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    disabled={processing}
+                                    data-test="{{ snake }}-save"
+                                >
+                                    {t('{{ snakePlural }}.save')}
+                                </Button>
+                            </DialogFooter>
+                        </>
+                    )}
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
+}

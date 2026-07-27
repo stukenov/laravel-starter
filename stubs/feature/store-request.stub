@@ -1,0 +1,24 @@
+<?php
+
+namespace App\Http\Requests\{{ studly }};
+
+use App\Models\{{ studly }};
+use Illuminate\Foundation\Http\FormRequest;
+
+class StoreRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return $this->user()->can('create', {{ studly }}::class);
+    }
+
+    /**
+     * @return array<string, array<int, mixed>>
+     */
+    public function rules(): array
+    {
+        return [
+            {{ rules }}
+        ];
+    }
+}

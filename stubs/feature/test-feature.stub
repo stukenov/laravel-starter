@@ -1,0 +1,135 @@
+<?php
+
+use App\Models\{{ studly }};
+use App\Models\User;
+
+function {{ snake }}Admin(): User
+{
+    return User::factory()->admin()->create();
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function {{ snake }}Payload(array $overrides = []): array
+{
+    return array_merge([
+        {{ payloadFields }}
+    ], $overrides);
+}
+
+// ── Correct data ─────────────────────────────────────────────────────
+
+it('shows the {{ snake }} list', function () {
+    {{ studly }}::factory()->count(2)->create();
+
+    $this->actingAs({{ snake }}Admin())
+        ->get(route('dash.{{ snakePlural }}.index'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('dash/{{ kebabPlural }}/index')
+            ->has('records.data', 2),
+        );
+});
+
+it('finds a record by a fragment of the first field', function () {
+    $record = {{ studly }}::factory()->create(['{{ firstField }}' => 'Уникальное значение']);
+
+    $this->actingAs({{ snake }}Admin())
+        ->get(route('dash.{{ snakePlural }}.index', ['search' => 'Уникаль']))
+        ->assertInertia(fn ($page) => $page->has('records.data', 1));
+
+    expect($record->fresh())->not->toBeNull();
+});
+
+it('creates a record', function () {
+    $this->actingAs({{ snake }}Admin())
+        ->post(route('dash.{{ snakePlural }}.store'), {{ snake }}Payload())
+        ->assertSessionHasNoErrors();
+
+    expect({{ studly }}::count())->toBe(1);
+});
+
+it('updates a record', function () {
+    $record = {{ studly }}::factory()->create();
+
+    $this->actingAs({{ snake }}Admin())
+        ->put(route('dash.{{ snakePlural }}.update', $record), {{ snake }}Payload())
+        ->assertSessionHasNoErrors();
+
+    expect($record->refresh()->{{ firstField }})->not->toBeNull();
+});
+
+it('deletes a record', function () {
+    $record = {{ studly }}::factory()->create();
+
+    $this->actingAs({{ snake }}Admin())
+        ->delete(route('dash.{{ snakePlural }}.destroy', $record))
+        ->assertSessionHasNoErrors();
+
+    expect({{ studly }}::find($record->id))->toBeNull();
+});
+
+it('gives every record a sortable uuid key', function () {
+    // RULE(db): UUIDv7 sorts by creation order, so inserts land at the end
+    // of the index instead of the middle. See AGENTS.md.
+    $first = {{ studly }}::factory()->create()->id;
+    $second = {{ studly }}::factory()->create()->id;
+
+    expect($first)->toMatch('/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-/')
+        ->and(strcmp($second, $first))->toBeGreaterThan(0);
+});
+
+// ── Wrong data ───────────────────────────────────────────────────────
+
+it('refuses a signed-in user who is not an administrator', function () {
+    // Registration is open by default, so without this anybody could sign
+    // up and manage the panel.
+    $plain = User::factory()->create();
+    $record = {{ studly }}::factory()->create();
+
+    $this->actingAs($plain)->get(route('dash.{{ snakePlural }}.index'))->assertForbidden();
+    $this->actingAs($plain)->post(route('dash.{{ snakePlural }}.store'), {{ snake }}Payload())->assertForbidden();
+    $this->actingAs($plain)->delete(route('dash.{{ snakePlural }}.destroy', $record))->assertForbidden();
+});
+
+it('refuses an anonymous request', function () {
+    $this->get(route('dash.{{ snakePlural }}.index'))->assertRedirect(route('login'));
+    $this->post(route('dash.{{ snakePlural }}.store'), {{ snake }}Payload())->assertRedirect(route('login'));
+});
+
+it('rejects a malformed uuid in the url', function () {
+    $this->actingAs({{ snake }}Admin())
+        ->delete(route('dash.{{ snakePlural }}.destroy', 'not-a-uuid'))
+        ->assertNotFound();
+});
+
+// ── Empty data ───────────────────────────────────────────────────────
+
+it('shows an empty state when there is nothing', function () {
+    $this->actingAs({{ snake }}Admin())
+        ->get(route('dash.{{ snakePlural }}.index'))
+        ->assertInertia(fn ($page) => $page->has('records.data', 0));
+});
+
+it('returns nothing for a search with no matches', function () {
+    {{ studly }}::factory()->create();
+
+    $this->actingAs({{ snake }}Admin())
+        ->get(route('dash.{{ snakePlural }}.index', ['search' => 'такого-точно-нет']))
+        ->assertInertia(fn ($page) => $page->has('records.data', 0));
+});
+
+it('treats a blank search as no search at all', function () {
+    {{ studly }}::factory()->count(3)->create();
+
+    $this->actingAs({{ snake }}Admin())
+        ->get(route('dash.{{ snakePlural }}.index', ['search' => '   ']))
+        ->assertInertia(fn ($page) => $page->has('records.data', 3));
+});
+
+it('rejects an entirely empty form', function () {
+    $this->actingAs({{ snake }}Admin())
+        ->post(route('dash.{{ snakePlural }}.store'), [])
+        ->assertSessionHasErrors('{{ firstField }}');
+});

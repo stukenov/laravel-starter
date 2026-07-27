@@ -111,6 +111,19 @@ A file's location follows from the entity name. This is not taste — the
 Tables are plural snake_case, models singular StudlyCase, routes RESTful,
 and the Inertia page path mirrors the URL.
 
+**`make:feature` emits all of it.** Do not hand-write a typical entity:
+
+    php artisan make:feature Post --fields=title:string,body:text
+    php artisan migrate
+    php artisan wayfinder:generate --with-form
+    npm run build          # the blade template includes the new page eagerly,
+                           # so backend tests 500 until the build exists
+    php artisan test && npm run test:js
+
+Field types: string, text, integer, boolean, date. The generated slice
+comes with 13 backend and 8 rendering tests that pass with no edits.
+`--force` overwrites; without it existing files are left alone.
+
 **What is deliberately absent** — this is one big monolith, not a layer
 cake: no repositories (Eloquent is one), no service layer (logic lives in
 models, form requests and policies), no action class per operation, no

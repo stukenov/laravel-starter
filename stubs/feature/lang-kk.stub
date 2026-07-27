@@ -1,0 +1,17 @@
+<?php
+
+return [
+    'title' => '{{ studlyPlural }}',
+    'description' => 'Жазбалар тізімі',
+    'search' => 'Іздеу',
+    'add' => 'Қосу',
+    'edit' => 'Өзгерту',
+    'empty' => 'Әзірге жазба жоқ',
+    'empty_search' => 'Ештеңе табылмады',
+    'save' => 'Сақтау',
+    'cancel' => 'Болдырмау',
+    'created' => 'Жазба құрылды.',
+    'updated' => 'Өзгерістер сақталды.',
+    'deleted' => 'Жазба жойылды.',
+    {{ langFields }}
+];

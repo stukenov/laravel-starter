@@ -1,0 +1,42 @@
+<?php
+
+namespace App\Models;
+
+use Database\Factories\{{ studly }}Factory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+#[Fillable([{{ fillable }}])]
+class {{ studly }} extends Model
+{
+    /** @use HasFactory<{{ studly }}Factory> */
+    use HasFactory, HasUuids;
+
+    /*
+     * RULE(db): UUIDv7 keys, generated in two places on purpose. HasUuids
+     * sets the key on the model; the database default covers inserts that
+     * bypass Eloquent. See AGENTS.md.
+     */
+
+    /**
+     * RULE(search): the query lives on the model — a controller may not
+     * reach the database directly. See AGENTS.md.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<{{ studly }}>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<{{ studly }}>
+     */
+    public function scopeSearch($query, string $term)
+    {
+        $term = trim($term);
+
+        if ($term === '') {
+            return $query;
+        }
+
+        $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%';
+
+        return $query->where('{{ firstField }}', 'ilike', $like);
+    }
+}

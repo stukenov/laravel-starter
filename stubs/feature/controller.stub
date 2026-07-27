@@ -1,0 +1,59 @@
+<?php
+
+namespace App\Http\Controllers\Dash;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\{{ studly }}\StoreRequest;
+use App\Http\Requests\{{ studly }}\UpdateRequest;
+use App\Models\{{ studly }};
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class {{ studly }}Controller extends Controller
+{
+    public function index(Request $request): Response
+    {
+        $this->authorize('viewAny', {{ studly }}::class);
+
+        $search = trim((string) $request->query('search', ''));
+
+        return Inertia::render('dash/{{ kebabPlural }}/index', [
+            'records' => {{ studly }}::search($search)
+                ->orderByDesc('created_at')
+                ->paginate(20)
+                ->withQueryString(),
+            'search' => $search,
+        ]);
+    }
+
+    public function store(StoreRequest $request): RedirectResponse
+    {
+        {{ studly }}::create($request->validated());
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('entities/{{ snakePlural }}.created')]);
+
+        return back();
+    }
+
+    public function update(UpdateRequest $request, {{ studly }} ${{ snake }}): RedirectResponse
+    {
+        ${{ snake }}->update($request->validated());
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('entities/{{ snakePlural }}.updated')]);
+
+        return back();
+    }
+
+    public function destroy(Request $request, {{ studly }} ${{ snake }}): RedirectResponse
+    {
+        $this->authorize('delete', ${{ snake }});
+
+        ${{ snake }}->delete();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('entities/{{ snakePlural }}.deleted')]);
+
+        return back();
+    }
+}

@@ -1,0 +1,17 @@
+<?php
+
+return [
+    'title' => '{{ studlyPlural }}',
+    'description' => 'A list of records',
+    'search' => 'Search',
+    'add' => 'Add',
+    'edit' => 'Edit',
+    'empty' => 'Nothing here yet',
+    'empty_search' => 'Nothing found',
+    'save' => 'Save',
+    'cancel' => 'Cancel',
+    'created' => 'Record created.',
+    'updated' => 'Changes saved.',
+    'deleted' => 'Record deleted.',
+    {{ langFields }}
+];
