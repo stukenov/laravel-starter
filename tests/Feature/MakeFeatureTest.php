@@ -318,3 +318,90 @@ it('offers a way to the next page', function () {
 
     expect($page)->toContain('<Pagination');
 });
+
+describe('relations', function () {
+    // Counted across three real projects being ported: 19 belongsTo, 22
+    // belongsToMany, 11 hasMany. The generator knew none of them, so it
+    // was useful for one of rail-news's thirteen entities.
+    //
+    // belongsTo is the side that owns a column, which is the side a
+    // generator has to write. hasMany is its inverse and needs no schema
+    // here; belongsToMany needs a pivot table and stays hand-written.
+
+    beforeEach(function () {
+        cleanupGenerated('Tag', 'tags', 'tags');
+        cleanupGenerated('Note', 'notes', 'notes');
+
+        Artisan::call('make:feature', ['name' => 'Tag', '--fields' => 'name:string', '--force' => true]);
+        Artisan::call('make:feature', [
+            'name' => 'Note',
+            '--fields' => 'title:string,tag:belongsTo',
+            '--force' => true,
+        ]);
+    });
+
+    afterEach(function () {
+        cleanupGenerated('Note', 'notes', 'notes');
+        cleanupGenerated('Tag', 'tags', 'tags');
+    });
+
+    // Correct data
+    it('writes a foreign key the database will accept', function () {
+        $migration = glob(database_path('migrations/*_create_notes_table.php'))[0];
+
+        expect(File::get($migration))
+            ->toContain("foreignUuid('tag_id')")
+            ->toContain("constrained('tags')");
+    });
+
+    it('declares the relation on the model', function () {
+        $model = File::get(base_path('app/Models/Note.php'));
+
+        expect($model)->toContain('public function tag(): BelongsTo')
+            ->and($model)->toContain('belongsTo(Tag::class)')
+            ->and($model)->toContain('use Illuminate\Database\Eloquent\Relations\BelongsTo;');
+    });
+
+    it('loads the relation with the list', function () {
+        // Otherwise the list is one query per row.
+        $controller = File::get(base_path('app/Http/Controllers/Dash/NoteController.php'));
+
+        expect($controller)->toContain("->with('tag')");
+    });
+
+    it('offers a select rather than a box to type a uuid into', function () {
+        $form = File::get(base_path('resources/js/pages/dash/notes/form.tsx'));
+
+        expect($form)->toContain('<select')
+            ->and($form)->toContain('name="tag_id"')
+            ->and($form)->toContain('tagOptions.map');
+    });
+
+    // Wrong data
+    it('refuses a key that points at nothing', function () {
+        $rules = File::get(base_path('app/Http/Requests/Note/StoreRequest.php'));
+
+        expect($rules)->toContain("Rule::exists('tags', 'id')")
+            ->and($rules)->toContain('use Illuminate\Validation\Rule;');
+    });
+
+    it('lets the key be empty', function () {
+        // Deleting a tag orphans its notes rather than deleting them, so
+        // a null key has to be a legal state.
+        $rules = File::get(base_path('app/Http/Requests/Note/StoreRequest.php'));
+        $migration = glob(database_path('migrations/*_create_notes_table.php'))[0];
+
+        expect($rules)->toContain("'tag_id' => ['nullable'")
+            ->and(File::get($migration))->toContain('nullOnDelete()');
+    });
+
+    // Empty data
+    it('changes nothing for an entity without relations', function () {
+        // The imports are conditional; an unused one is a lint error.
+        $model = File::get(base_path('app/Models/Tag.php'));
+
+        expect($model)->not->toContain('BelongsTo')
+            ->and(File::get(base_path('app/Http/Requests/Tag/StoreRequest.php')))
+            ->not->toContain('use Illuminate\Validation\Rule;');
+    });
+});

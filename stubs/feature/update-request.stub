@@ -4,6 +4,7 @@ namespace App\Http\Requests\{{ studly }};
 
 use App\Models\{{ studly }};
 use Illuminate\Foundation\Http\FormRequest;
+{{ requestImports }}
 use RuntimeException;
 
 class UpdateRequest extends FormRequest

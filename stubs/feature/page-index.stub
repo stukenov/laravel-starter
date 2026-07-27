@@ -10,14 +10,17 @@ import RecordForm, { type {{ studly }}Row } from './form';
 
 type Props = {
     records: Paginated<{{ studly }}Row>;
-    search: string;
+    search: string;{{ relationOptionProps }}
 };
 
 /**
  * Convention: a list is a list. Creating and editing live in a dialog
  * because the form is short. See AGENTS.md.
  */
-export default function {{ studlyPlural }}Index({ records, search }: Props) {
+export default function {{ studlyPlural }}Index({
+    records,
+    search,{{ relationOptionDestructure }}
+}: Props) {
     const t = useTranslations();
 
     const [term, setTerm] = useState(search);
@@ -113,6 +116,7 @@ export default function {{ studlyPlural }}Index({ records, search }: Props) {
             <RecordForm
                 record={editing}
                 open={creating || editing !== null}
+{{ relationOptionPass }}
                 onClose={() => {
                     setCreating(false);
                     setEditing(null);

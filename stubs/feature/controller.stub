@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\{{ studly }}\StoreRequest;
 use App\Http\Requests\{{ studly }}\UpdateRequest;
 use App\Models\{{ studly }};
+{{ relationModelImports }}
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,9 +23,10 @@ class {{ studly }}Controller extends Controller
         return Inertia::render('dash/{{ kebabPlural }}/index', [
             'records' => {{ studly }}::search($search)
                 ->orderByDesc('created_at')
+{{ eagerLoad }}
                 ->paginate(20)
                 ->withQueryString(),
-            'search' => $search,
+            'search' => $search,{{ relationOptions }}
         ]);
     }
 

@@ -25,6 +25,7 @@ export type {{ studly }}Row = {
 type Props = {
     record: {{ studly }}Row | null;
     open: boolean;
+{{ relationOptionProps }}
     onClose: () => void;
 };
 
@@ -32,7 +33,11 @@ type Props = {
  * One dialog for both creating and editing: the fields are identical and
  * two near-copies would drift apart.
  */
-export default function RecordForm({ record, open, onClose }: Props) {
+export default function RecordForm({
+    record,
+    open,{{ relationOptionDestructure }}
+    onClose,
+}: Props) {
     const t = useTranslations();
 
     const action = record

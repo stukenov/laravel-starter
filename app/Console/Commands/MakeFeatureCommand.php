@@ -83,7 +83,11 @@ class MakeFeatureCommand extends Command
      */
     private function parseFields(string $raw): array
     {
-        $allowed = ['string', 'text', 'integer', 'boolean', 'date', 'datetime'];
+        // `belongsTo` is the one relation the generator can own: it is
+        // the side that carries the column. `hasMany` is its inverse and
+        // needs no schema here; `belongsToMany` needs a pivot table and a
+        // multi-select, and stays hand-written — see AGENTS.md.
+        $allowed = ['string', 'text', 'integer', 'boolean', 'date', 'datetime', 'belongsTo'];
         $fields = [];
 
         foreach (array_filter(array_map('trim', explode(',', $raw))) as $pair) {
@@ -193,6 +197,23 @@ class MakeFeatureCommand extends Command
             '{{ tableCells }}' => $this->tableCells(),
             '{{ langFields }}' => $this->langFields(),
             '{{ payloadFields }}' => $this->payloadFields(),
+            '{{ relations }}' => $this->relations(),
+            '{{ relationImports }}' => $this->relationImports(),
+            '{{ eagerLoad }}' => $this->eagerLoad(),
+            '{{ relationOptions }}' => $this->relationOptions(),
+            '{{ relationOptionProps }}' => $this->relationOptionProps(),
+            '{{ relationOptionPass }}' => $this->relationOptionPass(),
+            '{{ relationOptionDestructure }}' => implode('', array_map(
+                fn (array $f) => "\n    {$f['name']}Options,",
+                $this->relationFields(),
+            )),
+            '{{ relationModelImports }}' => $this->relationModelImports(),
+            // `Rule::exists` is only emitted for a relation, so the
+            // import follows the same condition — an unused import is a
+            // lint error, a missing one is a fatal.
+            '{{ requestImports }}' => $this->hasRelations()
+                ? "use Illuminate\\Validation\\Rule;\n"
+                : '',
         ];
 
         return str_replace(array_keys($map), array_values($map), $contents);
@@ -214,15 +235,184 @@ class MakeFeatureCommand extends Command
         ];
 
         return $this->lines(
-            fn (array $f) => sprintf($types[$f['type']], $f['name']),
+            fn (array $f) => $f['type'] === 'belongsTo'
+                // Nullable and nullOnDelete: deleting a category should
+                // orphan its articles, not delete them. A project that
+                // wants the opposite says so by hand — that is a
+                // business decision, not a default.
+                ? sprintf(
+                    "\$table->foreignUuid('%s')->nullable()->constrained('%s')->nullOnDelete();",
+                    $this->foreignKey($f['name']),
+                    Str::snake(Str::plural($f['name'])),
+                )
+                : sprintf($types[$f['type']], $f['name']),
             indent: 12,
         );
+    }
+
+    /** `use BelongsTo;` when there is a relation, nothing otherwise. */
+    private function relationImports(): string
+    {
+        return $this->hasRelations()
+            ? "use Illuminate\\Database\\Eloquent\\Relations\\BelongsTo;\n"
+            : '';
+    }
+
+    /** `->with('category:id,name')` for the list, or nothing. */
+    private function eagerLoad(): string
+    {
+        $names = array_map(
+            fn (array $f) => "'{$f['name']}'",
+            array_filter($this->fields, fn (array $f) => $f['type'] === 'belongsTo'),
+        );
+
+        // Without this the list is one query per row — the oldest
+        // performance mistake there is.
+        return $names === [] ? '' : "\n                ->with(".implode(', ', $names).')';
+    }
+
+    private function hasRelations(): bool
+    {
+        foreach ($this->fields as $field) {
+            if ($field['type'] === 'belongsTo') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The option lists the form's selects read.
+     *
+     * The label is the related model's first fillable attribute. For an
+     * entity this generator made, that is the first field its author
+     * named — `make:feature Category --fields=name:string` gives `name`.
+     * A model written by hand may want something else; then this line is
+     * the one to change, and it is one line.
+     */
+    private function relationOptions(): string
+    {
+        return implode('', array_map(function (array $f): string {
+            $model = $this->relatedModel($f['name']);
+
+            return <<<PHP
+
+            '{$f['name']}Options' => {$model}::query()
+                ->get()
+                ->map(fn ({$model} \$option) => [
+                    'id' => \$option->id,
+                    'name' => (string) \$option->getAttribute(\$option->getFillable()[0] ?? 'id'),
+                ])
+                ->sortBy('name')
+                ->values(),
+PHP;
+        }, $this->relationFields()));
+    }
+
+    /** `categoryOptions: Option[];` for the page and form props. */
+    private function relationOptionProps(): string
+    {
+        return implode('', array_map(
+            fn (array $f) => "\n    {$f['name']}Options: { id: string; name: string }[];",
+            $this->relationFields(),
+        ));
+    }
+
+    /** `categoryOptions={categoryOptions}` where the page renders the form. */
+    private function relationOptionPass(): string
+    {
+        return implode('', array_map(
+            fn (array $f) => "\n                {$f['name']}Options={{$f['name']}Options}",
+            $this->relationFields(),
+        ));
+    }
+
+    private function relationModelImports(): string
+    {
+        return implode('', array_map(
+            fn (array $f) => 'use App\\Models\\'.$this->relatedModel($f['name']).";\n",
+            $this->relationFields(),
+        ));
+    }
+
+    /** @return array<int, array{name: string, type: string}> */
+    private function relationFields(): array
+    {
+        return array_values(array_filter(
+            $this->fields,
+            fn (array $f) => $f['type'] === 'belongsTo',
+        ));
+    }
+
+    /** A select over the options the controller supplies. */
+    private function relationField(string $name): string
+    {
+        $key = $this->foreignKey($name);
+
+        return <<<TSX
+        <div className="grid gap-1.5">
+                                <Label htmlFor="{$key}">
+                                    {t('{$this->snakePlural}.{$name}')}
+                                </Label>
+                                <select
+                                    id="{$key}"
+                                    name="{$key}"
+                                    defaultValue={record?.{$key} ?? ''}
+                                    className="border-input h-11 rounded-md border bg-transparent px-3 text-base sm:h-9 md:text-sm"
+                                    data-test="{$this->snake}-{$name}"
+                                >
+                                    <option value="">—</option>
+                                    {{$name}Options.map((option) => (
+                                        <option key={option.id} value={option.id}>
+                                            {option.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <InputError message={errors.{$key}} />
+                            </div>
+        TSX;
+    }
+
+    /** `category` → `category_id`. */
+    private function foreignKey(string $name): string
+    {
+        return Str::snake($name).'_id';
+    }
+
+    /** The related model's StudlyCase name: `category` → `Category`. */
+    private function relatedModel(string $name): string
+    {
+        return Str::studly(Str::singular($name));
+    }
+
+    /** The relation methods the model needs, or an empty string. */
+    private function relations(): string
+    {
+        $relations = array_filter($this->fields, fn (array $f) => $f['type'] === 'belongsTo');
+
+        if ($relations === []) {
+            return '';
+        }
+
+        return "\n".implode("\n", array_map(function (array $f): string {
+            $model = $this->relatedModel($f['name']);
+
+            return <<<PHP
+
+    /** @return BelongsTo<{$model}, \$this> */
+    public function {$f['name']}(): BelongsTo
+    {
+        return \$this->belongsTo({$model}::class);
+    }
+PHP;
+        }, $relations));
     }
 
     private function fillable(): string
     {
         return implode(', ', array_map(
-            fn (array $f) => "'{$f['name']}'",
+            fn (array $f) => "'".($f['type'] === 'belongsTo' ? $this->foreignKey($f['name']) : $f['name'])."'",
             $this->fields,
         ));
     }
@@ -241,7 +431,13 @@ class MakeFeatureCommand extends Command
         ];
 
         return $this->lines(
-            fn (array $f) => "'{$f['name']}' => {$types[$f['type']]},",
+            fn (array $f) => $f['type'] === 'belongsTo'
+                ? sprintf(
+                    "'%s' => ['nullable', 'uuid', Rule::exists('%s', 'id')],",
+                    $this->foreignKey($f['name']),
+                    Str::snake(Str::plural($f['name'])),
+                )
+                : "'{$f['name']}' => {$types[$f['type']]},",
             indent: 12,
         );
     }
@@ -258,7 +454,13 @@ class MakeFeatureCommand extends Command
         ];
 
         return $this->lines(
-            fn (array $f) => "'{$f['name']}' => {$types[$f['type']]},",
+            fn (array $f) => $f['type'] === 'belongsTo'
+                // Null by default: a factory that always fills the key
+                // makes "no category" untestable, and one that never
+                // fills it never exercises the relation. The test sets
+                // it when it needs it.
+                ? "'{$this->foreignKey($f['name'])}' => null,"
+                : "'{$f['name']}' => {$types[$f['type']]},",
             indent: 12,
         );
     }
@@ -275,7 +477,9 @@ class MakeFeatureCommand extends Command
         ];
 
         return $this->lines(
-            fn (array $f) => "'{$f['name']}' => {$types[$f['type']]},",
+            fn (array $f) => $f['type'] === 'belongsTo'
+                ? "'{$this->foreignKey($f['name'])}' => null,"
+                : "'{$f['name']}' => {$types[$f['type']]},",
             indent: 8,
         );
     }
@@ -289,7 +493,11 @@ class MakeFeatureCommand extends Command
         ];
 
         return $this->lines(
-            fn (array $f) => "{$f['name']}: {$types[$f['type']]};",
+            fn (array $f) => $f['type'] === 'belongsTo'
+                // Both: the key is what the form submits, the object is
+                // what the list shows.
+                ? "{$this->foreignKey($f['name'])}: string | null;\n    {$f['name']}: { id: string; name: string } | null;"
+                : "{$f['name']}: {$types[$f['type']]};",
             indent: 4,
         );
     }
@@ -307,6 +515,10 @@ class MakeFeatureCommand extends Command
     {
         return $this->lines(fn (array $f) => match ($f['type']) {
             'boolean' => $this->checkboxField($f['name']),
+            // A relation is picked from a list, and the list comes from
+            // the controller — there is nothing sensible to type into a
+            // free-text box for a foreign key.
+            'belongsTo' => $this->relationField($f['name']),
             'text' => $this->field($f['name'], <<<TSX
         <Textarea
                                     id="{$f['name']}"
@@ -398,7 +610,11 @@ class MakeFeatureCommand extends Command
     private function tableCells(): string
     {
         return $this->lines(
-            fn (array $f) => "<span className=\"flex-1 truncate\">{String(record.{$f['name']} ?? '')}</span>",
+            fn (array $f) => $f['type'] === 'belongsTo'
+                // The label, not the key: a column of uuids tells the
+                // reader nothing.
+                ? "<span className=\"flex-1 truncate\">{record.{$f['name']}?.name ?? '—'}</span>"
+                : "<span className=\"flex-1 truncate\">{String(record.{$f['name']} ?? '')}</span>",
             indent: 32,
         );
     }

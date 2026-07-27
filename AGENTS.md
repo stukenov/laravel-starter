@@ -158,7 +158,28 @@ and the Inertia page path mirrors the URL.
                            # so backend tests 500 until the build exists
     php artisan test && npm run test:js
 
-Field types: string, text, integer, boolean, date. The generated slice
+Field types: `string`, `text`, `integer`, `boolean`, `date`, `datetime`,
+and `belongsTo`.
+
+    php artisan make:feature Post --fields=title:string,category:belongsTo
+
+`category:belongsTo` writes the foreign key, the relation on the model,
+the eager load on the list, a select on the form and an `exists` rule.
+The key is nullable and `nullOnDelete`: deleting a category orphans its
+posts rather than deleting them, which is a business decision a project
+overrides deliberately.
+
+The select labels each option with the related model's **first fillable
+attribute** — for an entity this generator made, the first field its
+author named. Reference an entity whose first field is not a human label
+and the list shows the wrong column.
+
+**`hasMany` and `belongsToMany` are hand-written.** `hasMany` is the
+inverse of `belongsTo` and owns no schema. `belongsToMany` needs a pivot
+table and a multi-select, and guessing either would be worse than the
+half hour of writing them. Counted across three real projects: 19
+`belongsTo`, 22 `belongsToMany`, 11 `hasMany` — so the generator covers
+the side that owns a column, and the rest is deliberate work. The generated slice
 comes with 13 backend and 8 rendering tests that pass with no edits.
 `--force` overwrites; without it existing files are left alone.
 
