@@ -83,7 +83,7 @@ class MakeFeatureCommand extends Command
      */
     private function parseFields(string $raw): array
     {
-        $allowed = ['string', 'text', 'integer', 'boolean', 'date'];
+        $allowed = ['string', 'text', 'integer', 'boolean', 'date', 'datetime'];
         $fields = [];
 
         foreach (array_filter(array_map('trim', explode(',', $raw))) as $pair) {
@@ -205,7 +205,12 @@ class MakeFeatureCommand extends Command
             'text' => "\$table->text('%s')->nullable();",
             'integer' => "\$table->integer('%s')->default(0);",
             'boolean' => "\$table->boolean('%s')->default(false);",
-            'date' => "\$table->dateTz('%s')->nullable();",
+            // `date`, not `dateTz`: that method does not exist, and a
+            // calendar date has no timezone to carry. A moment in time is
+            // a different field type — see `datetime` below, which is
+            // timestamptz like everything else.
+            'date' => "\$table->date('%s')->nullable();",
+            'datetime' => "\$table->timestampTz('%s')->nullable();",
         ];
 
         return $this->lines(
@@ -228,8 +233,11 @@ class MakeFeatureCommand extends Command
             'string' => "['required', 'string', 'max:255']",
             'text' => "['nullable', 'string']",
             'integer' => "['required', 'integer']",
-            'boolean' => "['required', 'boolean']",
+            // Not `required`: a false checkbox is a legitimate answer,
+            // and `required` rejects it along with the empty string.
+            'boolean' => "['boolean']",
             'date' => "['nullable', 'date']",
+            'datetime' => "['nullable', 'date']",
         ];
 
         return $this->lines(
@@ -246,6 +254,7 @@ class MakeFeatureCommand extends Command
             'integer' => 'fake()->numberBetween(1, 100)',
             'boolean' => 'false',
             'date' => 'now()',
+            'datetime' => 'now()',
         ];
 
         return $this->lines(
@@ -262,6 +271,7 @@ class MakeFeatureCommand extends Command
             'integer' => '42',
             'boolean' => 'true',
             'date' => "'2026-07-27'",
+            'datetime' => "'2026-07-27T10:00:00Z'",
         ];
 
         return $this->lines(
@@ -275,6 +285,7 @@ class MakeFeatureCommand extends Command
         $types = [
             'string' => 'string', 'text' => 'string | null',
             'integer' => 'number', 'boolean' => 'boolean', 'date' => 'string | null',
+            'datetime' => 'string | null',
         ];
 
         return $this->lines(
@@ -283,22 +294,97 @@ class MakeFeatureCommand extends Command
         );
     }
 
+    /**
+     * The input each field gets, chosen by its type.
+     *
+     * It used to emit a plain text box for every type, which made a
+     * `boolean` field impossible to submit: an untouched checkbox is an
+     * empty string, Laravel's `boolean` rule accepts only true/false/1/0,
+     * and creating the record failed validation with an error pointing at
+     * a field the person never saw a control for.
+     */
     private function formFields(): string
     {
-        return $this->lines(fn (array $f) => <<<TSX
-        <div className="grid gap-1.5">
-                                <Label htmlFor="{$f['name']}">
-                                    {t('{$this->snakePlural}.{$f['name']}')}
-                                </Label>
-                                <Input
+        return $this->lines(fn (array $f) => match ($f['type']) {
+            'boolean' => $this->checkboxField($f['name']),
+            'text' => $this->field($f['name'], <<<TSX
+        <Textarea
+                                    id="{$f['name']}"
+                                    name="{$f['name']}"
+                                    rows={4}
+                                    defaultValue={String(record?.{$f['name']} ?? '')}
+                                    data-test="{$this->snake}-{$f['name']}"
+                                />
+        TSX),
+            'integer' => $this->field($f['name'], <<<TSX
+        <Input
+                                    id="{$f['name']}"
+                                    name="{$f['name']}"
+                                    type="number"
+                                    inputMode="numeric"
+                                    defaultValue={String(record?.{$f['name']} ?? '')}
+                                    data-test="{$this->snake}-{$f['name']}"
+                                />
+        TSX),
+            'date', 'datetime' => $this->field($f['name'], <<<TSX
+        <Input
+                                    id="{$f['name']}"
+                                    name="{$f['name']}"
+                                    type="date"
+                                    defaultValue={String(record?.{$f['name']} ?? '')}
+                                    data-test="{$this->snake}-{$f['name']}"
+                                />
+        TSX),
+            default => $this->field($f['name'], <<<TSX
+        <Input
                                     id="{$f['name']}"
                                     name="{$f['name']}"
                                     defaultValue={String(record?.{$f['name']} ?? '')}
                                     data-test="{$this->snake}-{$f['name']}"
                                 />
-                                <InputError message={errors.{$f['name']}} />
+        TSX),
+        }, indent: 24);
+    }
+
+    /** Label, control, error — the shape every field shares. */
+    private function field(string $name, string $control): string
+    {
+        return <<<TSX
+        <div className="grid gap-1.5">
+                                <Label htmlFor="{$name}">
+                                    {t('{$this->snakePlural}.{$name}')}
+                                </Label>
+                                {$control}
+                                <InputError message={errors.{$name}} />
                             </div>
-        TSX, indent: 24);
+        TSX;
+    }
+
+    /**
+     * A checkbox, plus a hidden "0" in front of it.
+     *
+     * An unchecked box sends nothing at all, which is indistinguishable
+     * from the field not being on the form. The hidden input means the
+     * server always receives a value, and the checkbox overrides it when
+     * ticked — the same trick Laravel's own `@checked` blade helper
+     * exists for.
+     */
+    private function checkboxField(string $name): string
+    {
+        return <<<TSX
+        <label className="flex min-h-11 items-center gap-2">
+                                <input type="hidden" name="{$name}" value="0" />
+                                <Checkbox
+                                    id="{$name}"
+                                    name="{$name}"
+                                    value="1"
+                                    defaultChecked={Boolean(record?.{$name})}
+                                    data-test="{$this->snake}-{$name}"
+                                />
+                                {t('{$this->snakePlural}.{$name}')}
+                                <InputError message={errors.{$name}} />
+                            </label>
+        TSX;
     }
 
     private function tableHeaders(): string

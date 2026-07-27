@@ -2,6 +2,7 @@ import { Form } from '@inertiajs/react';
 import {{ studly }}Controller from '@/actions/App/Http/Controllers/Dash/{{ studly }}Controller';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -12,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useTranslations } from '@/hooks/use-translations';
 
 export type {{ studly }}Row = {

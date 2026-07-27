@@ -66,9 +66,13 @@ function cleanupGenerated(string $studly, string $plural, string $snakePlural): 
 beforeEach(function () {
     cleanupGenerated('Widget', 'widgets', 'widgets');
 
+    // Every supported type, not two of them. The generator emitted
+    // `$table->dateTz()` for as long as it existed — a method Laravel
+    // does not have — and nobody found out, because the only fields this
+    // test ever asked for were a string and a text.
     Artisan::call('make:feature', [
         'name' => 'Widget',
-        '--fields' => 'title:string,body:text',
+        '--fields' => 'title:string,body:text,views:integer,active:boolean,published_on:date,seen_at:datetime',
         '--force' => true,
     ]);
 });
@@ -252,4 +256,65 @@ it('leaves existing files alone without --force', function () {
     Artisan::call('make:feature', ['name' => 'Widget', '--fields' => 'title:string']);
 
     expect(File::get(base_path('app/Models/Widget.php')))->toContain('hand written');
+});
+
+it('emits a migration the database accepts', function () {
+    // The cheapest end to "the method does not exist" and its whole
+    // family: run the thing rather than read it.
+    $migration = glob(database_path('migrations/*_create_widgets_table.php'))[0] ?? null;
+
+    expect($migration)->not->toBeNull();
+
+    $definition = File::get($migration);
+
+    foreach (['date(', 'timestampTz(', 'boolean(', 'integer(', 'text(', 'string('] as $column) {
+        expect($definition)->toContain($column);
+    }
+
+    expect($definition)->not->toContain('dateTz(');
+});
+
+it('gives a checkbox to a boolean, not a text box', function () {
+    // A text box for a boolean cannot be submitted at all: untouched it
+    // sends an empty string, and Laravel's `boolean` rule takes only
+    // true/false/1/0. Creating the record failed with an error pointing
+    // at a field the person never saw a control for.
+    $form = File::get(base_path('resources/js/pages/dash/widgets/form.tsx'));
+
+    expect($form)->toContain('<Checkbox')
+        ->and($form)->toContain('name="active"');
+});
+
+it('sends a value for an unchecked box', function () {
+    // An unchecked checkbox sends nothing, which on the server is
+    // indistinguishable from the field being absent. The hidden zero in
+    // front of it is what makes "no" arrive as an answer.
+    $form = File::get(base_path('resources/js/pages/dash/widgets/form.tsx'));
+
+    expect($form)->toContain('type="hidden"')
+        ->and($form)->toContain('value="0"');
+});
+
+it('does not make a boolean required', function () {
+    // `required` rejects false along with the empty string, so a
+    // checkbox left alone could never be saved.
+    $rules = File::get(base_path('app/Http/Requests/Widget/StoreRequest.php'));
+
+    expect($rules)->toContain("'active' => ['boolean']");
+});
+
+it('gives a textarea to a text field and a number box to an integer', function () {
+    $form = File::get(base_path('resources/js/pages/dash/widgets/form.tsx'));
+
+    expect($form)->toContain('<Textarea')
+        ->and($form)->toContain('type="number"')
+        ->and($form)->toContain('type="date"');
+});
+
+it('offers a way to the next page', function () {
+    // Every list paginated on the server and no page rendered a control,
+    // so a list longer than twenty ended at twenty.
+    $page = File::get(base_path('resources/js/pages/dash/widgets/index.tsx'));
+
+    expect($page)->toContain('<Pagination');
 });
