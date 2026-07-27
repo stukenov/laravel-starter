@@ -15,7 +15,7 @@ import {
 import { index as activityIndex } from '@/routes/dash/activity';
 import { index as rolesIndex } from '@/routes/dash/roles';
 import { index as usersIndex } from '@/routes/dash/users';
-import { dashboard } from '@/routes';
+import { home as dashHome } from '@/routes/dash';
 import type { NavItem } from '@/types';
 
 // Titles are translation keys — NavMain resolves them. A static array
@@ -23,7 +23,7 @@ import type { NavItem } from '@/types';
 const mainNavItems: NavItem[] = [
     {
         title: 'nav.dashboard',
-        href: dashboard(),
+        href: dashHome(),
         icon: LayoutGrid,
     },
     {
@@ -50,7 +50,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href={dashHome()} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>

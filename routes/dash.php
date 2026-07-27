@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Dash\ActivityController;
+use App\Http\Controllers\Dash\ActivityStreamController;
 use App\Http\Controllers\Dash\RoleController;
 use App\Http\Controllers\Dash\UserController;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,11 @@ Route::middleware(['auth', 'verified'])
     ->prefix('dash')
     ->name('dash.')
     ->group(function () {
+        // The panel home lives at the panel's own root. It kept the URL
+        // /dashboard from the upstream starter for a while, which left the
+        // one page nobody could reach by trimming the address bar.
+        Route::inertia('/', 'dashboard')->name('home');
+
         Route::get('users', [UserController::class, 'index'])->name('users.index');
         Route::post('users', [UserController::class, 'store'])->name('users.store');
         Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
@@ -30,4 +36,5 @@ Route::middleware(['auth', 'verified'])
 
         // Read only on purpose: an audit log that can be edited is not one.
         Route::get('activity', [ActivityController::class, 'index'])->name('activity.index');
+        Route::get('activity/stream', ActivityStreamController::class)->name('activity.stream');
     });

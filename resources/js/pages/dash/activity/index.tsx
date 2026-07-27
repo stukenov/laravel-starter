@@ -9,7 +9,8 @@ import {
 } from '@/components/ui/select';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatDateTime } from '@/lib/datetime';
-import { index } from '@/routes/dash/activity';
+import { useActivityStream } from '@/hooks/use-activity-stream';
+import { index, stream } from '@/routes/dash/activity';
 import { usePage } from '@inertiajs/react';
 
 export type Change = { field: string; from: unknown; to: unknown };
@@ -48,6 +49,18 @@ export default function ActivityIndex({
     const { auth, locale } = usePage().props;
     const timezone = (auth.user.timezone as string) ?? 'UTC';
 
+    // The live feed is disabled while a filter is on: the stream pushes
+    // everything, and silently mixing unfiltered entries into a filtered
+    // list would be a lie about what the screen is showing.
+    const filtering = filters.log !== '' || filters.event !== '';
+    const { live, connected } = useActivityStream(
+        stream().url,
+        !filtering,
+        entries.data.map((entry) => entry.id),
+    );
+
+    const rows = [...live, ...entries.data];
+
     const apply = (next: Partial<typeof filters>) => {
         const merged = { ...filters, ...next };
 
@@ -73,8 +86,17 @@ export default function ActivityIndex({
                         <h1 className="text-base font-semibold">
                             {t('activity.title')}
                         </h1>
-                        <p className="text-muted-foreground">
+                        <p className="flex items-center gap-2 text-muted-foreground">
                             {t('activity.description')}
+                            {connected && (
+                                <span
+                                    className="flex items-center gap-1 text-xs text-primary"
+                                    data-test="activity-live"
+                                >
+                                    <span className="size-1.5 rounded-full bg-primary" />
+                                    {t('activity.live')}
+                                </span>
+                            )}
                         </p>
                     </div>
 
@@ -133,7 +155,7 @@ export default function ActivityIndex({
                     </div>
                 </div>
 
-                {entries.data.length === 0 ? (
+                {rows.length === 0 ? (
                     <div
                         className="rounded-md border py-12 text-center text-muted-foreground"
                         data-test="activity-empty"
@@ -144,7 +166,7 @@ export default function ActivityIndex({
                     </div>
                 ) : (
                     <div className="overflow-hidden rounded-md border">
-                        {entries.data.map((entry) => (
+                        {rows.map((entry) => (
                             <div
                                 key={entry.id}
                                 className="border-b px-3 py-2 last:border-b-0"

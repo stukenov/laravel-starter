@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import { dashboard } from '@/routes';
+import { home as dashHome } from '@/routes/dash';
 
 /**
  * Skeleton of the dashboard.
@@ -20,7 +20,7 @@ Dashboard.layout = {
     breadcrumbs: [
         {
             title: 'nav.dashboard',
-            href: dashboard(),
+            href: dashHome(),
         },
     ],
 };

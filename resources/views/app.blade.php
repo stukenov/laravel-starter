@@ -10,7 +10,12 @@
             html { background-color: oklch(1 0 0); }
         </style>
 
+        {{-- Placeholder mark, replace it when cloning — AGENTS.md.
+             The .ico is the fallback for browsers that ignore SVG icons,
+             the touch icon is what iOS puts on the home screen. --}}
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+        <link rel="icon" href="/favicon.ico" sizes="48x48">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
         {{-- The font arrives as an inline style block: files are fetched at
              build time and served from our own domain. No external requests

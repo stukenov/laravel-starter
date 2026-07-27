@@ -31,7 +31,7 @@ it('serves legal pages under every locale', function (string $locale) {
 it('takes the locale from the profile inside the cabinet', function () {
     $user = User::factory()->create(['locale' => 'kk']);
 
-    $this->actingAs($user)->get(route('dashboard'))->assertOk();
+    $this->actingAs($user)->get(route('dash.home'))->assertOk();
 
     expect(app()->getLocale())->toBe('kk');
 });
@@ -50,7 +50,7 @@ it('ignores an unsupported locale stored on the user', function () {
     // источник просто пропускается, и язык берётся из следующего.
     $user = User::factory()->create(['locale' => 'de']);
 
-    $this->actingAs($user)->get(route('dashboard'));
+    $this->actingAs($user)->get(route('dash.home'));
 
     expect(app()->getLocale())->toBeIn(Locales::SUPPORTED)
         ->and(app()->getLocale())->not->toBe('de');

@@ -24,10 +24,6 @@ Route::prefix('{locale}')
         Route::inertia('terms', 'legal/terms')->name('legal.terms');
     });
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
-});
-
 /*
  * The styleguide is a working tool, not demo content: the only place
  * showing every component at once under the current tokens. Never ships.

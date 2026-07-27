@@ -25,6 +25,8 @@ away.
 
 - `APP_NAME` and `DB_DATABASE` in `.env`
 - The `Asia/Almaty` default in the users migration if the project is not Kazakhstani
+- The placeholder mark: `resources/js/components/app-logo-icon.tsx`,
+  `public/favicon.svg`, `public/favicon.ico`, `public/apple-touch-icon.png`
 - This section
 
 ## Stack
@@ -89,6 +91,9 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
 10. **A list is a list, a form is a form.** `/entity` lists,
     `/entity/new` creates, `/entity/:id` edits. A short form may be a
     dialog, a long one gets its own page. Never both on one route.
+
+    The panel root is `/dash` (route `dash.home`) and every panel
+    resource sits under it. Nothing may live at `/dashboard`.
 
 11. **Access is gated by permissions, never by a flag.** Permissions are
     declared in `App\Support\Access\Ability` because a permission means
@@ -230,6 +235,22 @@ on deploy alike.
 The bundle is `bootstrap/ssr/app.js`, not the `ssr.mjs` from Inertia 2
 docs. Getting that path wrong fails **silently**: production serves an
 empty container with nothing in the logs.
+
+## Live feed (SSE)
+
+The activity log streams over Server-Sent Events. Three things about it
+are easy to get wrong and impossible to catch with a green test run:
+
+- **An open connection holds a worker.** The built-in dev server is
+  single threaded, so one viewer blocks the whole app. Start it as
+  `PHP_CLI_SERVER_WORKERS=6 php artisan serve`. Under FPM in production
+  the same arithmetic decides how many viewers fit.
+- **`NOTIFY` is delivered at COMMIT.** Inside an uncommitted transaction
+  no listener ever hears it, which is why two tests write through a
+  connection of their own.
+- **`pg_connect()` reuses a matching connection.** `PostgresListener`
+  passes `PGSQL_CONNECT_FORCE_NEW`; anything else opening libpq by hand
+  must too, or somebody's `pg_close()` ends a wait that is in progress.
 
 ## Deliberately absent
 
