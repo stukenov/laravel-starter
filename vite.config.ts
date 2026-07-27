@@ -11,9 +11,19 @@ export default defineConfig({
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.tsx'],
             refresh: true,
+            // ПРАВИЛО(шрифт): один шрифт, локально, с кириллицей — AGENTS.md.
+            //
+            // Файлы скачиваются на сборке и лежат на нашем домене, а @fonts
+            // отдаёт их встроенным блоком стилей с поддержкой nonce.
+            // Внешних запросов при отрисовке не возникает.
+            //
+            // Оба подмножества кириллицы обязательны: і и ұ живут в cyrillic,
+            // остальные казахские буквы — в cyrillic-ext. Уберёте одно —
+            // часть букв молча подменится системным шрифтом.
             fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
+                bunny('Inter', {
+                    weights: [400, 500, 600, 700],
+                    subsets: ['latin', 'latin-ext', 'cyrillic', 'cyrillic-ext'],
                 }),
             ],
         }),
