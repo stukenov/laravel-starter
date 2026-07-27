@@ -8,6 +8,7 @@ import { cn, toUrl } from '@/lib/utils';
 import { edit } from '@/routes/profile';
 import { edit as editLocale } from '@/routes/locale';
 import { edit as editSecurity } from '@/routes/security';
+import { index as sessionsIndex } from '@/routes/sessions';
 import type { NavItem } from '@/types';
 
 // ПРАВИЛО(тема): пункта «Внешний вид» здесь нет и не будет —
@@ -26,6 +27,11 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Язык и время',
         href: editLocale(),
+        icon: null,
+    },
+    {
+        title: 'Устройства',
+        href: sessionsIndex(),
         icon: null,
     },
 ];

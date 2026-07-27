@@ -45,6 +45,22 @@ return [
         'confirm_submit' => 'Confirm',
     ],
 
+    'sessions' => [
+        'title' => 'Devices and sessions',
+        'description' => 'Where you are signed in. If you see a device you do not recognise, log out everywhere else and change your password.',
+        'current' => 'This device',
+        'unknown_device' => 'Unknown device',
+        'unknown_browser' => 'Unknown browser',
+        'unknown_ip' => 'Unknown address',
+        'last_active' => 'Last active',
+        'logout_others' => 'Log out other devices',
+        'logout_others_confirm' => 'Log out of all other devices?',
+        'logout_others_explain' => 'This device stays signed in. You will have to log in again elsewhere.',
+        'logged_out_others' => 'You have been logged out of all other devices.',
+        'only_current' => 'You are signed in on this device only.',
+        'cancel' => 'Cancel',
+    ],
+
     'nav' => [
         'dashboard' => 'Dashboard',
         'settings' => 'Settings',

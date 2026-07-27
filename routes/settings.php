@@ -3,6 +3,7 @@
 use App\Http\Controllers\Settings\LocaleController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
+use App\Http\Controllers\Settings\SessionController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
@@ -26,4 +27,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('settings/password', [SecurityController::class, 'update'])
         ->middleware('throttle:6,1')
         ->name('user-password.update');
+
+    Route::get('settings/sessions', [SessionController::class, 'index'])->name('sessions.index');
+
+    // Подтверждение пароля: выход со всех устройств — необратимое действие,
+    // и делать его должен тот, кто знает пароль, а не тот, кто нашёл
+    // незаблокированный экран.
+    Route::delete('settings/sessions', [SessionController::class, 'destroy'])
+        ->middleware(RequirePassword::class)
+        ->name('sessions.destroy');
 });

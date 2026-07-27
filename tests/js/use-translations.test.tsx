@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-const mockProps = vi.hoisted(() => ({ current: {} as Record<string, unknown> }));
+const mockProps = vi.hoisted(() => ({
+    current: {} as Record<string, unknown>,
+}));
 
 vi.mock('@inertiajs/react', () => ({
     usePage: () => ({ props: mockProps.current }),
@@ -12,7 +14,7 @@ const { useTranslations } = await import('@/hooks/use-translations');
 function Probe({ k }: { k: string }) {
     const t = useTranslations();
 
-    return <span data-testid="out">{t(k)}</span>;
+    return <span data-test="out">{t(k)}</span>;
 }
 
 describe('useTranslations', () => {
