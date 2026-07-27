@@ -74,20 +74,34 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
    preformatted date** — only ISO 8601; the client formats it through
    `Intl.DateTimeFormat` in `resources/js/lib/datetime.ts`.
 
-5. **No external domain at render time.** No fonts, icons, analytics or
+5. **Nothing renders unescaped HTML.** React escapes what it draws;
+   `dangerouslySetInnerHTML` is the way out of that, and it is how stored
+   XSS gets in. No field type here stores HTML, so nothing needs it —
+   which is what makes it a trap: the first project with a formatting
+   editor reaches for it, finds no sanitizer, and gives every editor
+   account a way to run scripts against every visitor. One port did this
+   in five files and only a person reading the diff caught it.
+
+   `tests/Feature/RawHtmlTest.php` keeps the door shut. If you need it
+   open, sanitize on write — in PHP, once, so the database holds
+   something already safe — not on read in each of the places that
+   display it. That needs a dependency, and adding one is the owner's
+   call.
+
+6. **No external domain at render time.** No fonts, icons, analytics or
    captcha. The browser enforces this through CSP, not goodwill — which
    is why reCAPTCHA is impossible here by construction.
    **Any CSP change ends with opening a page in a real browser and
    reading the console.** Green tests prove nothing here.
 
-6. **Design tokens live in `resources/css/app.css`.** The language is
+7. **Design tokens live in `resources/css/app.css`.** The language is
    dense macOS System Settings: 13px in the panel, 17px on public pages,
    7px radius, hairlines instead of shadows, accent `#0071e3` on one
    line. **Token changes end at `/dev/styleguide` in a browser, not at a
    green test run** — three styling bugs in a row returned HTTP 200 with
    valid markup and nothing for a test to catch.
 
-7. **Mobile first, and that is the base class.** A Tailwind class with
+8. **Mobile first, and that is the base class.** A Tailwind class with
    no prefix is the phone; `sm:` and up are the concession to a big
    screen. Written the other way round the page does not degrade, it
    breaks — a row of fixed columns inside `overflow-hidden` simply cuts
@@ -105,27 +119,27 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
    be overwritten by an update. Mark such a change with a comment saying
    why, so it can be reapplied deliberately rather than found missing.
 
-8. **Light theme only.** There is no dark theme and none is planned. The
+9. **Light theme only.** There is no dark theme and none is planned. The
    `dark:` variants inside `components/ui/` are upstream shadcn and never
    fire without a `dark` class on `<html>`. Do not add `dark:` to your
    own code.
 
-9. **Three locales: `ru`, `kk`, `en`.** New copy goes into all three at
-   once — a test compares the key sets. Public pages sit under
-   `/{locale}/`, the cabinet does not. On the front end "go home" is `/`,
-   not `home()`.
+10. **Three locales: `ru`, `kk`, `en`.** New copy goes into all three at
+    once — a test compares the key sets. Public pages sit under
+    `/{locale}/`, the cabinet does not. On the front end "go home" is `/`,
+    not `home()`.
 
-   Static objects (page `layout`, breadcrumbs, nav items) hold a
-   translation **key**, not text: a static object cannot call a hook, so
-   the component resolves it.
+    Static objects (page `layout`, breadcrumbs, nav items) hold a
+    translation **key**, not text: a static object cannot call a hook, so
+    the component resolves it.
 
-10. **Errors are pages, not modals.** Inertia draws a modal when the
-   server answers with plain HTML; the handler in `bootstrap/app.php`
-   removes the cause. If a modal appears, a status slipped past the list
-   — fix the list. The blade versions in `resources/views/errors/` work
-   when nothing else does: no `@vite`, no external links, system font.
+11. **Errors are pages, not modals.** Inertia draws a modal when the
+    server answers with plain HTML; the handler in `bootstrap/app.php`
+    removes the cause. If a modal appears, a status slipped past the list
+    — fix the list. The blade versions in `resources/views/errors/` work
+    when nothing else does: no `@vite`, no external links, system font.
 
-11. **A list is a list, a form is a form.** `/entity` lists,
+12. **A list is a list, a form is a form.** `/entity` lists,
     `/entity/new` creates, `/entity/:id` edits. A short form may be a
     dialog, a long one gets its own page. Never both on one route.
 
@@ -138,7 +152,7 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     its own page by hand. The command says so when it generates more than
     six, rather than leaving you to notice.
 
-12. **Access is gated by permissions, never by a flag.** Permissions are
+13. **Access is gated by permissions, never by a flag.** Permissions are
     declared in `App\Support\Access\Ability` because a permission means
     something only when code checks it; inventing one through the UI
     produces a name nothing enforces. Which permissions a role carries is
@@ -156,7 +170,7 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     it too — roles are infrastructure, not fixtures, and without them
     every policy denies everything for the wrong reason.
 
-13. **No demo content.** Everything that ships is working functionality.
+14. **No demo content.** Everything that ships is working functionality.
 
 ## Conventions over configuration
 
