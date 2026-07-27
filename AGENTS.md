@@ -307,4 +307,10 @@ Redis, Docker, dark theme, two-factor auth, passkeys, social login,
 Sanctum and any API, vector search, external error trackers, AI agents
 (moved to the `feature/ai-agents` branch).
 
+**Livewire and Laravel Pulse.** Pulse was installed, gated and opened in
+a browser: it loads a font from fonts.bunny.net, its dashboard never
+leaves the loading skeleton under the CSP, and it drags in Livewire — a
+second frontend runtime beside React. Removed. See
+`zettel/pulse-does-not-fit-a-strict-csp.md` before trying again.
+
 Ask before adding anything from this list.
