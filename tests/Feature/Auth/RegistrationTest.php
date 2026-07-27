@@ -26,7 +26,7 @@ class RegistrationTest extends TestCase
 
     public function test_new_users_can_register()
     {
-        $response = $this->post(route('register.store'), [
+        $response = $this->post(route('register.store'), honeypot() + [
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => 'password',

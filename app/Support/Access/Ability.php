@@ -24,6 +24,8 @@ final class Ability
 
     public const VIEW_ACTIVITY = 'activity.view';
 
+    public const VIEW_HEALTH = 'health.view';
+
     /**
      * @return array<int, string>
      */
@@ -35,6 +37,7 @@ final class Ability
             self::VIEW_ROLES,
             self::MANAGE_ROLES,
             self::VIEW_ACTIVITY,
+            self::VIEW_HEALTH,
         ];
     }
 }

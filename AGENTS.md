@@ -27,6 +27,10 @@ away.
 - The `Asia/Almaty` default in the users migration if the project is not Kazakhstani
 - The placeholder mark: `resources/js/components/app-logo-icon.tsx`,
   `public/favicon.svg`, `public/favicon.ico`, `public/apple-touch-icon.png`
+- The legal pages: `legal.privacy.body.*` and `legal.terms.body.*` in
+  `lang/{ru,kk,en}/common.php`. Headings ship, wording does not — every
+  unfilled section says so in red on the page.
+- `BACKUP_NOTIFICATION_EMAIL`, `FAILED_JOB_EMAILS`, `HEALTH_JSON_SECRET`
 - This section
 
 ## Stack
@@ -158,6 +162,9 @@ in `zettel/`.
 Every feature: **three levels × three data states**.
 
 - Levels: Pest (backend), Vitest + Testing Library (rendering), Playwright (clicks).
+  `npm run test:e2e` builds the assets, resets its own `_e2e` database and
+  starts SSR, so it is production-shaped and slow to start. It is the only
+  level that catches a page returning 200 with everything broken.
 - States: correct data, wrong data, empty data.
 
 Nine scenarios minimum. A test that was written but never run does not
@@ -183,6 +190,7 @@ Format: `zettel/README.md`.
     npm run test:js              rendering tests
     npx tsc --noEmit             type check
     vendor/bin/pint              PHP formatting
+    npm run test:e2e             real clicks in a real browser
     composer types:check         static analysis
     npm run build:ssr            build including the SSR bundle
     php artisan wayfinder:generate --with-form   regenerate TS routes
@@ -203,6 +211,10 @@ Mail in development is Mailpit on `127.0.0.1:1025`, web UI on `:8025`.
     app/Support/Access/Ability.php           permission names, declared in code
     app/Support/Csp/AppPreset.php            CSP policy
     app/Support/Sessions/SessionList.php     active sessions and devices
+    app/Support/Spam/SilentRedirectResponder.php  what happens on honeypot spam
+    app/Providers/HealthServiceProvider.php  which health checks run
+    app/Http/Controllers/SitemapController.php  sitemap.xml and robots.txt
+    routes/console.php                       the schedule
     app/Exceptions/UnsupportedDatabaseDriver.php  database driver guard
     bootstrap/app.php                        error handler, middleware
     resources/js/lib/datetime.ts             time formatting
@@ -235,6 +247,43 @@ on deploy alike.
 The bundle is `bootstrap/ssr/app.js`, not the `ssr.mjs` from Inertia 2
 docs. Getting that path wrong fails **silently**: production serves an
 empty container with nothing in the logs.
+
+**The port is 13714 for every Inertia project and cannot be changed** —
+the plugin bakes it into the bundle. Two of them on one development
+machine share a renderer: the first to start answers for both, and the
+second gets `Page not found: <component>` in a log it does not own while
+its own pages come back empty. A browser hides this, because the client
+bundle hydrates anyway. `SsrTest` asks the running server for a page only
+this project has, which is what catches it.
+
+## Operations
+
+Five things run outside the request cycle, and every one fails silently:
+nothing errors, the work simply stops happening.
+
+    php artisan health:check        queue, schedule, backups, disk, database
+    /dash/health                    the same results, gated by health.view
+    /health.json                    for a monitor; needs HEALTH_JSON_SECRET
+
+**Health checks are not run by the page.** `health:check` writes results on
+the schedule and the page reads them. A page that ran them would fire a disk
+and database check on every refresh, and hang on a check that hangs.
+
+**Spatie's own health dashboard is unusable here** — it opens with a
+stylesheet from `rsms.me`, which the CSP blocks. Hence our own page.
+
+**Three checks only exist in production** — debug mode, environment,
+optimized app. They assert how production is configured and are meant to be
+false in development; registered everywhere they would paint the dashboard
+permanently red, and a dashboard that is always red is one nobody reads.
+
+**Backups go to `storage/app/private/<APP_NAME>/` nightly.** `pg_dump` must
+be on the PATH of whoever runs cron. Success notifications are off on
+purpose: a mail every night is a mail nobody opens, and then the failure
+mail goes unread too.
+
+**Run `schedule-monitor:sync` after touching `routes/console.php`,** or the
+monitor keeps watching for a task that no longer exists.
 
 ## Live feed (SSE)
 

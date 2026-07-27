@@ -2,6 +2,7 @@
 
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Honeypot\EncryptedTime;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -60,4 +61,20 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * The honeypot fields a real browser submits.
+ *
+ * Registration requires them: the middleware is strict there on purpose,
+ * because a bot that simply omits them would otherwise be waved through.
+ * The timestamp has to be in the past — the point of it is that a form
+ * cannot be filled in faster than a person types.
+ */
+function honeypot(): array
+{
+    return [
+        config('honeypot.name_field_name') => '',
+        config('honeypot.valid_from_field_name') => EncryptedTime::create(now()->subMinute()),
+    ];
 }

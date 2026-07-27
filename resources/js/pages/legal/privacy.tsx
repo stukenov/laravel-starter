@@ -1,16 +1,15 @@
-import { Head } from '@inertiajs/react';
+import LegalDocument from '@/pages/legal/document';
 
-/**
- * Skeleton of the privacy policy.
- *
- * The text is deliberately absent: a legal document is written per
- * project, and placeholder wording risks shipping as if it were real.
- */
+const SECTIONS = [
+    'controller',
+    'collected',
+    'purpose',
+    'storage',
+    'sharing',
+    'rights',
+    'contacts',
+];
+
 export default function Privacy() {
-    return (
-        <>
-            <Head title="" />
-            <main className="mx-auto max-w-2xl px-6 py-16" />
-        </>
-    );
+    return <LegalDocument document="privacy" sections={SECTIONS} />;
 }

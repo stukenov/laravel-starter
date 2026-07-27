@@ -39,17 +39,22 @@ it('defaults a new user to Asia/Almaty', function () {
         ->and(User::factory()->create()->refresh()->locale)->toBe('ru');
 });
 
-it('stores timestamps with a timezone', function () {
-    // timestamp без зоны молча теряет смещение при переносе базы
-    // между серверами с разной локальной зоной.
-    $columns = DB::select("
-        select column_name, data_type from information_schema.columns
-        where table_name = 'users' and column_name in ('created_at', 'updated_at', 'email_verified_at')
-    ");
+it('stores every timestamp in the database with a timezone', function () {
+    // A timestamp without one silently loses the offset when the database
+    // moves to a server in another zone.
+    //
+    // Every table, not just users: a package migration is exactly how a
+    // zoneless column gets in — spatie/laravel-schedule-monitor shipped
+    // ten of them, and only a check this wide would have said so.
+    $zoneless = collect(DB::select("
+        select table_name, column_name from information_schema.columns
+        where table_schema = 'public'
+          and data_type like 'timestamp%'
+          and data_type <> 'timestamp with time zone'
+        order by table_name, column_name
+    "))->map(fn ($column) => "{$column->table_name}.{$column->column_name}");
 
-    foreach ($columns as $column) {
-        expect($column->data_type)->toBe('timestamp with time zone', $column->column_name);
-    }
+    expect($zoneless->all())->toBe([]);
 });
 
 it('lets a user change language and timezone', function () {

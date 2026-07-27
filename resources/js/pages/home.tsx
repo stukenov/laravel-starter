@@ -1,16 +1,25 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
+import PublicLayout from '@/layouts/public-layout';
 
 /**
- * Skeleton of the public home page.
+ * The public home page.
  *
- * Deliberately empty: placeholder copy is demo content that nobody
- * remembers to remove. A real project fills it in.
+ * The chrome is real — header, locale switcher, footer, legal links — and
+ * the body is left to the project. Placeholder marketing copy is demo
+ * content, and demo content is the thing nobody remembers to delete.
  */
 export default function Home() {
+    const { name } = usePage().props;
+
     return (
-        <>
+        <PublicLayout>
             <Head title="" />
-            <main className="mx-auto flex min-h-svh max-w-3xl flex-col justify-center px-6" />
-        </>
+            <h1
+                className="text-3xl font-semibold tracking-tight"
+                data-test="home-title"
+            >
+                {name as string}
+            </h1>
+        </PublicLayout>
     );
 }

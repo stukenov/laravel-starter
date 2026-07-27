@@ -1,4 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
+import { HoneypotFields, type Honeypot } from '@/components/honeypot-fields';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -12,9 +13,10 @@ import { store } from '@/routes/register';
 
 type Props = {
     passwordRules: string;
+    honeypot: Honeypot;
 };
 
-export default function Register({ passwordRules }: Props) {
+export default function Register({ passwordRules, honeypot }: Props) {
     const t = useTranslations();
 
     return (
@@ -28,6 +30,8 @@ export default function Register({ passwordRules }: Props) {
             >
                 {({ processing, errors }) => (
                     <>
+                        <HoneypotFields honeypot={honeypot} />
+
                         <div className="grid gap-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="name">{t('auth.name')}</Label>

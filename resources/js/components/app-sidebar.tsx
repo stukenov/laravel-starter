@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { History, LayoutGrid, ShieldCheck, Users } from 'lucide-react';
+import { Activity, History, LayoutGrid, ShieldCheck, Users } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -13,6 +13,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { index as activityIndex } from '@/routes/dash/activity';
+import { index as healthIndex } from '@/routes/dash/health';
 import { index as rolesIndex } from '@/routes/dash/roles';
 import { index as usersIndex } from '@/routes/dash/users';
 import { home as dashHome } from '@/routes/dash';
@@ -40,6 +41,11 @@ const mainNavItems: NavItem[] = [
         title: 'activity.title',
         href: activityIndex(),
         icon: History,
+    },
+    {
+        title: 'health.title',
+        href: healthIndex(),
+        icon: Activity,
     },
 ];
 

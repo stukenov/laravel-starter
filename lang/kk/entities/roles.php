@@ -22,6 +22,7 @@ return [
     // Dots are replaced by underscores: a dot in a key makes Laravel
     // read it as a nested path, and the lookup silently returns the key.
     'abilities' => [
+        'health_view' => 'Жүйе күйін көру',
         'users_view' => 'Пайдаланушыларды көру',
         'users_manage' => 'Пайдаланушыларды басқару',
         'roles_view' => 'Рөлдерді көру',

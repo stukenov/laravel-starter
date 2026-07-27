@@ -13,6 +13,7 @@ use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
+use Spatie\Honeypot\Honeypot;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -69,6 +70,10 @@ class FortifyServiceProvider extends ServiceProvider
 
         Fortify::registerView(fn () => Inertia::render('auth/register', [
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            // The fields a captcha would have been. Rendered by the page
+            // rather than a blade component, and only here: registration
+            // is the only form a stranger can reach. See AGENTS.md.
+            'honeypot' => app(Honeypot::class)->toArray(),
         ]));
 
         Fortify::confirmPasswordView(fn () => Inertia::render('auth/confirm-password'));

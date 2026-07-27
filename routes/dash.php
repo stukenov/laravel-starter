@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\Dash\ActivityController;
 use App\Http\Controllers\Dash\ActivityStreamController;
+use App\Http\Controllers\Dash\HealthController;
 use App\Http\Controllers\Dash\RoleController;
 use App\Http\Controllers\Dash\UserController;
+use App\Support\Access\Ability;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -37,4 +39,10 @@ Route::middleware(['auth', 'verified'])
         // Read only on purpose: an audit log that can be edited is not one.
         Route::get('activity', [ActivityController::class, 'index'])->name('activity.index');
         Route::get('activity/stream', ActivityStreamController::class)->name('activity.stream');
+
+        // No model, so no policy — the permission is a gate of its own,
+        // registered by spatie under the same name.
+        Route::get('health', [HealthController::class, 'index'])
+            ->middleware('can:'.Ability::VIEW_HEALTH)
+            ->name('health.index');
     });

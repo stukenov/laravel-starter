@@ -96,6 +96,7 @@ return [
     'nav' => [
         'section' => 'Sections',
         'sessions' => 'Devices',
+        'health' => 'Health',
         'dashboard' => 'Dashboard',
         'settings' => 'Settings',
         'profile' => 'Profile',
@@ -124,6 +125,56 @@ return [
         503 => [
             'title' => 'Under maintenance',
             'description' => 'The site will be back shortly. Please check again later.',
+        ],
+    ],
+
+    'public' => [
+        'sign_in' => 'Sign in',
+        'privacy' => 'Privacy',
+        'terms' => 'Terms',
+    ],
+
+    'legal' => [
+        'unfilled' => 'This section has not been filled in.',
+        'privacy' => [
+            'title' => 'Privacy policy',
+            'sections' => [
+                'controller' => 'Who processes the data',
+                'collected' => 'What we collect',
+                'purpose' => 'Why we need it',
+                'storage' => 'Where and how long we keep it',
+                'sharing' => 'Who we share it with',
+                'rights' => 'Your rights',
+                'contacts' => 'How to reach us',
+            ],
+        ],
+        'terms' => [
+            'title' => 'Terms of use',
+            'sections' => [
+                'scope' => 'What these terms cover',
+                'account' => 'Your account',
+                'allowed' => 'What you may do',
+                'forbidden' => 'What you may not do',
+                'payment' => 'Payment and refunds',
+                'liability' => 'Liability',
+                'changes' => 'Changes to these terms',
+            ],
+        ],
+    ],
+
+    'health' => [
+        'title' => 'Health',
+        'description' => 'What is checked and what broke',
+        'healthy' => 'All good',
+        'unhealthy' => 'Something is wrong',
+        'never_ran' => 'The checks have never run. Start the scheduler.',
+        'checked_at' => 'Last checked:',
+        'status' => [
+            'ok' => 'Ok',
+            'warning' => 'Warning',
+            'failed' => 'Failed',
+            'skipped' => 'Skipped',
+            'crashed' => 'Crashed',
         ],
     ],
 ];

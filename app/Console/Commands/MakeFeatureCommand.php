@@ -342,9 +342,22 @@ class MakeFeatureCommand extends Command
             $contents,
         );
 
-        $contents = preg_replace('/(\n    \}\);\n)$/', $block."\n    });\n", rtrim($contents)."\n");
+        // The anchor is the closing of the `dash.` group, which has to stay
+        // the last thing in the file. Anything appended after it — another
+        // route, a conditional block — used to make this quietly match
+        // nothing: the generator reported success and wrote no routes, and
+        // the only sign was a 404 later. So it is checked.
+        $patched = preg_replace('/(\n    \}\);\n)$/', $block."\n    });\n", rtrim($contents)."\n");
 
-        File::put($path, $contents);
+        if ($patched === null || $patched === rtrim($contents)."\n") {
+            $this->components->error(
+                'routes/dash.php must end with the dash group. Add the routes by hand, then move whatever follows the group into routes/web.php.'
+            );
+
+            return;
+        }
+
+        File::put($path, $patched);
         $this->components->task('routes/dash.php updated', fn () => true);
     }
 }
