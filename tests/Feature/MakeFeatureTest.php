@@ -510,6 +510,56 @@ describe('relations', function () {
     });
 });
 
+it('casts every attribute it later treats as a date', function () {
+    // The defect this replaces: the generator wrote no casts at all, so
+    // Postgres handed back `2026-07-28` as a plain string and
+    // `toPanelItem()` called `?->toIso8601String()` on it — a fatal
+    // error, and a 500 on the list page of every generated entity with a
+    // date. All thirteen backend tests it emits failed, on a slice whose
+    // stated acceptance criterion is that they pass with no edits.
+    //
+    // It survived because a factory holds the Carbon it was handed until
+    // the row is read back: in memory the object looks right, and only a
+    // real request, which re-queries, sees what the database returns.
+    //
+    // Both sides are read out of the file rather than listed here, so
+    // adding a seventh field type cannot leave this test behind.
+    $model = File::get(base_path('app/Models/Widget.php'));
+
+    preg_match_all("/'(\w+)' => \\\$this->\\1\\?->toIso8601String\\(\\)/", $model, $used);
+    preg_match_all("/'(\w+)' => '(?:date|datetime)'/", $model, $declared);
+
+    // Eloquent casts its own timestamps; only the fields the generator
+    // added are its responsibility.
+    $used = array_diff($used[1], ['created_at', 'updated_at']);
+
+    $missing = array_values(array_diff($used, $declared[1]));
+
+    expect($used)->not->toBeEmpty()
+        ->and($missing)->toBe([]);
+});
+
+it('leaves the other types uncast, because pgsql already types them', function () {
+    // An integer comes back as an int and a boolean as a bool, so their
+    // TypeScript types are honest with no cast. Casting them anyway would
+    // suggest the driver cannot be trusted, and the next person would add
+    // one for `string` too.
+    $model = File::get(base_path('app/Models/Widget.php'));
+
+    expect($model)->not->toContain("'views' => 'integer'")
+        ->and($model)->not->toContain("'active' => 'boolean'");
+});
+
+it('indents what it generates', function () {
+    // For a while the first line of every generated array carried four
+    // extra spaces — pint does not touch array bodies, so it shipped in
+    // every model this command ever made.
+    $model = File::get(base_path('app/Models/Widget.php'));
+
+    expect($model)->toContain("        return [\n            'id' => \$this->id,")
+        ->and($model)->not->toContain("        return [\n                ");
+});
+
 it('does not let a field label overwrite the page heading', function () {
     // `title` is the commonest field name there is, and flat keys meant
     // it overwrote the page title: the generator's own documented example

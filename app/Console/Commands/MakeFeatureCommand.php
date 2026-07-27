@@ -251,6 +251,7 @@ class MakeFeatureCommand extends Command
             '{{ payloadFields }}' => $this->payloadFields(),
             '{{ relations }}' => $this->relations(),
             '{{ enumConstants }}' => $this->enumConstants(),
+            '{{ casts }}' => $this->casts(),
             '{{ panelItem }}' => $this->panelItem(),
             '{{ enumOptions }}' => $this->enumOptions(),
             '{{ enumLangSections }}' => $this->enumLangSections(),
@@ -596,6 +597,61 @@ PHP;
      * One method, so the list, the form and any future consumer agree
      * about what an entity looks like from outside.
      */
+    /**
+     * Without this a date column is a string, and every generated entity
+     * with one answered 500 on its own list page.
+     *
+     * Postgres hands PHP a `date` back as `2026-07-28` and a
+     * `timestamptz` as `2026-07-27 23:22:45+00` — plain strings, neither
+     * of them ISO 8601, neither of them a Carbon. `toPanelItem()` calls
+     * `?->toIso8601String()` on them, which is a fatal error on a string.
+     *
+     * It went unnoticed because a factory holds the Carbon it was given
+     * until the row is read back: the object in memory looks right and
+     * only a real request, which re-queries, sees what the database
+     * actually returns.
+     *
+     * The other types need nothing — pgsql already returns `integer` as
+     * an int and `boolean` as a bool, so their TypeScript types are
+     * honest as they stand.
+     */
+    private function casts(): string
+    {
+        $casts = [];
+
+        foreach ($this->fields as $field) {
+            $cast = match ($field['type']) {
+                'date' => 'date',
+                'datetime' => 'datetime',
+                default => null,
+            };
+
+            if ($cast !== null) {
+                $casts[] = "            '{$field['name']}' => '{$cast}',";
+            }
+        }
+
+        if ($casts === []) {
+            return '';
+        }
+
+        $body = implode("\n", $casts);
+
+        return <<<PHP
+
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+{$body}
+        ];
+    }
+PHP;
+    }
+
     private function panelItem(): string
     {
         $lines = ["            'id' => \$this->id,"];
@@ -639,7 +695,7 @@ PHP;
     public function toPanelItem(): array
     {
         return [
-    {$body}
+{$body}
         ];
     }
 PHP;
