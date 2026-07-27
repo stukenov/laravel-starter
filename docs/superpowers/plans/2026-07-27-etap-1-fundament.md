@@ -1664,18 +1664,21 @@ git commit -m "feat: CSP с nonce и заголовки безопасности
 
 ---
 
-## Task 11: Проект объясняет себя ИИ-инструментам
+## Task 11: Правила проекта — текстом и тестами
 
 Стартер клонируют и продолжают в связке с ИИ-агентом. Без правил в корне каждый новый агент начинает с угадывания: поставит SQLite «для тестов», приделает тёмную тему, притащит Google Fonts, сложит список и форму на один маршрут. Файлы правил — это не документация, а ограничитель.
+
+Но правило, записанное только текстом, живёт до первого спешащего разработчика. Поэтому задача делает две вещи сразу: **описывает конвенции и закрепляет их архитектурными тестами.** Pest 4 умеет это из коробки — в поставке есть готовые наборы `Laravel`, `Security`, `Strict`.
 
 Задача идёт последней в этапе намеренно: описываем то, что реально есть, а не то, что планировалось.
 
 **Files:**
-- Create: `AGENTS.md`, `CLAUDE.md`, `zettel/README.md`, `.cursor/rules/project.mdc`
+- Create: `AGENTS.md`, `CLAUDE.md`, `zettel/README.md`, `.cursor/rules/project.mdc`, `tests/Feature/ArchitectureTest.php`
+- Modify: `composer.json`, `app/Providers/AppServiceProvider.php`
 - Test: `tests/Feature/AgentRulesTest.php`
 
 **Interfaces:**
-- Produces: `AGENTS.md` как единственный источник правды; `CLAUDE.md` и правило Cursor ссылаются на него, а не дублируют
+- Produces: `AGENTS.md` как единственный источник правды; `CLAUDE.md` и правило Cursor ссылаются на него, а не дублируют; архитектурные тесты запрещают репозитории и сервисный слой
 
 - [ ] **Step 1: Написать падающий тест**
 
@@ -1767,6 +1770,43 @@ Tailwind 4, shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
    Не сваливайте всё на один маршрут.
 8. **Никакого демонстрационного содержимого.** Всё, что попадает в проект,
    должно быть рабочим функционалом.
+
+## Конвенции вместо настройки
+
+Положение каждого файла выводится из имени сущности. Это не эстетика —
+на этом работает генератор `make:feature`. Исключение ломает генератор.
+
+    Post
+    ├─ app/Models/Post.php
+    ├─ app/Policies/PostPolicy.php
+    ├─ app/Http/Controllers/Dash/PostController.php
+    ├─ app/Http/Requests/Post/StoreRequest.php
+    ├─ app/Http/Requests/Post/UpdateRequest.php
+    ├─ resources/js/pages/dash/posts/index.tsx
+    ├─ resources/js/pages/dash/posts/form.tsx
+    ├─ lang/{ru,kk,en}/entities/posts.php
+    └─ tests/{Feature,js,e2e}/Dash/Post*
+
+Таблица — множественное число в snake_case, модель — единственное
+в StudlyCase, маршруты всегда RESTful с одинаковыми именами, путь страницы
+Inertia повторяет путь маршрута.
+
+**Чего у нас нет намеренно** — это «великий монолит», а не слоёный пирог:
+
+- репозиториев: Eloquent сам по себе репозиторий;
+- сервисного слоя: логика живёт в моделях, form requests и политиках;
+- классов-действий на каждую операцию;
+- интерфейсов с единственной реализацией;
+- CQRS и событийного источника.
+
+Запреты проверяются `tests/Feature/ArchitectureTest.php`, а не честным словом.
+
+Единственное исключение — `spatie/laravel-data`. Он нужен не ради DTO,
+а чтобы порождать типы TypeScript на границе PHP и JS.
+
+**Конвенция обязательна для типового, но не запрещает нетиповое.**
+Дерево, версионирование, многоязычный контент в схему не влезут — такая
+сущность пишется руками, а отступление объясняется карточкой в `zettel/`.
 
 ## Тесты
 
@@ -1885,15 +1925,146 @@ alwaysApply: true
 Сразу. Появилась по ходу задачи новая мысль — сразу новая карточка.
 ```
 
-- [ ] **Step 6: Запустить тесты**
+- [ ] **Step 6: Расставить комментарии-ловушки**
+
+Не сплошняком. Только там, где сделать неправильно соблазнительно и неочевидно. Формат единый и намеренно greppable:
+
+```php
+// ПРАВИЛО(база): проверка намеренная, не отключайте — AGENTS.md
+```
+
+Десять мест, где агент почти наверняка ошибётся:
+
+| Файл | Что он попытается сделать |
+|---|---|
+| `app/Providers/AppServiceProvider.php` | Отключить проверку драйвера, чтобы «тесты шли быстрее на SQLite» |
+| `phpunit.xml` | Вернуть `DB_CONNECTION=sqlite` |
+| `resources/views/app.blade.php` | Подключить Google Fonts или аналитику |
+| `resources/views/errors/*.blade.php` | «Улучшить», добавив `@vite` — и сломать их ровно тогда, когда они нужны |
+| `bootstrap/app.php` | Убрать обработчик или расширить список статусов не глядя |
+| `vite.config.ts` | Поменять шрифт на тот, у которого нет кириллицы |
+| `database/migrations/*` | Написать `$table->id()` вместо `uuid` |
+| `config/fortify.php` | Включить обратно двухфакторку и passkeys |
+| `resources/js/lib/datetime.ts` | Притащить `dayjs` вместо `Intl` |
+| `routes/*.php` | Свалить список и форму на один маршрут |
+
+Пример для запасной страницы ошибки:
+
+```blade
+{{-- ПРАВИЛО(ошибки): без @vite и без внешних ссылок. Этот файл должен
+     работать, когда не работает ничего, включая сборку — AGENTS.md --}}
+```
+
+- [ ] **Step 7: Написать вложенные `AGENTS.md`**
+
+Четыре файла с правилами по месту работы:
+
+- `app/Models/AGENTS.md` — uuid из базы, `timestamptz`, никаких репозиториев
+- `database/migrations/AGENTS.md` — `uuidv7()` по умолчанию, `citext` для почты
+- `resources/js/AGENTS.md` — светлая тема, `Intl` вместо библиотек дат, компоненты только из `ui/`
+- `lang/AGENTS.md` — новый текст добавляется сразу в три локали
+
+Каждый — не больше пятнадцати строк. Длинный файл правил не читают.
+
+- [ ] **Step 8: Замкнуть круг тестом**
+
+Добавить в `tests/Feature/AgentRulesTest.php`:
+
+```php
+it('has no stale rule comments', function () {
+    $rules = file_get_contents(base_path('AGENTS.md'));
+
+    $files = collect(File::allFiles(base_path()))
+        ->reject(fn ($f) => str_contains($f->getPathname(), '/vendor/'))
+        ->reject(fn ($f) => str_contains($f->getPathname(), '/node_modules/'))
+        ->filter(fn ($f) => in_array($f->getExtension(), ['php', 'ts', 'tsx', 'xml']));
+
+    $topics = [];
+
+    foreach ($files as $file) {
+        preg_match_all('/ПРАВИЛО\(([^)]+)\)/u', $file->getContents(), $matches);
+        $topics = array_merge($topics, $matches[1]);
+    }
+
+    // Комментарий-правило обязан ссылаться на AGENTS.md — иначе он осиротеет
+    expect($topics)->not->toBeEmpty();
+
+    foreach (array_unique($topics) as $topic) {
+        expect($rules)->toContain('AGENTS.md');
+    }
+});
+
+it('keeps nested rule files short enough to be read', function () {
+    foreach (['app/Models', 'database/migrations', 'resources/js', 'lang'] as $dir) {
+        $path = base_path("{$dir}/AGENTS.md");
+
+        expect($path)->toBeFile();
+        expect(substr_count(file_get_contents($path), "\n"))->toBeLessThan(20);
+    }
+});
+```
+
+- [ ] **Step 9: Написать архитектурные тесты**
+
+`tests/Feature/ArchitectureTest.php`:
+
+```php
+<?php
+
+arch()->preset()->laravel();
+arch()->preset()->security();
+
+arch('великий монолит: репозиториев и сервисного слоя нет')
+    ->expect('App')
+    ->not->toUse(['App\Repositories', 'App\Services', 'App\Actions']);
+
+arch('модели живут в одном месте и наследуют Eloquent')
+    ->expect('App\Models')
+    ->toBeClasses()
+    ->toExtend('Illuminate\Database\Eloquent\Model');
+
+arch('контроллеры не ходят в базу напрямую')
+    ->expect('App\Http\Controllers')
+    ->not->toUse('Illuminate\Support\Facades\DB');
+
+arch('политики называются единообразно')
+    ->expect('App\Policies')
+    ->toHaveSuffix('Policy');
+
+arch('запросы формы называются единообразно')
+    ->expect('App\Http\Requests')
+    ->toHaveSuffix('Request');
+```
+
+Прогнать и убрать те утверждения, которые Pest 4 не поддерживает — набор возможностей сверяется по `vendor/pestphp/pest/src/ArchPresets/`, а не по памяти.
+
+- [ ] **Step 10: Дописать процесс SSR в `composer dev` и вычистить SQLite**
+
+В Laravel 13 есть реестр процессов разработки. В `AppServiceProvider::boot()`:
+
+```php
+use Illuminate\Foundation\DevCommands;
+
+DevCommands::artisan('inertia:start-ssr', 'ssr');
+```
+
+Так `composer dev` поднимает и SSR тоже — иначе разработчик увидит пустую страницу и решит, что всё сломано.
+
+В `composer.json` из `post-create-project-cmd` удалить строку, создающую `database/database.sqlite` — у нас только Postgres, этот файл бессмыслен и провоцирует.
+
+Удалить демонстрационные тесты: `tests/Feature/ExampleTest.php`, `tests/Unit/ExampleTest.php`, `tests/Feature/Auth/TwoFactorChallengeTest.php`.
+
+- [ ] **Step 11: Запустить тесты**
 
 ```bash
 php artisan test --filter=AgentRulesTest
+php artisan test --filter=ArchitectureTest
+composer dev  # убедиться, что в списке процессов появился ssr, затем прервать
 ```
 
-Ожидаем: 4 passed.
+Ожидаем: оба набора зелёные, `composer dev` показывает процесс `ssr`.
 
-- [ ] **Step 7: Проверить, что правила не разъехались с кодом**
+- [ ] **Step 12: Проверить, что правила не разъехались с кодом**
 
 Пройти по списку жёстких правил и убедиться, что каждое подтверждается тестом из предыдущих задач:
 
@@ -1909,11 +2080,11 @@ php artisan test --filter=AgentRulesTest
 
 Если правило нельзя привязать к тесту — либо оно лишнее, либо не хватает теста.
 
-- [ ] **Step 8: Коммит**
+- [ ] **Step 13: Коммит**
 
 ```bash
 git add -A
-git commit -m "feat: правила проекта для ИИ-инструментов в AGENTS.md, картотека объясняет себя"
+git commit -m "feat: правила проекта текстом и тестами — AGENTS.md, arch-тесты, комментарии-ловушки"
 ```
 
 ---
@@ -1946,3 +2117,35 @@ git commit -m "feat: правила проекта для ИИ-инструме�
 Этап 2 — авторизация: экраны входа, регистрации, сброса пароля и подтверждения почты под shadcn, настройки профиля, сессии и устройства, удаление аккаунта. План пишется отдельно после закрытия первого этапа.
 
 При каждом этапе `AGENTS.md` обновляется вместе с кодом — устаревшие правила хуже отсутствующих.
+
+### Генератор `make:feature` — определение «полного»
+
+Пишется в этапе 2, как только появится первый настоящий вертикальный срез, из которого можно извлекать шаблоны. Требование заказчика: **генератор полный**. Это значит буквально следующее.
+
+Команда `php artisan make:feature Post title:string body:text` порождает **пятнадцать файлов** — весь срез, без единого места, которое надо дописывать руками:
+
+| Слой | Файлы |
+|---|---|
+| База | миграция с `uuidv7()` и `timestamptz` |
+| Модель | модель, фабрика |
+| Доступ | политика, регистрация в `AuthServiceProvider` |
+| Ввод | `StoreRequest`, `UpdateRequest` |
+| Контроллер | RESTful-контроллер, регистрация маршрутов |
+| Интерфейс | страница списка, страница или окно формы, пункт меню |
+| Типы | типы TypeScript через `typescript-transformer` |
+| Переводы | три файла — `ru`, `kk`, `en` |
+| Тесты | Pest, Vitest, Playwright — по три состояния данных в каждом |
+
+**Критерий приёмки, и он жёсткий:**
+
+```bash
+php artisan make:feature Post title:string body:text
+php artisan migrate
+php artisan test && npx vitest run && npx playwright test
+```
+
+Всё зелёное **сразу после генерации**, без единой правки. Девять сценариев проходят по-настоящему: создание с правильными данными, отказ на неправильных, пустое состояние списка.
+
+Генератор, который порождает пропущенные или пустые тесты, **считается несделанным**. Заглушка вместо теста хуже отсутствия теста: она создаёт видимость покрытия, и следующий человек ей верит.
+
+Отдельный тест на сам генератор: он запускается во временной сущности, прогоняет порождённый набор и проверяет, что тот зелёный. Затем сущность удаляется.
