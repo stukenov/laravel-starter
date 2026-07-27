@@ -3,10 +3,10 @@ import { useMemo } from 'react';
 import { makeTranslator } from '@/lib/i18n';
 
 /**
- * ПРАВИЛО(локали): весь текст экранов идёт через t() — AGENTS.md.
+ * RULE(i18n): every string on screen goes through t() — AGENTS.md.
  *
- * Словарь приходит общими свойствами Inertia, поэтому хук не делает
- * запросов и не хранит состояние — только оборачивает готовые данные.
+ * The dictionary arrives in Inertia shared props, so this hook makes no
+ * requests and holds no state — it only wraps data that is already here.
  */
 export function useTranslations() {
     const { translations } = usePage().props;

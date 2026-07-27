@@ -23,9 +23,9 @@ class StoreRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            // Почта в citext: уникальность и так регистронезависимая,
-            // но правило обязано ругаться понятным сообщением раньше,
-            // чем сработает индекс.
+            // Email is citext, so uniqueness is case-insensitive anyway —
+            // but the rule must complain in plain words before the index
+            // does it with an exception.
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class)],
             'password' => ['required', 'string', Password::defaults()],
             'locale' => ['required', 'string', Rule::in(SetLocale::SUPPORTED)],

@@ -1,12 +1,12 @@
 /**
- * ПРАВИЛО(время): форматирует клиент, не сервер — AGENTS.md.
+ * RULE(time): the client formats, the server does not — AGENTS.md.
  *
- * Сервер отдаёт момент времени в ISO 8601 (UTC), а зона пользователя лежит
- * в его профиле. Здесь используется встроенный Intl — ни dayjs, ни moment,
- * ни date-fns не нужны, и это же держит требование «ничего внешнего».
+ * The server sends an instant in ISO 8601 (UTC); the user's zone lives
+ * in their profile. Built-in Intl does the rest — no dayjs, no moment,
+ * no date-fns, which also keeps the "nothing external" rule.
  *
- * Битое или пустое значение даёт тире, а не «Invalid Date»: пустая ячейка
- * в таблице лучше, чем англоязычная ошибка посреди русского интерфейса.
+ * A broken or empty value renders as a dash, not "Invalid Date": an
+ * empty cell beats an English error in the middle of a Russian UI.
  */
 
 const EMPTY = '—';
@@ -52,8 +52,11 @@ function format(
     try {
         return new Intl.DateTimeFormat(locale, options).format(date);
     } catch {
-        // Неизвестная зона или локаль не должны ронять страницу целиком:
-        // показываем то же время в UTC, чем ничего.
-        return new Intl.DateTimeFormat('en', { ...options, timeZone: 'UTC' }).format(date);
+        // An unknown zone or locale must not take the page down:
+        // show the same instant in UTC rather than nothing.
+        return new Intl.DateTimeFormat('en', {
+            ...options,
+            timeZone: 'UTC',
+        }).format(date);
     }
 }

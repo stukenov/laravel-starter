@@ -161,12 +161,11 @@ return [
     */
 
     /*
-     * ПРАВИЛО(авторизация): три возможности, не больше — AGENTS.md.
+     * RULE(auth): three features, no more — AGENTS.md.
      *
-     * Двухфакторка и passkeys приезжают со стартером включёнными, но мы их
-     * не заказывали: это три экрана и восемнадцать тестов сверх объёма.
-     * Включаются обратно одной строкой — вместе с ними придётся вернуть
-     * страницы и тесты.
+     * Two-factor and passkeys ship enabled with the starter, but were
+     * never asked for: three screens and eighteen tests beyond scope.
+     * One line brings them back — along with their pages and tests.
      */
     'features' => [
         Features::registration(),

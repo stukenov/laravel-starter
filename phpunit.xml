@@ -28,9 +28,9 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
-        <!-- ПРАВИЛО(база): тесты идут на настоящем PostgreSQL, не на SQLite.
-             Иначе uuidv7(), citext и timestamptz не проверяются вообще,
-             а расхождения всплывают уже в проде. См. AGENTS.md -->
+        <!-- RULE(db): tests run against a real PostgreSQL, not SQLite.
+             Otherwise uuidv7(), citext and timestamptz go unverified and
+             the difference surfaces in production. See AGENTS.md -->
         <env name="DB_CONNECTION" value="pgsql"/>
         <env name="DB_DATABASE" value="laravel_starter_test"/>
         <env name="DB_URL" value=""/>

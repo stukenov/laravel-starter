@@ -1,10 +1,10 @@
 import { Head } from '@inertiajs/react';
 
 /**
- * Каркас условий использования.
+ * Skeleton of the terms of service.
  *
- * Текст намеренно отсутствует: юридический документ пишет заказчик под
- * конкретный проект, а текст-заглушка рискует уехать в прод как настоящий.
+ * The text is deliberately absent: a legal document is written per
+ * project, and placeholder wording risks shipping as if it were real.
  */
 export default function Terms() {
     return (

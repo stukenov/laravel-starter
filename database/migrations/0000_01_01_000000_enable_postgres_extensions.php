@@ -6,14 +6,14 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration
 {
     /**
-     * ПРАВИЛО(база): расширения ставятся первой миграцией — AGENTS.md.
+     * RULE(db): extensions go in the first migration — AGENTS.md.
      *
-     * citext нужен для регистронезависимой почты, pg_trgm — для поиска
-     * по подстроке, btree_gin — чтобы класть в один индекс jsonb вместе
-     * с обычными колонками.
+     * citext gives case-insensitive email, pg_trgm powers substring
+     * search, btree_gin lets a single index hold jsonb next to plain
+     * columns.
      *
-     * uuidv7() здесь нет намеренно: в PostgreSQL 18 это встроенная функция,
-     * расширение не требуется.
+     * uuidv7() is deliberately absent: PostgreSQL 18 ships it as a
+     * built-in function, no extension required.
      */
     public function up(): void
     {

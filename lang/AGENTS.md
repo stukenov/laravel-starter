@@ -1,9 +1,13 @@
-# Переводы
+# Translations
 
-- Три локали: `ru`, `kk`, `en`. Новый ключ добавляется сразу во все три —
-  тест сверяет, что наборы ключей совпадают.
-- Пропущенный перевод выводится на экран ключом, а не пустотой:
-  так его видно сразу.
-- Казахские буквы: ә ғ қ ң ө ұ ү һ і. Шрифт их покрывает, проверено.
+- Three locales: `ru`, `kk`, `en`. A new key goes into all three at once —
+  a test compares the key sets.
+- Per-entity copy lives in `entities/<plural>.php` and reaches the front
+  end prefixed: `users.title`.
+- A missing translation renders as its key, not as emptiness, so it is
+  visible immediately.
+- Kazakh letters in use: ә ғ қ ң ө ұ ү һ і. The font covers them, verified.
+- This directory is the one place where Russian and Kazakh belong. Every
+  other file in the repo is English.
 
-Полные правила: `AGENTS.md` в корне.
+Full rules: `AGENTS.md` in the repo root.

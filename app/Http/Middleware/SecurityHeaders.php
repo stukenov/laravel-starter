@@ -7,9 +7,9 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * ПРАВИЛО(безопасность): заголовки ставятся на все ответы — AGENTS.md.
+ * RULE(security): headers go on every response — AGENTS.md.
  *
- * CSP живёт отдельно, в AppPreset. Здесь то, что CSP не покрывает.
+ * CSP lives separately in AppPreset. This is what CSP does not cover.
  */
 class SecurityHeaders
 {
@@ -24,8 +24,8 @@ class SecurityHeaders
             'Permissions-Policy' => 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
         ]);
 
-        // HSTS только по https: на http он бессмыслен, а в разработке
-        // ещё и заставил бы браузер намертво запомнить редирект.
+        // HSTS only over https: pointless on http, and in development
+        // it would make the browser remember the redirect for good.
         if ($request->secure()) {
             $response->headers->set(
                 'Strict-Transport-Security',

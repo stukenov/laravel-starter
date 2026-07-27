@@ -2,11 +2,11 @@ import { useTranslations } from '@/hooks/use-translations';
 import AuthLayoutTemplate from '@/layouts/auth/auth-simple-layout';
 
 /**
- * ПРАВИЛО(локали): заголовок задаётся ключом, а не текстом — AGENTS.md.
+ * RULE(i18n): the title is a key, not text — AGENTS.md.
  *
- * Страница объявляет лэйаут статическим свойством (Login.layout = {...}),
- * а в статике хук не вызвать. Поэтому туда кладётся ключ перевода,
- * а переводит уже лэйаут — здесь хук доступен.
+ * A page declares its layout as a static property (Login.layout = {...})
+ * and a static object cannot call a hook. So it holds a translation key
+ * and the layout resolves it, where the hook is available.
  */
 export default function AuthLayout({
     titleKey = '',

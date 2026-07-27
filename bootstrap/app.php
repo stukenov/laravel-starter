@@ -20,11 +20,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['sidebar_state', 'locale']);
 
-        // SetLocale идёт до HandleInertiaRequests: тот отдаёт переводы
-        // общими свойствами и должен знать уже выбранный язык.
-        // Заголовки безопасности — глобально, а не в группе web.
-        // Иначе несуществующий маршрут отдаёт ответ вообще без них:
-        // группа web не выполняется, когда маршрут не найден.
+        // SetLocale runs before HandleInertiaRequests: that one ships the
+        // translations as shared props and needs the language decided.
+        // Security headers go global, not into the web group: an unknown
+        // route would otherwise answer without any of them, because the
+        // web group never runs when no route matches.
         $middleware->append([
             SecurityHeaders::class,
             AddCspHeaders::class,
@@ -42,28 +42,29 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         /*
-         * ПРАВИЛО(ошибки): страница, а не модальное окно — AGENTS.md.
+         * RULE(errors): a page, not a modal — AGENTS.md.
          *
-         * Модалку рисует клиент Inertia, когда сервер отвечает обычным HTML
-         * вместо ожидаемого JSON. Здесь причина устраняется: каждый статус
-         * из списка возвращается нормальной страницей Inertia.
+         * Inertia draws the modal when the server answers with plain HTML
+         * instead of the expected JSON. This removes the cause: every
+         * status in the list comes back as a proper Inertia page.
          *
-         * Появилось окно — значит какой-то статус проскочил мимо списка.
-         * Чинить надо список, а не клиент.
+         * If a modal shows up, a status slipped past the list. Fix the
+         * list, not the client.
          */
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
-            // Проверять здесь заголовок X-Inertia — ошибка: тогда прямой
-            // заход по битой ссылке (из письма, из поиска) получал бы
-            // минимальную blade-заглушку вместо оформленной страницы,
-            // а это как раз самый частый случай.
+            // Checking X-Inertia here is a mistake: a direct hit on a
+            // broken link — from an email, from search — would then get
+            // the bare blade fallback instead of a designed page, and
+            // that is the most common case of all.
             if ($request->expectsJson()) {
                 return $response;
             }
 
             $status = $response->getStatusCode();
 
-            // 419 — не ошибка, а истёкшая сессия. Пользователь ничего не
-            // сломал, ему просто надо войти заново, и мы ведём его туда.
+            // 419 is not an error but an expired session. Nothing is
+            // broken; the user simply needs to log in again, so take
+            // them there.
             if ($status === 419) {
                 return redirect()
                     ->guest(route('login'))

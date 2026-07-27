@@ -8,11 +8,12 @@ use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * ПРАВИЛО(локали): три языка, гибридные адреса — AGENTS.md.
+ * RULE(i18n): three languages, hybrid URLs — AGENTS.md.
  *
- * Публичная часть живёт под префиксом /{locale}/ ради корректных hreflang,
- * кабинет — без префикса, язык берётся из профиля. Поэтому источник локали
- * зависит от того, куда пришёл запрос, и порядок здесь важен.
+ * Public pages live under /{locale}/ for correct hreflang; the cabinet
+ * has no prefix and takes the language from the profile. So the source
+ * of the locale depends on where the request landed, and the order below
+ * matters.
  */
 class SetLocale
 {
@@ -28,15 +29,15 @@ class SetLocale
 
         app()->setLocale($locale);
 
-        // Без этого route('home') требовал бы явной передачи локали в каждом
-        // вызове — и любой забытый превращался бы в ошибку уже в проде.
+        // Without this, route('home') would demand an explicit locale at
+        // every call site, and one forgotten call becomes a production error.
         URL::defaults(['locale' => $locale]);
 
         $response = $next($request);
 
-        // Запоминаем выбор ровно тогда, когда он сделан явно — то есть когда
-        // язык пришёл из адреса. Иначе кука закрепила бы случайно выбранный
-        // запасной вариант навсегда.
+        // Remember the choice only when it was explicit — that is, when the
+        // language came from the URL. Otherwise the cookie would pin down an
+        // accidental fallback forever.
         if ($request->route('locale') === $locale) {
             $response->headers->setCookie(cookie()->forever(self::COOKIE, $locale));
         }
@@ -45,11 +46,12 @@ class SetLocale
     }
 
     /**
-     * Порядок источников: адрес → профиль → кука → браузер → запасной.
+     * Order: URL → profile → cookie → browser → fallback.
      *
-     * Кука нужна страницам вне префикса — входу и регистрации. Без неё
-     * человек, читавший сайт по-казахски, нажимает «Кіру» и получает
-     * русскую форму: профиля у него ещё нет, язык брать неоткуда.
+     * The cookie exists for pages outside the prefix — login and register.
+     * Without it, somebody reading the site in Kazakh clicks "Кіру" and
+     * gets a Russian form: they have no profile yet, so there is nothing
+     * else to read the language from.
      */
     public static function resolve(Request $request): string
     {
@@ -75,13 +77,13 @@ class SetLocale
     }
 
     /**
-     * Определяет язык по заголовку браузера — только для корневого адреса.
+     * Reads the language from the browser header — root URL only.
      */
     public static function fromBrowser(Request $request): string
     {
-        // Symfony подставляет локаль приложения, когда заголовка нет вовсе,
-        // из-за чего «браузер промолчал» неотличимо от «браузер попросил
-        // английский». Поэтому доверяем только настоящему заголовку.
+        // Symfony substitutes the app locale when the header is absent,
+        // making "the browser said nothing" indistinguishable from "the
+        // browser asked for English". So trust a real header only.
         $header = $request->headers->get('Accept-Language');
 
         if ($header === null || trim($header) === '') {

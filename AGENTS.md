@@ -1,81 +1,101 @@
-# Правила проекта
+# Project rules
 
-Стартер на Laravel + Inertia React SSR + PostgreSQL. Этот файл —
-единственный источник правды о правилах. `CLAUDE.md` и правило Cursor
-ссылаются сюда, чтобы копии не разъезжались.
+Laravel + Inertia React SSR + PostgreSQL starter. This file is the single
+source of truth. `CLAUDE.md` and the Cursor rule point here so the copies
+cannot drift apart.
 
-## Заменить при клонировании
+## Language — think in English, answer in Russian
 
-- `APP_NAME` и `DB_DATABASE` в `.env`
-- Значение по умолчанию `Asia/Almaty` в миграции пользователей, если проект не казахстанский
-- Этот раздел
+**Everything an agent reads or writes is English:** code, comments,
+`AGENTS.md`, `zettel/`, `docs/`, commit messages, test names, variable
+names. Do not write Russian into any of them.
 
-## Стек
+**Answer the project owner in Russian.** Explanations, summaries, status
+updates, questions — Russian only.
 
-Laravel 13, Fortify, Inertia 3 в режиме SSR, React 19, TypeScript,
-Tailwind 4, shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
+**Product text is not English by default.** UI strings live in
+`lang/{ru,kk,en}` and follow the localisation rules below.
 
-## Жёсткие правила
+The reason is cost: Cyrillic costs roughly twice as many tokens per
+character as Latin. Measured on this repo, English cuts the agent-facing
+files by ~41%. Nobody reads them but agents, so there is nothing to trade
+away.
 
-1. **Только PostgreSQL.** Драйвер `pgsql`, в тестах тоже. Приложение
-   падает на старте при другом драйвере — это сделано намеренно, не
-   чините это отключением проверки. Схема опирается на `uuidv7()`,
-   `citext` и `timestamptz`, которых на других драйверах нет.
+## Replace when cloning
 
-2. **Зона соединения с базой — UTC.** Не убирайте `'timezone' => 'UTC'`
-   из настроек `pgsql`. PHP шлёт дату строкой без смещения, Postgres
-   трактует её в зоне своей сессии — момент уезжает молча.
+- `APP_NAME` and `DB_DATABASE` in `.env`
+- The `Asia/Almaty` default in the users migration if the project is not Kazakhstani
+- This section
 
-3. **Идентификаторы — UUIDv7, и генераторов намеренно два.** Модель
-   ставит ключ через `HasUuids`, база страхует значением по умолчанию
-   для вставок мимо Eloquent. Оба нужны.
+## Stack
 
-4. **Все временные колонки — `timestamptz`.** Приложение в UTC, зона
-   пользователя в `users.timezone`. **Сервер никогда не отдаёт готовую
-   строку с датой** — только ISO 8601, форматирует клиент через
-   `Intl.DateTimeFormat` из `resources/js/lib/datetime.ts`.
+Laravel 13, Fortify, Inertia 3 (SSR), React 19, TypeScript, Tailwind 4,
+shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
 
-5. **Ни одного внешнего домена при отрисовке.** Ни шрифтов, ни иконок,
-   ни аналитики, ни капчи. Запрет исполняет браузер через CSP, а не
-   договорённость. Поэтому reCAPTCHA здесь невозможна в принципе.
-   **Любая правка CSP проверяется открытием страницы в браузере
-   с чтением консоли** — зелёные тесты тут ничего не доказывают.
+## Hard rules
 
-6. **Оформление задают токены в `resources/css/app.css`.** Язык — плотные
-   системные настройки macOS: 13px в панели, 17px на публичных страницах,
-   скругление 7px, волоски вместо теней, акцент #0071e3 одной строкой.
-   **Правка токенов заканчивается не прогоном тестов, а открытием
-   `/dev/styleguide` в браузере** — три оформительских бага подряд имели
-   статус 200 и валидную разметку, тестам было не за что зацепиться.
+1. **PostgreSQL only.** Driver `pgsql`, in tests too. The app refuses to
+   boot on anything else — that is deliberate, do not "fix" it by
+   disabling the check. The schema relies on `uuidv7()`, `citext` and
+   `timestamptz`, none of which exist elsewhere.
 
-7. **Только светлая тема.** Тёмной нет и не планируется. Варианты
-   `dark:` внутри `components/ui/` — апстрим shadcn, они не срабатывают
-   без класса `dark` на `<html>`. В свой код `dark:` не добавляйте.
+2. **The database connection runs in UTC.** Keep `'timezone' => 'UTC'`
+   in the `pgsql` config. PHP sends timestamps without an offset and
+   Postgres reads them in its session timezone — the instant shifts
+   silently otherwise.
 
-8. **Три локали: `ru`, `kk`, `en`.** Новый текст добавляется сразу
-   в три файла — тест сверяет, что наборы ключей совпадают. Публичная
-   часть с префиксом `/{locale}/`, кабинет без префикса. На фронте
-   «на главную» — это `/`, а не `home()`.
+3. **Identifiers are UUIDv7, generated in two places on purpose.**
+   `HasUuids` sets the key on the model; the database default covers
+   inserts that bypass Eloquent. Both are needed.
 
-9. **Ошибки — страницы, не модальные окна.** Модалку рисует клиент
-   Inertia, когда сервер отвечает обычным HTML. Обработчик в
-   `bootstrap/app.php` устраняет причину. Появилось окно — значит
-   статус проскочил мимо списка, чините список. Blade-версии в
-   `resources/views/errors/` работают, когда не работает ничего:
-   без `@vite`, без внешних ссылок, системным шрифтом.
+4. **Every timestamp column is `timestamptz`.** The app runs in UTC, the
+   user's zone lives in `users.timezone`. **The server never sends a
+   preformatted date** — only ISO 8601; the client formats it through
+   `Intl.DateTimeFormat` in `resources/js/lib/datetime.ts`.
 
-10. **Список и форма — разные экраны.** `/entity` — список,
-   `/entity/new` — создание, `/entity/:id` — редактирование. Короткая
-   форма может быть окном, большая — страницей. Не сваливайте на один
-   маршрут.
+5. **No external domain at render time.** No fonts, icons, analytics or
+   captcha. The browser enforces this through CSP, not goodwill — which
+   is why reCAPTCHA is impossible here by construction.
+   **Any CSP change ends with opening a page in a real browser and
+   reading the console.** Green tests prove nothing here.
 
-11. **Никакого демонстрационного содержимого.** Всё, что попадает
-    в проект, — рабочий функционал.
+6. **Design tokens live in `resources/css/app.css`.** The language is
+   dense macOS System Settings: 13px in the panel, 17px on public pages,
+   7px radius, hairlines instead of shadows, accent `#0071e3` on one
+   line. **Token changes end at `/dev/styleguide` in a browser, not at a
+   green test run** — three styling bugs in a row returned HTTP 200 with
+   valid markup and nothing for a test to catch.
 
-## Конвенции вместо настройки
+7. **Light theme only.** There is no dark theme and none is planned. The
+   `dark:` variants inside `components/ui/` are upstream shadcn and never
+   fire without a `dark` class on `<html>`. Do not add `dark:` to your
+   own code.
 
-Положение файла выводится из имени сущности. Это не эстетика: на этом
-будет работать генератор `make:feature`.
+8. **Three locales: `ru`, `kk`, `en`.** New copy goes into all three at
+   once — a test compares the key sets. Public pages sit under
+   `/{locale}/`, the cabinet does not. On the front end "go home" is `/`,
+   not `home()`.
+
+   Static objects (page `layout`, breadcrumbs, nav items) hold a
+   translation **key**, not text: a static object cannot call a hook, so
+   the component resolves it.
+
+9. **Errors are pages, not modals.** Inertia draws a modal when the
+   server answers with plain HTML; the handler in `bootstrap/app.php`
+   removes the cause. If a modal appears, a status slipped past the list
+   — fix the list. The blade versions in `resources/views/errors/` work
+   when nothing else does: no `@vite`, no external links, system font.
+
+10. **A list is a list, a form is a form.** `/entity` lists,
+    `/entity/new` creates, `/entity/:id` edits. A short form may be a
+    dialog, a long one gets its own page. Never both on one route.
+
+11. **No demo content.** Everything that ships is working functionality.
+
+## Conventions over configuration
+
+A file's location follows from the entity name. This is not taste — the
+`make:feature` generator relies on it.
 
     Post
     ├─ app/Models/Post.php
@@ -86,104 +106,110 @@ Tailwind 4, shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     ├─ resources/js/pages/dash/posts/index.tsx
     ├─ resources/js/pages/dash/posts/form.tsx
     ├─ lang/{ru,kk,en}/entities/posts.php
-    └─ tests/{Feature,js,e2e}/Dash/Post*
+    └─ tests/{Feature/Dash,js}/Post*
 
-Таблица — множественное число в snake_case, модель — единственное
-в StudlyCase, маршруты RESTful, путь страницы Inertia повторяет путь
-маршрута.
+Tables are plural snake_case, models singular StudlyCase, routes RESTful,
+and the Inertia page path mirrors the URL.
 
-**Чего нет намеренно** — это «великий монолит», а не слоёный пирог:
-репозиториев (Eloquent сам репозиторий), сервисного слоя (логика
-в моделях, form requests и политиках), классов-действий на каждую
-операцию, интерфейсов с единственной реализацией, CQRS.
+**What is deliberately absent** — this is one big monolith, not a layer
+cake: no repositories (Eloquent is one), no service layer (logic lives in
+models, form requests and policies), no action class per operation, no
+interfaces with a single implementation, no CQRS.
 
-Запреты проверяет `tests/Feature/ArchitectureTest.php`.
+`tests/Feature/ArchitectureTest.php` enforces this. Controllers may not
+touch the database directly — put the query on the model or in
+`app/Support`.
 
-**Конвенция обязательна для типового, но не запрещает нетиповое.**
-Дерево, версионирование, многоязычный контент пишутся руками,
-а отступление объясняется карточкой в `zettel/`.
+**Conventions bind the typical, not the unusual.** Trees, versioning and
+translatable content are written by hand, and the deviation gets a card
+in `zettel/`.
 
-## Тесты
+## Tests
 
-Каждая фича — **три уровня × три состояния данных**:
+Every feature: **three levels × three data states**.
 
-- уровни: Pest (бэкенд), Vitest с Testing Library (отрисовка), Playwright (клики);
-- состояния: правильные данные, неправильные, пустые.
+- Levels: Pest (backend), Vitest + Testing Library (rendering), Playwright (clicks).
+- States: correct data, wrong data, empty data.
 
-Минимум девять сценариев на фичу. Написанный, но не запущенный тест
-не считается написанным — прогоняйте и показывайте вывод.
+Nine scenarios minimum. A test that was written but never run does not
+count — run it and show the output.
 
-Тесты идут на настоящем PostgreSQL. Не переводите их на SQLite ради
-скорости: тогда `uuidv7()`, `citext` и `timestamptz` не проверяются
-вообще, а расхождения всплывают уже в проде.
+Tests run against a real PostgreSQL. Do not switch them to SQLite for
+speed: `uuidv7()`, `citext` and `timestamptz` then go unverified and the
+difference surfaces in production instead.
 
-## Картотека
+The element marker is `data-test`, not `data-testid` — Testing Library is
+configured for it and Playwright uses the same attribute.
 
-`zettel/` ведётся с первого дня и **обязательна**. Одна карточка —
-одна мысль. Появилось решение или новый кусок кода — сразу новая
-карточка, а не «потом соберу». Правила: `zettel/README.md`.
+## Zettelkasten
 
-## Команды
+`zettel/` is mandatory and kept from day one. One card, one thought.
+A decision or a new piece of code means a new card right away, not "later".
+Format: `zettel/README.md`.
 
-    composer dev                 всё сразу: сервер, очередь, логи, vite
-    php artisan test             тесты бэкенда
-    npm run test:js              тесты отрисовки
-    npx tsc --noEmit             проверка типов
-    vendor/bin/pint              форматирование PHP
-    vendor/bin/phpstan analyse   статический анализ
-    npm run build:ssr            сборка вместе с бандлом SSR
-    php artisan wayfinder:generate --with-form   перегенерация маршрутов для TS
-    /dev/styleguide              все компоненты разом (только APP_ENV=local)
+## Commands
 
-Флаг `--with-form` обязателен: без него пропадает вариант `.form()`
-и отваливается вся авторизация.
+    composer dev                 server, queue, logs, vite
+    php artisan test             backend tests
+    npm run test:js              rendering tests
+    npx tsc --noEmit             type check
+    vendor/bin/pint              PHP formatting
+    composer types:check         static analysis
+    npm run build:ssr            build including the SSR bundle
+    php artisan wayfinder:generate --with-form   regenerate TS routes
+    /dev/styleguide              every component at once (APP_ENV=local only)
 
-Postgres.app держит бинарники вне `PATH`:
+`--with-form` is not optional: without it the `.form()` variant disappears
+and the whole auth flow breaks.
+
+Postgres.app keeps its binaries out of `PATH`:
 `/Applications/Postgres.app/Contents/Versions/latest/bin`
 
-Почта в разработке — Mailpit на `127.0.0.1:1025`, веб-интерфейс
-на `http://127.0.0.1:8025`.
+Mail in development is Mailpit on `127.0.0.1:1025`, web UI on `:8025`.
 
-## Где что лежит
+## Where things live
 
-    app/Http/Middleware/SetLocale.php        определение локали
-    app/Http/Middleware/SecurityHeaders.php  заголовки безопасности
-    app/Support/Csp/AppPreset.php            политика CSP
-    app/Exceptions/UnsupportedDatabaseDriver.php  защита драйвера
-    bootstrap/app.php                        обработчик ошибок, middleware
-    resources/js/lib/datetime.ts             форматирование времени
-    resources/js/lib/i18n.ts                 хелпер t()
-    resources/js/pages/errors/               страница ошибки
-    resources/views/errors/                  запасные страницы ошибок
-    lang/{ru,kk,en}/                         переводы
-    scripts/check-font-glyphs.py             глубокая проверка шрифта
-    docs/superpowers/specs/                  спецификации
-    docs/superpowers/plans/                  планы реализации
+    app/Http/Middleware/SetLocale.php        locale resolution
+    app/Http/Middleware/SecurityHeaders.php  security headers
+    app/Support/Csp/AppPreset.php            CSP policy
+    app/Support/Sessions/SessionList.php     active sessions and devices
+    app/Exceptions/UnsupportedDatabaseDriver.php  database driver guard
+    bootstrap/app.php                        error handler, middleware
+    resources/js/lib/datetime.ts             time formatting
+    resources/js/lib/i18n.ts                 the t() helper
+    resources/js/hooks/use-translations.ts   the hook around it
+    resources/js/pages/errors/               error page
+    resources/views/errors/                  fallback error pages
+    lang/{ru,kk,en}/                         UI copy
+    lang/{ru,kk,en}/entities/                per-entity copy
+    scripts/check-font-glyphs.py             deep font check
+    docs/superpowers/specs/                  specifications
+    docs/superpowers/plans/                  implementation plans
 
 ## SSR
 
-Отдельный файл `ssr.tsx` не нужен: в Inertia 3 плагин `@inertiajs/vite`
-сам находит точку входа и вшивает серверный бутстрап.
+No hand-written `ssr.tsx`: in Inertia 3 the `@inertiajs/vite` plugin finds
+the entry point and injects the server bootstrap itself.
 
-**В разработке отдельный процесс SSR запускать не надо** — рендеринг
-идёт через dev-сервер Vite, поэтому в `composer dev` его и нет.
+**Development needs no separate SSR process** — rendering goes through the
+Vite dev server, which is why `composer dev` does not start one.
 
-**В проде процесс нужен:** `php artisan inertia:start-ssr` поверх
-собранного `npm run build:ssr`. Держать его живым — задача systemd.
+**Production does:** `php artisan inertia:start-ssr` over a
+`npm run build:ssr` bundle. Keeping it alive is systemd's job.
 
-**Процесс SSR держит бандл в памяти.** Пересборка меняет файл на диске,
-но работающий процесс об этом не узнает и продолжит отдавать старую
-версию интерфейса. Поэтому `npm run build:ssr` всегда в паре
-с перезапуском процесса — и в проверках, и при деплое.
+**The SSR process holds the bundle in memory.** Rebuilding changes the file
+on disk; the running process never notices and keeps serving the old UI.
+So `npm run build:ssr` always comes paired with a restart — in checks and
+on deploy alike.
 
-Бандл называется `bootstrap/ssr/app.js`, а не `ssr.mjs` из документации
-Inertia 2. Ошибка в этом пути **тихая**: прод отдаёт пустой контейнер
-без единой ошибки в логах.
+The bundle is `bootstrap/ssr/app.js`, not the `ssr.mjs` from Inertia 2
+docs. Getting that path wrong fails **silently**: production serves an
+empty container with nothing in the logs.
 
-## Чего в проекте намеренно нет
+## Deliberately absent
 
-Redis, Docker, тёмная тема, двухфакторная аутентификация, passkeys,
-вход через соцсети, Sanctum и API, векторный поиск, внешние трекеры
-ошибок, ИИ-агенты (вынесены в ветку `feature/ai-agents`).
+Redis, Docker, dark theme, two-factor auth, passkeys, social login,
+Sanctum and any API, vector search, external error trackers, AI agents
+(moved to the `feature/ai-agents` branch).
 
-Прежде чем добавить что-то из этого списка — спросите.
+Ask before adding anything from this list.

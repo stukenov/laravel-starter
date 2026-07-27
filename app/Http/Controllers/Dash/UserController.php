@@ -52,7 +52,7 @@ class UserController extends Controller
     {
         $data = $request->validated();
 
-        // Пустое поле пароля означает «оставить прежний».
+        // An empty password field means "keep the current one".
         if (blank($data['password'] ?? null)) {
             unset($data['password']);
         }

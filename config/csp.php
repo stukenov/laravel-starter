@@ -13,8 +13,8 @@ return [
      * any class that implements `Spatie\Csp\Preset`
      */
     'presets' => [
-        // ПРАВИЛО(внешнее): своя политика вместо Basic — она разрешает
-        // чужие домены. См. app/Support/Csp/AppPreset.php и AGENTS.md
+        // RULE(external): our own policy instead of Basic, which permits
+        // foreign domains. See app/Support/Csp/AppPreset.php and AGENTS.md
         AppPreset::class,
     ],
 

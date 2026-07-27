@@ -16,8 +16,8 @@ export function Breadcrumbs({
 }: {
     breadcrumbs: BreadcrumbItemType[];
 }) {
-    // ПРАВИЛО(локали): в крошке лежит ключ перевода — статический объект
-    // страницы не может вызвать хук. См. AGENTS.md
+    // RULE(i18n): a crumb holds a translation key — a page's static
+    // object cannot call a hook. See AGENTS.md
     const t = useTranslations();
 
     return (

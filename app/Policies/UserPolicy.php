@@ -5,41 +5,50 @@ namespace App\Policies;
 use App\Models\User;
 
 /**
- * ПРАВИЛО(конвенции): политика называется по сущности — AGENTS.md.
+ * RULE(access): managing users is for administrators only — AGENTS.md.
  *
- * Ролей в стартере ещё нет — они появятся в этапе 3 вместе с
- * spatie/laravel-permission. До тех пор доступ есть у любого вошедшего,
- * но точка расширения уже на месте: менять придётся один файл.
+ * This policy used to return true everywhere, with a comment saying real
+ * roles arrive in stage 3. That was a genuine hole: registration is open
+ * by default, so anyone could sign up and then change any account's email
+ * and password — including an administrator's. "Roles come later" is not
+ * a reason to ship an open door.
+ *
+ * `is_admin` is a stopgap. When spatie/laravel-permission lands, this
+ * file and the column go together.
  */
 class UserPolicy
 {
+    /**
+     * The list exposes every user's email — that is a data leak on its
+     * own, not just a management concern.
+     */
     public function viewAny(User $user): bool
     {
-        return true;
+        return (bool) $user->is_admin;
     }
 
     public function view(User $user, User $target): bool
     {
-        return true;
+        return (bool) $user->is_admin || $user->id === $target->id;
     }
 
     public function create(User $user): bool
     {
-        return true;
+        return (bool) $user->is_admin;
     }
 
     public function update(User $user, User $target): bool
     {
-        return true;
+        return (bool) $user->is_admin;
     }
 
     /**
-     * Удалить себя нельзя — иначе администратор одним кликом лишает
-     * систему последнего входа. Для ухода есть отдельный экран удаления
-     * аккаунта, там оно осознанное и с подтверждением пароля.
+     * Even an administrator may not delete themselves: one click would
+     * strip the system of its last way in. Leaving is a separate,
+     * deliberate flow behind a password confirmation.
      */
     public function delete(User $user, User $target): bool
     {
-        return $user->id !== $target->id;
+        return (bool) $user->is_admin && $user->id !== $target->id;
     }
 }

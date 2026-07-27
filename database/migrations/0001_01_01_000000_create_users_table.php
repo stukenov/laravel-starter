@@ -11,7 +11,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            // ПРАВИЛО(база): ключ — uuid, значение выдаёт база — AGENTS.md
+            // RULE(db): uuid key, value produced by the database — AGENTS.md
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('email')->unique();
@@ -23,17 +23,17 @@ return new class extends Migration
             $table->timestampsTz();
         });
 
-        // Значение по умолчанию ставится на уровне базы, а не в модели:
-        // так идентификатор появится и у записи, вставленной мимо Eloquent —
-        // миграцией, скриптом или руками в psql.
+        // The default lives in the database, not the model, so a row
+        // inserted by a migration, a script or by hand in psql still gets
+        // a proper identifier.
         DB::statement('alter table users alter column id set default uuidv7()');
 
-        // citext делает уникальность почты регистронезависимой без
-        // нормализации в коде: Saken@Example.KZ и saken@example.kz —
-        // один и тот же адрес для базы.
+        // citext makes email uniqueness case-insensitive without any
+        // normalisation in code: Saken@Example.KZ and saken@example.kz
+        // are the same address to the database.
         DB::statement('alter table users alter column email type citext');
 
-        // Поиск по пользователям в панели: полнотекстовый по имени и почте.
+        // Panel search over users: full text across name and email.
         DB::statement("
             alter table users add column search_vector tsvector
             generated always as (
@@ -42,7 +42,7 @@ return new class extends Migration
         ");
         DB::statement('create index users_search_vector_idx on users using gin (search_vector)');
 
-        // Дополняет полнотекстовый поиск: ищет по куску слова, а не по слову.
+        // Complements full text: matches a fragment, not a whole word.
         DB::statement('create index users_name_trgm_idx on users using gin (name gin_trgm_ops)');
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -55,7 +55,7 @@ return new class extends Migration
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
-            // Тип обязан совпадать с users.id, иначе связь не построится.
+            // Must match users.id or the relation cannot be built.
             $table->uuid('user_id')->nullable()->index();
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();

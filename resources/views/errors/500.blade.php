@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Что-то пошло не так</title>
-    {{-- ПРАВИЛО(ошибки): без @vite и без единой внешней ссылки.
-         Этот файл должен работать, когда не работает ничего: упал процесс
-         SSR, нет собранных ресурсов, база недоступна. Поэтому здесь
-         системный шрифт и встроенные стили — и так и должно остаться.
-         См. AGENTS.md --}}
+    {{-- RULE(errors): no @vite and not a single external link.
+         This file must work when nothing else does: the SSR process is
+         down, no build exists, the database is unreachable. Hence the
+         system font and inline styles — and so it must stay.
+         See AGENTS.md --}}
     <style>
         body {
             margin: 0; min-height: 100svh; display: grid; place-items: center;

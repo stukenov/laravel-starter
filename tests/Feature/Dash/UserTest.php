@@ -4,7 +4,7 @@ use App\Models\User;
 
 function admin(): User
 {
-    return User::factory()->create(['name' => 'Админ', 'email' => 'admin@example.kz']);
+    return User::factory()->admin()->create(['name' => 'Админ', 'email' => 'admin@example.kz']);
 }
 
 function payload(array $overrides = []): array
@@ -140,6 +140,29 @@ it('refuses to let a user delete themselves', function () {
         ->assertForbidden();
 
     expect(User::find($user->id))->not->toBeNull();
+});
+
+it('refuses a signed-in user who is not an administrator', function () {
+    // Registration is open by default, so without this check anyone
+    // could sign up and take over any account.
+    $plain = User::factory()->create();
+
+    $this->actingAs($plain)->get(route('dash.users.index'))->assertForbidden();
+    $this->actingAs($plain)->post(route('dash.users.store'), payload())->assertForbidden();
+    $this->actingAs($plain)
+        ->put(route('dash.users.update', $plain), payload(['email' => $plain->email]))
+        ->assertForbidden();
+});
+
+it('refuses a non administrator trying to delete somebody', function () {
+    $plain = User::factory()->create();
+    $victim = User::factory()->create();
+
+    $this->actingAs($plain)
+        ->delete(route('dash.users.destroy', $victim))
+        ->assertForbidden();
+
+    expect(User::find($victim->id))->not->toBeNull();
 });
 
 it('refuses an anonymous request', function () {

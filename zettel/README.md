@@ -1,30 +1,31 @@
-# Картотека проекта
+# Project zettelkasten
 
-Одна карточка — одна мысль. Три коротких карточки лучше одной длинной.
+One card, one thought. Three short cards beat one long one.
 
-## Что записываем
+**Write in English.** Nobody reads these but agents, and Cyrillic costs
+roughly twice the tokens per character.
 
-- **Функционал** — что делает и почему сделано именно так
-- **Требования и решения** — своими словами, не копипастой сообщения
-- **Обсуждения** — к чему пришли, что отвергли и почему
-- **Новый код** — что появилось, зачем, как связано с остальным
-- **Находки** — особенно тихие поломки, которые трудно поймать заново
+## What goes in
 
-## Формат
+- **Behaviour** — what it does and why it was built that way
+- **Decisions** — in your own words, not pasted from a message
+- **Discussions** — what was concluded, what was rejected and why
+- **New code** — what appeared, what for, how it connects
+- **Findings** — especially silent failures that are hard to rediscover
 
-Отдельный `.md`-файл, короткое имя-слаг латиницей. Заголовок — сама
-мысль одной фразой, а не тема. Дальше несколько предложений по делу.
+## Format
 
-Плохой заголовок: «Про базу данных».
-Хороший: «PostgreSQL 18 даёт uuidv7 встроенной функцией — расширение не нужно».
+One `.md` file, short latin slug. The title is the thought itself in a
+single phrase, not a topic. Then a few sentences that earn their place.
 
-## Связи
+Bad title: "About the database".
+Good title: "PostgreSQL 18 ships uuidv7 as a function — no extension needed".
 
-Ссылки между карточками через `[[имя-карточки]]`. Ссылаться щедро.
-Ссылка на ещё не написанную карточку — не ошибка, а пометка, что её
-стоит написать.
+## Links
 
-## Когда писать
+Link cards with `[[card-name]]`. Link generously. A link to a card that
+does not exist yet is not an error — it marks one worth writing.
 
-Сразу. Появилась по ходу задачи новая мысль — сразу новая карточка,
-а не «потом соберу».
+## When
+
+Immediately. A new thought during a task means a new card now, not later.

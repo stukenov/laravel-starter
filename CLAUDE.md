@@ -1,5 +1,5 @@
 # CLAUDE.md
 
-Правила проекта живут в одном месте, чтобы копии не разъезжались:
+Project rules live in one place so the copies cannot drift:
 
 @AGENTS.md

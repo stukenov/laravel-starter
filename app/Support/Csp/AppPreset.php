@@ -8,14 +8,14 @@ use Spatie\Csp\Policy;
 use Spatie\Csp\Preset;
 
 /**
- * ПРАВИЛО(внешнее): ни одного чужого домена при отрисовке — AGENTS.md.
+ * RULE(external): no foreign domain at render time — AGENTS.md.
  *
- * Это не документация, а исполняемый запрет: браузер сам отклонит запрос
- * к постороннему хосту. Если однажды кто-то добавит виджет аналитики или
- * шрифт с CDN, страница сломается сразу и заметно, а не тихо утечёт.
+ * Not documentation but an executable ban: the browser itself rejects a
+ * request to an outside host. If somebody adds an analytics widget or a
+ * CDN font, the page breaks loudly instead of leaking quietly.
  *
- * Отсюда следует, что reCAPTCHA и подобные сервисы в проекте невозможны
- * в принципе — вместо них honeypot.
+ * It follows that reCAPTCHA and friends are impossible here by
+ * construction — honeypot instead.
  */
 class AppPreset implements Preset
 {
@@ -28,21 +28,19 @@ class AppPreset implements Preset
             ->add(Directive::FORM_ACTION, Keyword::SELF)
             ->add(Directive::FRAME_ANCESTORS, Keyword::NONE)
             ->add(Directive::OBJECT, Keyword::NONE)
-            // data: нужен для встроенных изображений и шрифтов, которые
-            // собирает Vite. Это не внешний ресурс — данные лежат в самом
-            // документе.
+            // data: covers inlined images and fonts emitted by Vite.
+            // Not an external resource — the bytes are in the document.
             ->add(Directive::IMG, [Keyword::SELF, 'data:'])
             ->add(Directive::FONT, [Keyword::SELF, 'data:'])
-            // Стили инлайновые по необходимости: Laravel отдаёт шрифт
-            // встроенным блоком, а Tailwind в разработке внедряет стили
-            // в документ. Для скриптов такое послабление недопустимо —
-            // там nonce.
+            // Inline styles are unavoidable: Laravel serves the font as
+            // an inline block and Tailwind injects styles in dev. The
+            // same leniency is unacceptable for scripts — nonce there.
             ->add(Directive::STYLE, [Keyword::SELF, Keyword::UNSAFE_INLINE])
-            // 'self' обязателен рядом с nonce, и это не очевидно.
-            // Один только nonce блокирует собственные бандлы Vite: у их
-            // тегов <script src> nonce нет. Страница при этом отдаётся
-            // со статусом 200 и с разметкой — ломается лишь весь
-            // JavaScript, и увидеть это можно только в браузере.
+            // 'self' must sit next to the nonce, and that is not
+            // obvious. A nonce alone blocks our own Vite bundles: their
+            // <script src> tags carry none. The page still returns 200
+            // with valid markup — only every script dies, and you can
+            // only see that in a browser.
             ->add(Directive::SCRIPT, Keyword::SELF)
             ->addNonce(Directive::SCRIPT);
     }

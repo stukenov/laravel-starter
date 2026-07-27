@@ -4,16 +4,17 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        {{-- ПРАВИЛО(тема): только светлая. Здесь не должно появиться ни
-             определения системной темы, ни класса на <html> — AGENTS.md --}}
+        {{-- RULE(theme): light only. Neither system-theme detection nor a
+             class on <html> belongs here — AGENTS.md --}}
         <style>
             html { background-color: oklch(1 0 0); }
         </style>
 
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 
-        {{-- Шрифт приходит встроенным блоком стилей: файлы скачаны на сборке
-             и лежат на нашем домене. Внешних запросов здесь быть не может. --}}
+        {{-- The font arrives as an inline style block: files are fetched at
+             build time and served from our own domain. No external requests
+             are possible here. --}}
         @fonts
 
         @viteReactRefresh

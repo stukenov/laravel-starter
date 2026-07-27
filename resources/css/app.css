@@ -5,9 +5,9 @@
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
-/* ПРАВИЛО(тема): вариант dark оставлен только ради компонентов shadcn
-   в components/ui/. Класс .dark на <html> не ставится никогда, поэтому
-   их варианты не срабатывают. Не добавляйте dark: в свой код — AGENTS.md */
+/* RULE(theme): the dark variant exists only for the shadcn components
+   in components/ui/. A .dark class is never put on <html>, so their
+   variants never fire. Do not add dark: to your own code — AGENTS.md */
 @custom-variant dark (&:is(.dark *));
 
 @theme {
@@ -67,21 +67,21 @@
 
 :root {
     /*
-     * ПРАВИЛО(оформление): язык системных настроек macOS — AGENTS.md.
+     * RULE(design): the language of macOS System Settings — AGENTS.md.
      *
-     * Три решения, принятые на макетах:
-     *   1. Панель плотная (macOS), публичные страницы воздушные (apple.com)
-     *   2. Поверхности разделяются волосками, не тенями
-     *   3. Акцент — системный синий Apple
+     * Three decisions taken on mockups:
+     *   1. Dense panel (macOS), airy public pages (apple.com)
+     *   2. Surfaces separated by hairlines, not shadows
+     *   3. Accent is the Apple system blue
      *
-     * Акцент меняется одной строкой ниже, все компоненты подхватят.
+     * The accent is one line below; every component follows it.
      */
 
-    /* Акцент. Единственная переменная, которую меняют под проект. */
+    /* Accent. The one variable a project changes. */
     --primary: oklch(0.558 0.204 258.5);          /* #0071e3 */
     --primary-foreground: oklch(1 0 0);
 
-    /* Нейтральная шкала: почти без подтона, как у Apple */
+    /* Neutral scale: almost no cast, the way Apple does it */
     --background: oklch(1 0 0);
     --foreground: oklch(0.21 0.004 285.9);        /* #1d1d1f */
     --card: oklch(1 0 0);
@@ -96,30 +96,31 @@
     --accent-foreground: var(--foreground);
     --destructive: oklch(0.58 0.216 27.3);
     /*
-     * Это НЕ цвет текста на красной кнопке — та жёстко использует text-white.
-     * Отсюда красится текст сообщения об ошибке, который лежит на светлом
-     * фоне. Поставишь сюда белый — сообщение станет невидимым, и заметить
-     * это можно только глазами: разметка на месте, тестам не за что зацепиться.
+     * This is NOT the text colour on the red button — that one hardcodes
+     * text-white. It colours the error *message*, which sits on a light
+     * background. Put white here and the message becomes invisible; only
+     * the eye catches it, the markup stays perfectly valid.
      */
     --destructive-foreground: oklch(0.51 0.19 27.3);
 
     /*
-     * Заглушка загрузки. Отдельный токен, а не muted: тот почти белый и на
-     * белой карточке пропадает совсем. И не primary: тогда заглушка красится
-     * акцентом и читается как активное состояние. Оба промаха видно только
-     * глазами — разметка на месте, тестам не за что зацепиться.
+     * Loading placeholder. Its own token, not muted: that one is nearly
+     * white and vanishes on a white card. Not primary either: then the
+     * placeholder takes the accent and reads as an active state. Both
+     * mistakes are visible only to the eye — the markup is fine and
+     * there is nothing for a test to catch.
      */
     --skeleton: oklch(0.90 0 0);
 
-    /* Волоски. Именно на них держится вся пластика — не на тенях. */
+    /* Hairlines. The whole feel rests on these, not on shadows. */
     --border: oklch(0.918 0 0);
     --input: oklch(0.878 0 0);
     --ring: var(--primary);
 
-    /* Скругления: 5-7px в панели, как в системных настройках */
+    /* Radius: 5-7px in the panel, as in System Settings */
     --radius: 0.4375rem;                          /* 7px */
 
-    /* Боковая панель: серая подложка, белый контент */
+    /* Sidebar: grey backdrop, white content */
     --sidebar: oklch(0.965 0 0);                  /* #f5f5f7 */
     --sidebar-foreground: var(--foreground);
     --sidebar-primary: var(--primary);
@@ -147,11 +148,11 @@
     }
 
     /*
-     * Два масштаба вместо одного. В панели плотно — 13px, как в системных
-     * настройках macOS: на экран помещается больше строк. На публичных
-     * страницах просторно — 17px, как на apple.com.
+     * Two scales, not one. The panel is dense — 13px, like macOS System
+     * Settings: more rows fit on screen. Public pages are roomy — 17px,
+     * like apple.com.
      *
-     * Переключает класс на контейнере лэйаута, а не медиазапрос.
+     * Switched by a class on the layout container, not a media query.
      */
     .density-panel {
         font-size: 13px;
@@ -163,7 +164,7 @@
         line-height: 1.5;
     }
 
-    /* Волоски должны оставаться волосками и на плотных экранах */
+    /* Hairlines must stay hairlines on high-density screens too */
     @media (min-resolution: 2dppx) {
         .hairline {
             border-width: 0.5px;

@@ -11,7 +11,7 @@ createInertiaApp({
     title: (title) => (title ? `${title} — ${appName}` : appName),
     layout: (name) => {
         switch (true) {
-            // Публичные страницы верстают себя сами
+            // Public pages lay themselves out
             case name === 'home':
             case name.startsWith('legal/'):
             case name.startsWith('errors/'):

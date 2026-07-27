@@ -30,9 +30,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('settings/sessions', [SessionController::class, 'index'])->name('sessions.index');
 
-    // Подтверждение пароля: выход со всех устройств — необратимое действие,
-    // и делать его должен тот, кто знает пароль, а не тот, кто нашёл
-    // незаблокированный экран.
+    // Password confirmation: logging out everywhere is irreversible and
+    // belongs to somebody who knows the password, not to whoever found
+    // an unlocked screen.
     Route::delete('settings/sessions', [SessionController::class, 'destroy'])
         ->middleware(RequirePassword::class)
         ->name('sessions.destroy');

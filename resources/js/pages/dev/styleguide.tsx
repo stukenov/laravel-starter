@@ -24,11 +24,11 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /**
- * Живой стайлгайд. Доступен только при APP_ENV=local.
+ * Live styleguide. Available only when APP_ENV=local.
  *
- * Это не демо-контент, а рабочий инструмент: единственное место, где видно
- * все компоненты разом под текущими токенами. Правка токенов проверяется
- * здесь за один взгляд, а не обходом десяти экранов.
+ * Not demo content but a working tool: the only place showing every
+ * component at once under the current tokens. A token change is checked
+ * here in one glance instead of walking ten screens.
  */
 
 function Section({

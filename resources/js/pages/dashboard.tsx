@@ -2,10 +2,10 @@ import { Head } from '@inertiajs/react';
 import { dashboard } from '@/routes';
 
 /**
- * Каркас сводки.
+ * Skeleton of the dashboard.
  *
- * Плитки-заглушки из стартера убраны: это демо-контент, который потом
- * забывают вычистить. Наполняется на конкретном проекте.
+ * The starter's placeholder tiles are gone: demo content that nobody
+ * remembers to remove. A real project fills it in.
  */
 export default function Dashboard() {
     return (

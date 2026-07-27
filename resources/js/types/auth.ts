@@ -1,5 +1,5 @@
 export type User = {
-    // ПРАВИЛО(база): идентификаторы — uuid, не число. См. AGENTS.md
+    // RULE(db): identifiers are uuid, not numbers. See AGENTS.md
     id: string;
     name: string;
     email: string;

@@ -6,7 +6,7 @@ function Toaster({ ...props }: ToasterProps) {
 
     return (
         <Sonner
-            // ПРАВИЛО(тема): только светлая, переключателя нет — AGENTS.md
+            // RULE(theme): light only, no switcher — AGENTS.md
             theme="light"
             className="toaster group"
             position="bottom-right"

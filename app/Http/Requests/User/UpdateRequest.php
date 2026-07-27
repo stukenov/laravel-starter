@@ -27,8 +27,8 @@ class UpdateRequest extends FormRequest
                 'required', 'string', 'email', 'max:255',
                 Rule::unique(User::class)->ignore($this->route('user')->id),
             ],
-            // Пароль при правке необязателен: пустое поле означает
-            // «оставить прежний», а не «стереть».
+            // Password is optional when editing: an empty field means
+            // "keep the current one", not "wipe it".
             'password' => ['nullable', 'string', Password::defaults()],
             'locale' => ['required', 'string', Rule::in(SetLocale::SUPPORTED)],
             'timezone' => ['required', 'string', Rule::in(DateTimeZone::listIdentifiers())],

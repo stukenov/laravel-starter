@@ -44,10 +44,10 @@ class HandleInertiaRequests extends Middleware
             ],
             'locale' => app()->getLocale(),
             'locales' => SetLocale::SUPPORTED,
-            // Плоский словарь: ключ 'nav.dashboard' вместо вложенных объектов.
-            // Так хелпер t() остаётся в двадцать строк без обхода дерева.
-            // Словари сущностей приходят с префиксом: ключ 'users.title'
-            // не сталкивается с 'nav.title' из общего словаря.
+            // Flat dictionary: key 'nav.dashboard' instead of nested
+            // objects, which keeps t() at twenty lines with no tree walk.
+            // Entity dictionaries are prefixed, so 'users.title' cannot
+            // collide with 'nav.title' from the common one.
             'translations' => array_merge(
                 Arr::dot(trans('common')),
                 collect(glob(lang_path(app()->getLocale().'/entities/*.php')))

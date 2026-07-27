@@ -1,14 +1,14 @@
 export type Translations = Record<string, string>;
 
 /**
- * ПРАВИЛО(локали): свой хелпер вместо библиотеки i18n — AGENTS.md.
+ * RULE(i18n): our own helper instead of an i18n library — AGENTS.md.
  *
- * Переводы приходят общими свойствами Inertia уже плоским словарём,
- * поэтому весь нужный функционал — подстановка значений. Тянуть ради
- * этого внешнюю библиотеку незачем.
+ * Translations arrive through Inertia shared props already flattened,
+ * so the only work left is placeholder substitution. Not worth a
+ * dependency.
  *
- * Неизвестный ключ возвращается как есть: так пропущенный перевод видно
- * на экране сразу, а не превращается в пустое место.
+ * An unknown key comes back as itself, so a missing translation shows
+ * up on screen instead of becoming a blank.
  */
 export function makeTranslator(translations: Translations) {
     return function t(

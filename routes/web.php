@@ -5,11 +5,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
- * ПРАВИЛО(локали): гибридная схема адресов — AGENTS.md.
+ * RULE(i18n): hybrid URL scheme — AGENTS.md.
  *
- * Публичная часть — с префиксом /{locale}/, чтобы у каждого языка был свой
- * адрес и корректные hreflang. Кабинет — без префикса: там язык берётся из
- * профиля, а префикс только ломал бы ссылки при его смене.
+ * Public pages carry a /{locale}/ prefix so each language has its own
+ * address and correct hreflang. The cabinet has none: the language comes
+ * from the profile there, and a prefix would only break links when it
+ * changes.
  */
 
 Route::get('/', fn (Request $request) => redirect('/'.SetLocale::fromBrowser($request)))
@@ -28,8 +29,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 /*
- * Стайлгайд — рабочий инструмент, а не демо-контент: единственное место,
- * где видно все компоненты разом под текущими токенами. В прод не попадает.
+ * The styleguide is a working tool, not demo content: the only place
+ * showing every component at once under the current tokens. Never ships.
  */
 if (app()->environment('local')) {
     Route::inertia('dev/styleguide', 'dev/styleguide')->name('dev.styleguide');

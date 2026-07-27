@@ -16,17 +16,17 @@ return [
     */
 
     /*
-     * ПРАВИЛО(ssr): SSR обязателен, не выключайте — AGENTS.md.
+     * RULE(ssr): SSR is required, do not switch it off — AGENTS.md.
      *
-     * В разработке отдельный процесс не нужен: плагин @inertiajs/vite отдаёт
-     * рендеринг через сам dev-сервер Vite. В проде работает собранный бандл
-     * ниже, его поднимает `php artisan inertia:start-ssr`.
+     * Development needs no separate process: the @inertiajs/vite plugin
+     * renders through the Vite dev server itself. Production runs the
+     * bundle below, started by `php artisan inertia:start-ssr`.
      */
     'ssr' => [
         'enabled' => true,
         'url' => env('INERTIA_SSR_URL', 'http://127.0.0.1:13714'),
-        // Имя бандла задаёт плагин: точка входа app.tsx → bootstrap/ssr/app.js.
-        // Серверный бутстрап плагин вшивает внутрь сам, писать его не надо.
+        // The plugin decides the name: entry app.tsx → bootstrap/ssr/app.js.
+        // It injects the server bootstrap itself; do not write one.
         'bundle' => base_path('bootstrap/ssr/app.js'),
     ],
 

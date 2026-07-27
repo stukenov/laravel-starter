@@ -1,10 +1,11 @@
-# Модели
+# Models
 
-- Ключ — `uuid`. `HasUuids` ставит его в модели, база страхует значением
-  по умолчанию `uuidv7()`. Оба механизма нужны, не убирайте ни один.
-- Все даты — `timestamptz`, приложение работает в UTC.
-- Логика живёт здесь, в form requests и политиках. Репозиториев и
-  сервисного слоя в проекте нет — это проверяет ArchitectureTest.
-- Идентификатор в типах — строка, не число.
+- Key is `uuid`. `HasUuids` sets it on the model, the database default
+  `uuidv7()` covers inserts that bypass Eloquent. Both are needed.
+- Every timestamp is `timestamptz`; the app runs in UTC.
+- Logic lives here, in form requests and in policies. There are no
+  repositories and no service layer — ArchitectureTest enforces it.
+- Queries belong here too: controllers may not touch the database.
+- Identifiers are strings in types, never numbers.
 
-Полные правила: `AGENTS.md` в корне.
+Full rules: `AGENTS.md` in the repo root.

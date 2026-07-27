@@ -30,7 +30,22 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            // Explicit, not left to the database default: a freshly
+            // created model does not re-read the row, so the attribute
+            // would be null in memory and every policy check would
+            // explode on a null return.
+            'is_admin' => false,
         ];
+    }
+
+    /**
+     * Administrators may manage other users. Stopgap until real roles.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => true,
+        ]);
     }
 
     /**

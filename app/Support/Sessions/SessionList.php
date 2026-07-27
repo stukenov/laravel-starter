@@ -8,11 +8,11 @@ use DeviceDetector\Parser\Device\AbstractDeviceParser;
 use Illuminate\Support\Facades\DB;
 
 /**
- * ПРАВИЛО(сессии): список читается из таблицы sessions — AGENTS.md.
+ * RULE(sessions): the list is read from the sessions table — AGENTS.md.
  *
- * Драйвер сессий обязан быть database, иначе показывать нечего. Разбор
- * user-agent вынесен сюда, а не в контроллер: он нужен и в тестах, и,
- * скорее всего, в журнале действий.
+ * The session driver must be database or there is nothing to show.
+ * User-agent parsing lives here rather than in the controller: tests
+ * need it, and so will the activity log.
  */
 class SessionList
 {
@@ -21,7 +21,7 @@ class SessionList
      */
     public static function forUser(User $user, string $currentSessionId): array
     {
-        // Без этого детектор отдаёт коды вроде "AP" вместо "Apple".
+        // Without this the detector returns codes like "AP" for "Apple".
         AbstractDeviceParser::setVersionTruncation(AbstractDeviceParser::VERSION_TRUNCATION_NONE);
 
         $rows = DB::table('sessions')
@@ -48,28 +48,28 @@ class SessionList
 
         return [
             'id' => $row->id,
-            // Пустые значения не выдумываем — отдаём null, а подпись
-            // подставляет интерфейс на своём языке.
+            // Do not invent values — return null and let the UI supply
+            // a label in its own language.
             'browser' => self::clean($browser),
             'platform' => self::clean($platform),
             'device' => self::clean($device),
             'ip' => $row->ip_address,
-            // Момент времени в ISO 8601 (UTC) — форматирует клиент
-            // в зоне пользователя. См. правило про время в AGENTS.md.
+            // ISO 8601 (UTC) — the client formats it in the user's zone.
+            // See the time rule in AGENTS.md.
             'last_active_at' => now()->createFromTimestamp($row->last_activity)->toIso8601String(),
             'is_current' => $row->id === $currentSessionId,
         ];
     }
 
     /**
-     * Завершает все сессии пользователя, кроме текущей.
+     * Ends every session of the user except the current one.
      *
-     * Не logoutOtherDevices(): тот меняет хеш пароля в сессии, но строки
-     * в таблице оставляет — список продолжит показывать устройства,
-     * которых уже нет.
+     * Not logoutOtherDevices(): that rotates the password hash in the
+     * session but leaves the rows in place, so the list keeps showing
+     * devices that are already gone.
      *
-     * Живёт здесь, а не в контроллере: обращаться к базе из контроллера
-     * запрещено правилом, и это проверяет ArchitectureTest.
+     * It lives here rather than in the controller because reaching the
+     * database from a controller is banned — ArchitectureTest enforces it.
      */
     public static function revokeOthers(User $user, string $currentSessionId): int
     {
@@ -80,9 +80,9 @@ class SessionList
     }
 
     /**
-     * Библиотека отдаёт 'UNK' вместо пустоты, когда не смогла опознать.
-     * Показывать это пользователю нельзя: строка ничего не значит и не
-     * переводится. Приводим к null — подпись подставит интерфейс.
+     * The library returns 'UNK' instead of nothing when it fails to
+     * identify something. That string is meaningless and untranslatable,
+     * so it becomes null and the UI supplies a label.
      */
     private static function clean(mixed $value): ?string
     {

@@ -15,8 +15,8 @@ class LocaleUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Список зон берётся у самого PHP, а не пишется руками:
-            // так он не устареет при следующем обновлении tzdata.
+            // The zone list comes from PHP itself rather than being typed
+            // out, so it cannot go stale on the next tzdata update.
             'timezone' => ['required', 'string', Rule::in(DateTimeZone::listIdentifiers())],
             'locale' => ['required', 'string', Rule::in(SetLocale::SUPPORTED)],
         ];

@@ -1,10 +1,10 @@
 import { Head } from '@inertiajs/react';
 
 /**
- * Каркас публичной главной страницы.
+ * Skeleton of the public home page.
  *
- * Намеренно пустая: тексты-заглушки — это демо-контент, который потом
- * забывают вычистить. Наполняется на конкретном проекте.
+ * Deliberately empty: placeholder copy is demo content that nobody
+ * remembers to remove. A real project fills it in.
  */
 export default function Home() {
     return (

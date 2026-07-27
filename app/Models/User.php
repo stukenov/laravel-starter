@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property string $password
  * @property string $locale
  * @property string $timezone
+ * @property bool $is_admin
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -33,17 +34,17 @@ class User extends Authenticatable implements MustVerifyEmail
     use HasFactory, HasUuids, Notifiable;
 
     /*
-     * ПРАВИЛО(база): идентификаторы — UUIDv7, и генераторов намеренно два.
+     * RULE(db): UUIDv7 keys, generated in two places on purpose.
      *
-     * HasUuids в Laravel 13 отдаёт Str::uuid7(), то есть модель проставляет
-     * ключ сама и сразу его знает. Значение по умолчанию uuidv7() в базе —
-     * страховка для записей, вставленных мимо Eloquent: миграцией,
-     * скриптом или руками в psql.
+     * HasUuids in Laravel 13 returns Str::uuid7(), so the model sets the
+     * key itself and knows it immediately. The uuidv7() default in the
+     * database covers rows inserted around Eloquent: by a migration, a
+     * script, or by hand in psql.
      *
-     * Одного механизма мало. Отключишь генерацию в модели — Eloquent
-     * перестанет узнавать выданный базой ключ и начнёт подставлять мусор.
-     * Уберёшь значение по умолчанию — сломаются вставки мимо моделей.
-     * См. AGENTS.md
+     * One mechanism is not enough. Disable model generation and Eloquent
+     * stops recognising the key the database issued, filling it with
+     * junk. Drop the database default and inserts outside models break.
+     * See AGENTS.md.
      */
 
     /**
@@ -95,6 +96,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            // Not fillable on purpose: nobody grants themselves admin
+            // through a mass assignment.
+            'is_admin' => 'boolean',
         ];
     }
 }

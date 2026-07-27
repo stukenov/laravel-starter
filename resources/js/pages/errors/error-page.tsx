@@ -9,11 +9,11 @@ type Props = {
 };
 
 /**
- * ПРАВИЛО(ошибки): обычная страница, не модальное окно — AGENTS.md.
+ * RULE(errors): an ordinary page, not a modal — AGENTS.md.
  *
- * Модалку показывает клиент Inertia, когда сервер отвечает не-Inertia-
- * ответом. Обработчик в bootstrap/app.php убирает саму причину: для
- * каждого обрабатываемого статуса возвращается нормальная страница.
+ * Inertia shows the modal when the server answers with a non-Inertia
+ * response. The handler in bootstrap/app.php removes the cause: every
+ * handled status comes back as a proper page.
  */
 export default function ErrorPage({ status, title, description, home }: Props) {
     return (

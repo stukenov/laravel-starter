@@ -30,11 +30,11 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * ПРАВИЛО(база): проверка намеренная, не отключайте — AGENTS.md.
+     * RULE(db): the check is deliberate, do not disable it — AGENTS.md.
      *
-     * Схема опирается на uuidv7(), citext и timestamptz. Ни того, ни другого,
-     * ни третьего на других драйверах нет, поэтому запуск на SQLite не «чуть
-     * хуже», а тихо неправильный: тесты зеленеют, а прод ломается.
+     * The schema relies on uuidv7(), citext and timestamptz. None exist
+     * on other drivers, so running on SQLite is not "slightly worse" —
+     * it is quietly wrong: tests go green while production breaks.
      *
      * @throws UnsupportedDatabaseDriver
      */

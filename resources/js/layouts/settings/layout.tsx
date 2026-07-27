@@ -12,8 +12,8 @@ import { edit as editSecurity } from '@/routes/security';
 import { index as sessionsIndex } from '@/routes/sessions';
 import type { NavItem } from '@/types';
 
-// ПРАВИЛО(тема): пункта «Внешний вид» здесь нет и не будет —
-// тема только светлая, переключать нечего. См. AGENTS.md
+// RULE(theme): there is no "Appearance" item here and never will be —
+// the theme is light only, nothing to switch. See AGENTS.md
 const sidebarNavItems: NavItem[] = [
     {
         title: 'nav.profile',

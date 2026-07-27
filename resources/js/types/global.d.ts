@@ -12,11 +12,11 @@ declare module '@inertiajs/core' {
         sharedPageProps: {
             name: string;
             auth: Auth;
-            /** Текущий язык интерфейса: ru | kk | en */
+            /** Active UI language: ru | kk | en */
             locale: string;
-            /** Все поддерживаемые языки — для переключателя */
+            /** Every supported language, for the switcher */
             locales: string[];
-            /** Плоский словарь переводов: ключ 'nav.dashboard' */
+            /** Flat translation dictionary, keyed 'nav.dashboard' */
             translations: Record<string, string>;
             sidebarOpen: boolean;
             [key: string]: unknown;

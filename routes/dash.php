@@ -4,10 +4,10 @@ use App\Http\Controllers\Dash\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
- * ПРАВИЛО(конвенции): маршруты RESTful с одинаковыми именами — AGENTS.md.
+ * RULE(conventions): RESTful routes with identical names — AGENTS.md.
  *
- * На этой предсказуемости работает генератор make:feature: он порождает
- * ровно такой блок, а страницы Inertia лежат по пути, повторяющему адрес.
+ * make:feature relies on this predictability: it emits exactly this block,
+ * and the Inertia pages sit at a path mirroring the URL.
  */
 Route::middleware(['auth', 'verified'])
     ->prefix('dash')
