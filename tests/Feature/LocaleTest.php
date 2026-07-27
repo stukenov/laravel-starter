@@ -2,7 +2,9 @@
 
 use App\Models\User;
 use App\Support\Locale\Locales;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\File;
 
 // Correct data
 it('serves each supported locale', function (string $locale) {
@@ -88,15 +90,54 @@ it('honours a browser language we do support', function () {
         ->assertRedirect('/kk');
 });
 
-// Полнота переводов: пропущенный ключ выводится на экран как есть,
-// поэтому расхождение между локалями надо ловить тестом, а не глазами.
+// A missing key is printed on screen as itself — `users.fields.email`
+// where a label belongs. Nothing errors and nothing logs, so the only
+// way to find it is to open every page in every language, or this.
+//
+// It used to compare `common.php` alone, while AGENTS.md said a test
+// compares the key sets. That was true of one file out of eight: the
+// per-entity dictionaries, which is where new copy actually lands, were
+// never looked at. The list is built by globbing `lang/ru`, so a file
+// added tomorrow is covered without anybody remembering to add it.
 it('keeps every locale file in sync', function () {
-    $ru = Arr::dot(require lang_path('ru/common.php'));
-    $kk = Arr::dot(require lang_path('kk/common.php'));
-    $en = Arr::dot(require lang_path('en/common.php'));
+    $reference = collect(File::glob(lang_path('ru/*.php')))
+        ->merge(File::glob(lang_path('ru/entities/*.php')))
+        ->map(fn (string $path) => str_replace(lang_path('ru').'/', '', $path));
 
-    expect(array_keys($kk))->toBe(array_keys($ru))
-        ->and(array_keys($en))->toBe(array_keys($ru));
+    $drift = [];
+
+    foreach ($reference as $file) {
+        $ru = array_keys(Arr::dot(require lang_path("ru/{$file}")));
+
+        foreach (['kk', 'en'] as $locale) {
+            if (! File::exists(lang_path("{$locale}/{$file}"))) {
+                $drift[] = "{$locale}/{$file}: missing entirely";
+
+                continue;
+            }
+
+            $other = array_keys(Arr::dot(require lang_path("{$locale}/{$file}")));
+
+            foreach (array_diff($ru, $other) as $key) {
+                $drift[] = "{$locale}/{$file}: missing {$key}";
+            }
+
+            foreach (array_diff($other, $ru) as $key) {
+                $drift[] = "{$locale}/{$file}: has {$key}, ru does not";
+            }
+        }
+    }
+
+    expect($drift)->toBe([]);
+});
+
+it('has more than one file to compare', function () {
+    // A glob that matches nothing passes the assertion above. There are
+    // eight: four shared dictionaries and one per entity.
+    $files = collect(File::glob(lang_path('ru/*.php')))
+        ->merge(File::glob(lang_path('ru/entities/*.php')));
+
+    expect($files->count())->toBeGreaterThan(5);
 });
 
 // Кука локали: страницы вне префикса — вход и регистрация — иначе всегда

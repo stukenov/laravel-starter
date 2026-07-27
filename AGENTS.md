@@ -54,6 +54,13 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
    `HasUuids` sets the key on the model; the database default covers
    inserts that bypass Eloquent. Both are needed.
 
+   **`morphs()` and `foreignId()` write a bigint and say nothing.** Use
+   `uuidMorphs()` and a `foreignUuid()`. Both look right in a migration
+   and fail at the first insert, with an error about a type mismatch
+   rather than about the rule that was broken — it has happened twice, to
+   spatie's permission tables and to its activity log.
+   `tests/Feature/KeyTypesTest.php` now catches it.
+
    **This rule governs tables this application creates.** A table owned
    by something else — an existing production database, another service's
    schema, a system this app only wraps — keeps whatever keys it already
