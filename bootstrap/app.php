@@ -1,12 +1,14 @@
 <?php
 
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
+use Spatie\Csp\AddCspHeaders;
 use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -20,6 +22,14 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // SetLocale идёт до HandleInertiaRequests: тот отдаёт переводы
         // общими свойствами и должен знать уже выбранный язык.
+        // Заголовки безопасности — глобально, а не в группе web.
+        // Иначе несуществующий маршрут отдаёт ответ вообще без них:
+        // группа web не выполняется, когда маршрут не найден.
+        $middleware->append([
+            SecurityHeaders::class,
+            AddCspHeaders::class,
+        ]);
+
         $middleware->web(append: [
             SetLocale::class,
             HandleInertiaRequests::class,
