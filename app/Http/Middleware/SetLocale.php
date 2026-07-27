@@ -20,6 +20,8 @@ class SetLocale
 
     public const FALLBACK = 'ru';
 
+    public const COOKIE = 'locale';
+
     public function handle(Request $request, Closure $next): Response
     {
         $locale = self::resolve($request);
@@ -30,11 +32,24 @@ class SetLocale
         // вызове — и любой забытый превращался бы в ошибку уже в проде.
         URL::defaults(['locale' => $locale]);
 
-        return $next($request);
+        $response = $next($request);
+
+        // Запоминаем выбор ровно тогда, когда он сделан явно — то есть когда
+        // язык пришёл из адреса. Иначе кука закрепила бы случайно выбранный
+        // запасной вариант навсегда.
+        if ($request->route('locale') === $locale) {
+            $response->headers->setCookie(cookie()->forever(self::COOKIE, $locale));
+        }
+
+        return $response;
     }
 
     /**
-     * Порядок: адрес → профиль → запасной вариант.
+     * Порядок источников: адрес → профиль → кука → браузер → запасной.
+     *
+     * Кука нужна страницам вне префикса — входу и регистрации. Без неё
+     * человек, читавший сайт по-казахски, нажимает «Кіру» и получает
+     * русскую форму: профиля у него ещё нет, язык брать неоткуда.
      */
     public static function resolve(Request $request): string
     {
@@ -50,7 +65,13 @@ class SetLocale
             return $userLocale;
         }
 
-        return self::FALLBACK;
+        $fromCookie = $request->cookie(self::COOKIE);
+
+        if (is_string($fromCookie) && self::supports($fromCookie)) {
+            return $fromCookie;
+        }
+
+        return self::fromBrowser($request);
     }
 
     /**

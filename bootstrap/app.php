@@ -18,7 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->encryptCookies(except: ['sidebar_state']);
+        $middleware->encryptCookies(except: ['sidebar_state', 'locale']);
 
         // SetLocale идёт до HandleInertiaRequests: тот отдаёт переводы
         // общими свойствами и должен знать уже выбранный язык.

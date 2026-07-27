@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\SetLocale;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia;
@@ -51,7 +52,10 @@ it('keeps the http status code, not just the look of an error', function () {
 
 // Неправильные данные
 it('redirects 419 to login instead of showing an error page', function () {
-    $this->post('/test-419')
+    // Язык задаётся явно: без куки и профиля он берётся из заголовка
+    // браузера, а тестовый клиент по умолчанию просит английский.
+    $this->withUnencryptedCookie(SetLocale::COOKIE, 'ru')
+        ->post('/test-419')
         ->assertRedirect(route('login'))
         ->assertSessionHas('status', 'Сессия истекла. Войдите заново.');
 });

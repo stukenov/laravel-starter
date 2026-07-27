@@ -7,6 +7,42 @@ return [
         'logout' => 'Шығу',
         'forgot_password' => 'Құпиясөзді ұмыттыңыз ба?',
         'session_expired' => 'Сеанс мерзімі бітті. Қайта кіріңіз.',
+
+        'email' => 'Электрондық пошта',
+        'email_placeholder' => 'pochta@example.kz',
+        'password' => 'Құпиясөз',
+        'password_placeholder' => 'Құпиясөз',
+        'password_confirm' => 'Құпиясөзді қайталаңыз',
+        'name' => 'Аты',
+        'name_placeholder' => 'Аты-жөні',
+        'remember' => 'Мені есте сақта',
+
+        'login_title' => 'Аккаунтқа кіру',
+        'login_description' => 'Пошта мен құпиясөзді енгізіңіз',
+        'no_account' => 'Аккаунтыңыз жоқ па?',
+        'sign_up' => 'Тіркелу',
+
+        'register_title' => 'Аккаунт құру',
+        'register_description' => 'Аккаунт ашу үшін өрістерді толтырыңыз',
+        'have_account' => 'Аккаунтыңыз бар ма?',
+
+        'forgot_title' => 'Құпиясөзді қалпына келтіру',
+        'forgot_description' => 'Поштаға құпиясөзді ауыстыру сілтемесін жібереміз',
+        'send_link' => 'Сілтеме жіберу',
+        'or_return_to' => 'Немесе оралыңыз',
+
+        'reset_title' => 'Жаңа құпиясөз',
+        'reset_description' => 'Кіру үшін құпиясөз ойлап табыңыз',
+        'reset_submit' => 'Құпиясөзді сақтау',
+
+        'verify_title' => 'Поштаны растау',
+        'verify_description' => 'Сілтемесі бар хат жібердік. Мекенжайды растау үшін сілтемеге өтіңіз.',
+        'verify_resend' => 'Хатты қайта жіберу',
+        'verify_sent' => 'Жаңа сілтеме поштаңызға жіберілді.',
+
+        'confirm_title' => 'Құпиясөзді растаңыз',
+        'confirm_description' => 'Бұл қорғалған бөлім. Жалғастыру үшін құпиясөзді енгізіңіз.',
+        'confirm_submit' => 'Растау',
     ],
 
     'nav' => [

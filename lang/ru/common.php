@@ -12,6 +12,42 @@ return [
         'logout' => 'Выйти',
         'forgot_password' => 'Забыли пароль?',
         'session_expired' => 'Сессия истекла. Войдите заново.',
+
+        'email' => 'Электронная почта',
+        'email_placeholder' => 'pochta@example.kz',
+        'password' => 'Пароль',
+        'password_placeholder' => 'Пароль',
+        'password_confirm' => 'Повторите пароль',
+        'name' => 'Имя',
+        'name_placeholder' => 'Имя и фамилия',
+        'remember' => 'Запомнить меня',
+
+        'login_title' => 'Вход в аккаунт',
+        'login_description' => 'Введите почту и пароль',
+        'no_account' => 'Ещё нет аккаунта?',
+        'sign_up' => 'Зарегистрироваться',
+
+        'register_title' => 'Создание аккаунта',
+        'register_description' => 'Заполните поля, чтобы завести аккаунт',
+        'have_account' => 'Уже есть аккаунт?',
+
+        'forgot_title' => 'Восстановление пароля',
+        'forgot_description' => 'Пришлём ссылку для смены пароля на почту',
+        'send_link' => 'Отправить ссылку',
+        'or_return_to' => 'Или вернуться ко',
+
+        'reset_title' => 'Новый пароль',
+        'reset_description' => 'Придумайте пароль для входа',
+        'reset_submit' => 'Сохранить пароль',
+
+        'verify_title' => 'Подтверждение почты',
+        'verify_description' => 'Мы отправили письмо со ссылкой. Перейдите по ней, чтобы подтвердить адрес.',
+        'verify_resend' => 'Отправить письмо ещё раз',
+        'verify_sent' => 'Новая ссылка отправлена на вашу почту.',
+
+        'confirm_title' => 'Подтвердите пароль',
+        'confirm_description' => 'Это защищённый раздел. Введите пароль, чтобы продолжить.',
+        'confirm_submit' => 'Подтвердить',
     ],
 
     'nav' => [

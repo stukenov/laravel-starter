@@ -46,11 +46,14 @@ it('returns 404 for a malformed locale', function () {
 });
 
 it('ignores an unsupported locale stored on the user', function () {
+    // Битое значение в профиле не выбирается, но и не роняет запрос:
+    // источник просто пропускается, и язык берётся из следующего.
     $user = User::factory()->create(['locale' => 'de']);
 
     $this->actingAs($user)->get(route('dashboard'));
 
-    expect(app()->getLocale())->toBe(SetLocale::FALLBACK);
+    expect(app()->getLocale())->toBeIn(SetLocale::SUPPORTED)
+        ->and(app()->getLocale())->not->toBe('de');
 });
 
 // Пустые данные
@@ -94,4 +97,31 @@ it('keeps every locale file in sync', function () {
 
     expect(array_keys($kk))->toBe(array_keys($ru))
         ->and(array_keys($en))->toBe(array_keys($ru));
+});
+
+// Кука локали: страницы вне префикса — вход и регистрация — иначе всегда
+// открываются на запасном языке, каким бы ни был выбор пользователя.
+it('remembers the locale chosen through the url', function () {
+    $this->get('/kk')->assertCookie(SetLocale::COOKIE, 'kk', encrypted: false);
+});
+
+it('uses the remembered locale on pages outside the prefix', function () {
+    $this->withUnencryptedCookie(SetLocale::COOKIE, 'kk')
+        ->get(route('login'))
+        ->assertInertia(fn ($page) => $page->where('locale', 'kk'));
+});
+
+it('lets the profile win over the cookie', function () {
+    $user = User::factory()->create(['locale' => 'en']);
+
+    $this->actingAs($user)
+        ->withUnencryptedCookie(SetLocale::COOKIE, 'kk')
+        ->get(route('profile.edit'))
+        ->assertInertia(fn ($page) => $page->where('locale', 'en'));
+});
+
+it('ignores a broken cookie value', function () {
+    $this->withUnencryptedCookie(SetLocale::COOKIE, 'de')
+        ->get(route('login'))
+        ->assertInertia(fn ($page) => $page->where('locale', fn ($l) => in_array($l, ['ru', 'kk', 'en'], true)));
 });
