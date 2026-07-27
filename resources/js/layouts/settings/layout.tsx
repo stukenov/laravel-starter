@@ -4,6 +4,7 @@ import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn, toUrl } from '@/lib/utils';
 import { edit } from '@/routes/profile';
 import { edit as editLocale } from '@/routes/locale';
@@ -15,22 +16,22 @@ import type { NavItem } from '@/types';
 // тема только светлая, переключать нечего. См. AGENTS.md
 const sidebarNavItems: NavItem[] = [
     {
-        title: 'Profile',
+        title: 'nav.profile',
         href: edit(),
         icon: null,
     },
     {
-        title: 'Security',
+        title: 'nav.security',
         href: editSecurity(),
         icon: null,
     },
     {
-        title: 'Язык и время',
+        title: 'nav.locale',
         href: editLocale(),
         icon: null,
     },
     {
-        title: 'Устройства',
+        title: 'nav.sessions',
         href: sessionsIndex(),
         icon: null,
     },
@@ -38,12 +39,13 @@ const sidebarNavItems: NavItem[] = [
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
+    const t = useTranslations();
 
     return (
         <div className="px-4 py-6">
             <Heading
-                title="Settings"
-                description="Manage your profile and account settings"
+                title={t('settings.title')}
+                description={t('settings.description')}
             />
 
             <div className="flex flex-col lg:flex-row lg:space-x-12">
@@ -66,7 +68,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                     {item.icon && (
                                         <item.icon className="h-4 w-4" />
                                     )}
-                                    {item.title}
+                                    {t(item.title)}
                                 </Link>
                             </Button>
                         ))}

@@ -5,6 +5,7 @@ import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/hooks/use-translations';
 import {
     Dialog,
     DialogClose,
@@ -17,18 +18,22 @@ import {
 import { Label } from '@/components/ui/label';
 
 export default function DeleteUser() {
+    const t = useTranslations();
+
     const passwordInput = useRef<HTMLInputElement>(null);
 
     return (
         <div className="space-y-6">
             <Heading
                 variant="small"
-                title="Delete account"
-                description="Delete your account and all of its resources"
+                title={t('settings.delete_title')}
+                description={t('settings.delete_description')}
             />
             <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4">
                 <div className="relative space-y-0.5 text-red-600">
-                    <p className="font-medium">Warning</p>
+                    <p className="font-medium">
+                        {t('settings.delete_warning')}
+                    </p>
                     <p className="text-sm">
                         Please proceed with caution, this cannot be undone.
                     </p>
@@ -77,7 +82,9 @@ export default function DeleteUser() {
                                             id="password"
                                             name="password"
                                             ref={passwordInput}
-                                            placeholder="Password"
+                                            placeholder={t(
+                                                'settings.password_current',
+                                            )}
                                             autoComplete="current-password"
                                         />
 

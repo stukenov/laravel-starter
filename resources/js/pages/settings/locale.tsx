@@ -110,5 +110,5 @@ export default function LocaleSettings({ timezones }: Props) {
 }
 
 LocaleSettings.layout = {
-    breadcrumbs: [{ title: 'Язык и время', href: edit() }],
+    breadcrumbs: [{ title: 'nav.locale', href: edit() }],
 };

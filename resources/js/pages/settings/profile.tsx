@@ -7,6 +7,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from '@/hooks/use-translations';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
 import type { Auth } from '@/types';
@@ -22,19 +23,21 @@ export default function Profile({
     mustVerifyEmail: boolean;
     status?: string;
 }) {
+    const t = useTranslations();
+
     const { auth } = usePage<PageProps>().props;
 
     return (
         <>
-            <Head title="Profile settings" />
+            <Head title={t('settings.profile_title')} />
 
-            <h1 className="sr-only">Profile settings</h1>
+            <h1 className="sr-only">{t('settings.profile_title')}</h1>
 
             <div className="space-y-6">
                 <Heading
                     variant="small"
-                    title="Profile"
-                    description="Update your name and email address"
+                    title={t('settings.profile_title')}
+                    description={t('settings.profile_description')}
                 />
 
                 <Form
@@ -47,7 +50,9 @@ export default function Profile({
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
+                                <Label htmlFor="name">
+                                    {t('settings.name')}
+                                </Label>
 
                                 <Input
                                     id="name"
@@ -56,7 +61,7 @@ export default function Profile({
                                     name="name"
                                     required
                                     autoComplete="name"
-                                    placeholder="Full name"
+                                    placeholder={t('settings.name_placeholder')}
                                 />
 
                                 <InputError
@@ -66,7 +71,9 @@ export default function Profile({
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                                <Label htmlFor="email">
+                                    {t('settings.email')}
+                                </Label>
 
                                 <Input
                                     id="email"
@@ -76,7 +83,9 @@ export default function Profile({
                                     name="email"
                                     required
                                     autoComplete="username"
-                                    placeholder="Email address"
+                                    placeholder={t(
+                                        'settings.email_placeholder',
+                                    )}
                                 />
 
                                 <InputError
@@ -131,7 +140,7 @@ export default function Profile({
 Profile.layout = {
     breadcrumbs: [
         {
-            title: 'Profile settings',
+            title: 'settings.profile_title',
             href: edit(),
         },
     ],

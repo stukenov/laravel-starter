@@ -45,6 +45,38 @@ return [
         'confirm_submit' => 'Confirm',
     ],
 
+    'settings' => [
+        'title' => 'Settings',
+        'description' => 'Your profile and account options',
+        'save' => 'Save',
+        'saved' => 'Saved',
+        'cancel' => 'Cancel',
+
+        'profile_title' => 'Profile',
+        'profile_description' => 'Your name and email address',
+        'name' => 'Name',
+        'name_placeholder' => 'Full name',
+        'email' => 'Email address',
+        'email_placeholder' => 'name@example.com',
+        'email_unverified' => 'Your email address is not verified.',
+        'email_resend' => 'Resend the verification email',
+        'email_sent' => 'A new link has been sent to your email address.',
+
+        'password_title' => 'Change password',
+        'password_description' => 'A long password protects an account better than a complicated one',
+        'password_current' => 'Current password',
+        'password_new' => 'New password',
+        'password_confirm' => 'Confirm new password',
+        'password_saved' => 'Password updated.',
+
+        'delete_title' => 'Delete account',
+        'delete_description' => 'Your account and everything in it will be removed permanently',
+        'delete_warning' => 'This cannot be undone',
+        'delete_warning_text' => 'Enter your password to confirm deleting your account.',
+        'delete_button' => 'Delete account',
+        'delete_confirm' => 'Delete this account permanently?',
+    ],
+
     'sessions' => [
         'title' => 'Devices and sessions',
         'description' => 'Where you are signed in. If you see a device you do not recognise, log out everywhere else and change your password.',
@@ -62,6 +94,7 @@ return [
     ],
 
     'nav' => [
+        'sessions' => 'Devices',
         'dashboard' => 'Dashboard',
         'settings' => 'Settings',
         'profile' => 'Profile',
