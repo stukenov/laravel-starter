@@ -72,12 +72,30 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
    green test run** — three styling bugs in a row returned HTTP 200 with
    valid markup and nothing for a test to catch.
 
-7. **Light theme only.** There is no dark theme and none is planned. The
+7. **Mobile first, and that is the base class.** A Tailwind class with
+   no prefix is the phone; `sm:` and up are the concession to a big
+   screen. Written the other way round the page does not degrade, it
+   breaks — a row of fixed columns inside `overflow-hidden` simply cuts
+   its content off at 375px, silently and without a scrollbar.
+
+   **A touch target is 44px.** Dense controls are fine where there is a
+   cursor: `size-11 sm:size-7`. The one that matters most is the button
+   that opens the navigation — on a phone it is the only way in.
+
+   A list is a row on a wide screen and a card on a narrow one. See
+   `pages/dash/users/index.tsx`: the header hides below `sm`, because a
+   header labels columns and a card has none.
+
+   Anything changed inside `components/ui/` is upstream shadcn and will
+   be overwritten by an update. Mark such a change with a comment saying
+   why, so it can be reapplied deliberately rather than found missing.
+
+8. **Light theme only.** There is no dark theme and none is planned. The
    `dark:` variants inside `components/ui/` are upstream shadcn and never
    fire without a `dark` class on `<html>`. Do not add `dark:` to your
    own code.
 
-8. **Three locales: `ru`, `kk`, `en`.** New copy goes into all three at
+9. **Three locales: `ru`, `kk`, `en`.** New copy goes into all three at
    once — a test compares the key sets. Public pages sit under
    `/{locale}/`, the cabinet does not. On the front end "go home" is `/`,
    not `home()`.
@@ -86,20 +104,20 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
    translation **key**, not text: a static object cannot call a hook, so
    the component resolves it.
 
-9. **Errors are pages, not modals.** Inertia draws a modal when the
+10. **Errors are pages, not modals.** Inertia draws a modal when the
    server answers with plain HTML; the handler in `bootstrap/app.php`
    removes the cause. If a modal appears, a status slipped past the list
    — fix the list. The blade versions in `resources/views/errors/` work
    when nothing else does: no `@vite`, no external links, system font.
 
-10. **A list is a list, a form is a form.** `/entity` lists,
+11. **A list is a list, a form is a form.** `/entity` lists,
     `/entity/new` creates, `/entity/:id` edits. A short form may be a
     dialog, a long one gets its own page. Never both on one route.
 
     The panel root is `/dash` (route `dash.home`) and every panel
     resource sits under it. Nothing may live at `/dashboard`.
 
-11. **Access is gated by permissions, never by a flag.** Permissions are
+12. **Access is gated by permissions, never by a flag.** Permissions are
     declared in `App\Support\Access\Ability` because a permission means
     something only when code checks it; inventing one through the UI
     produces a name nothing enforces. Which permissions a role carries is
@@ -110,7 +128,7 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     it too — roles are infrastructure, not fixtures, and without them
     every policy denies everything for the wrong reason.
 
-12. **No demo content.** Everything that ships is working functionality.
+13. **No demo content.** Everything that ships is working functionality.
 
 ## Conventions over configuration
 

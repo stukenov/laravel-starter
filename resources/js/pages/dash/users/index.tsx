@@ -107,7 +107,11 @@ export default function UsersIndex({
                     </div>
                 ) : (
                     <div className="overflow-hidden rounded-md border">
-                        <div className="flex bg-muted/40 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+                        {/* RULE(mobile): a row of fixed columns is a
+                            desktop idea. Below sm the row becomes a card
+                            and the header has nothing left to label, so
+                            it steps out of the way. */}
+                        <div className="hidden bg-muted/40 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase sm:flex">
                             <span className="flex-[2]">{t('users.name')}</span>
                             <span className="flex-[2]">{t('users.email')}</span>
                             <span className="w-28">{t('users.locale')}</span>
@@ -121,26 +125,28 @@ export default function UsersIndex({
                                 key={user.id}
                                 type="button"
                                 onClick={() => setEditing(user)}
-                                className="flex w-full items-center border-t px-3 py-2 text-left hover:bg-muted/40"
+                                className="flex min-h-11 w-full flex-col gap-1 border-t px-3 py-2 text-left hover:bg-muted/40 sm:flex-row sm:items-center sm:gap-0"
                                 data-test="users-row"
                             >
-                                <span className="flex-[2] truncate">
+                                <span className="truncate font-medium sm:flex-[2] sm:font-normal">
                                     {user.name}
                                 </span>
-                                <span className="flex-[2] truncate text-muted-foreground">
+                                <span className="truncate text-muted-foreground sm:flex-[2]">
                                     {user.email}
                                 </span>
-                                <span className="w-28">
-                                    <Badge variant="outline">
-                                        {user.locale}
-                                    </Badge>
-                                </span>
-                                <span className="w-32 text-right text-muted-foreground">
-                                    {formatDate(
-                                        user.created_at,
-                                        timezone,
-                                        locale,
-                                    )}
+                                <span className="order-last flex items-center gap-2 text-muted-foreground sm:order-none sm:contents">
+                                    <span className="sm:w-28">
+                                        <Badge variant="outline">
+                                            {user.locale}
+                                        </Badge>
+                                    </span>
+                                    <span className="text-muted-foreground sm:w-32 sm:text-right">
+                                        {formatDate(
+                                            user.created_at,
+                                            timezone,
+                                            locale,
+                                        )}
+                                    </span>
                                 </span>
                             </button>
                         ))}

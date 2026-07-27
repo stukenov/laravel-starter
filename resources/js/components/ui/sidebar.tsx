@@ -259,7 +259,15 @@ function SidebarTrigger({
       data-slot="sidebar-trigger"
       variant="ghost"
       size="icon"
-      className={cn("h-7 w-7", className)}
+      // RULE(mobile): a touch target is 44px — AGENTS.md.
+      //
+      // On a phone this button is the only way to open the navigation at
+      // all, and 28px is a miss more often than a hit. Kept dense on a
+      // pointer, where it is aimed with a cursor.
+      //
+      // Local change to an upstream shadcn file: a `shadcn add sidebar`
+      // will overwrite it. Reapply deliberately.
+      className={cn("size-11 sm:size-7", className)}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
