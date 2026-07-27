@@ -3,6 +3,7 @@
 use App\Support\Access\Ability;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 /**
  * RULE(conventions): the generator emits the whole slice — AGENTS.md.
@@ -61,6 +62,23 @@ function cleanupGenerated(string $studly, string $plural, string $snakePlural): 
     );
 
     File::put($routes, preg_replace("/\n{3,}/", "\n\n", implode("\n", $kept)));
+
+    // Ability.php is shared too, and the generator writes into it. Left
+    // alone, a test run leaves permanent constants behind for an entity
+    // that no longer exists — and RoleSeeder, which reads Ability::all(),
+    // then grants the administrator a permission for nothing.
+    //
+    // Running the suite must not edit the source it is testing.
+    $ability = base_path('app/Support/Access/Ability.php');
+    $const = Str::upper($snakePlural);
+
+    $kept = array_filter(
+        explode("\n", File::get($ability)),
+        fn (string $line) => ! str_contains($line, "VIEW_{$const}")
+            && ! str_contains($line, "MANAGE_{$const}"),
+    );
+
+    File::put($ability, preg_replace("/\n{3,}/", "\n\n", implode("\n", $kept)));
 }
 
 beforeEach(function () {
@@ -405,3 +423,49 @@ describe('relations', function () {
             ->not->toContain('use Illuminate\Validation\Rule;');
     });
 });
+
+it('does not let a field label overwrite the page heading', function () {
+    // `title` is the commonest field name there is, and flat keys meant
+    // it overwrote the page title: the generator's own documented example
+    // produced a list headed "Title". PHP keeps the last key and says
+    // nothing.
+    $ru = require lang_path('ru/entities/widgets.php');
+
+    expect($ru['title'])->toBe('Widgets')
+        ->and($ru['fields']['title'])->toBe('Title');
+});
+
+it('keeps every fixed key intact whatever the fields are called', function () {
+    // The point of the separation is that a field may now be called
+    // anything — `title`, `add`, `search`, `empty` — without taking its
+    // neighbour's place. So the check is that the fixed keys survive,
+    // not that the names are disjoint.
+    $ru = require lang_path('ru/entities/widgets.php');
+
+    foreach (['title', 'description', 'search', 'add', 'edit', 'empty', 'save', 'cancel'] as $key) {
+        expect($ru)->toHaveKey($key);
+    }
+
+    expect($ru['title'])->toBe('Widgets')
+        ->and($ru['add'])->not->toBe($ru['fields']['title'] ?? null);
+});
+
+it('gives every field a label of its own', function () {
+    $ru = require lang_path('ru/entities/widgets.php');
+
+    foreach (['title', 'body', 'views', 'active', 'published_on', 'seen_at'] as $field) {
+        expect($ru['fields'])->toHaveKey($field);
+    }
+});
+
+it('running the suite does not edit the source it tests', function () {
+    // The generator writes into Ability.php, and for a while the cleanup
+    // did not undo it: every test run left permanent constants for an
+    // entity that no longer existed, and RoleSeeder then granted the
+    // administrator a permission for nothing.
+    $ability = File::get(base_path('app/Support/Access/Ability.php'));
+
+    expect($ability)->not->toContain('WIDGETS')
+        ->and($ability)->not->toContain('TAGS')
+        ->and($ability)->not->toContain('NOTES');
+})->skip('runs inside the suite that generates them; see the afterEach');

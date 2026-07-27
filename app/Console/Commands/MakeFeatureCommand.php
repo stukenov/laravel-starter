@@ -353,7 +353,7 @@ PHP;
         return <<<TSX
         <div className="grid gap-1.5">
                                 <Label htmlFor="{$key}">
-                                    {t('{$this->snakePlural}.{$name}')}
+                                    {t('{$this->snakePlural}.fields.{$name}')}
                                 </Label>
                                 <select
                                     id="{$key}"
@@ -564,7 +564,7 @@ PHP;
         return <<<TSX
         <div className="grid gap-1.5">
                                 <Label htmlFor="{$name}">
-                                    {t('{$this->snakePlural}.{$name}')}
+                                    {t('{$this->snakePlural}.fields.{$name}')}
                                 </Label>
                                 {$control}
                                 <InputError message={errors.{$name}} />
@@ -593,7 +593,7 @@ PHP;
                                     defaultChecked={Boolean(record?.{$name})}
                                     data-test="{$this->snake}-{$name}"
                                 />
-                                {t('{$this->snakePlural}.{$name}')}
+                                {t('{$this->snakePlural}.fields.{$name}')}
                                 <InputError message={errors.{$name}} />
                             </label>
         TSX;
@@ -602,7 +602,7 @@ PHP;
     private function tableHeaders(): string
     {
         return $this->lines(
-            fn (array $f) => "<span className=\"flex-1\">{t('{$this->snakePlural}.{$f['name']}')}</span>",
+            fn (array $f) => "<span className=\"flex-1\">{t('{$this->snakePlural}.fields.{$f['name']}')}</span>",
             indent: 28,
         );
     }
@@ -623,7 +623,7 @@ PHP;
     {
         return $this->lines(
             fn (array $f) => "'{$f['name']}' => '".Str::headline($f['name'])."',",
-            indent: 4,
+            indent: 8,
         );
     }
 
