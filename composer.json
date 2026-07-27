@@ -68,9 +68,7 @@
             "npm run types:check",
             "@test"
         ],
-        "types:check": [
-            "phpstan analyse"
-        ],
+        "types:check": "phpstan analyse --memory-limit=1G",
         "test": [
             "@php artisan config:clear --ansi",
             "@lint:check",
@@ -89,7 +87,6 @@
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi",
-            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan migrate --graceful --ansi"
         ],
         "pre-package-uninstall": [
