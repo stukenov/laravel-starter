@@ -5,7 +5,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 /**
- * RULE(reachable): a route nobody can reach is a feature nobody has.
+ * RULE(reachable): a route nobody can reach is a feature nobody has
+ * — AGENTS.md, "Tests".
  *
  * Three times in one night the same defect: a controller action complete,
  * its route registered, a test asserting it behaves — and nothing on any
