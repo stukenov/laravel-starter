@@ -83,3 +83,60 @@ it('sends no hsts header over plain http', function () {
     // запомнить редирект на https.
     expect($this->get('/ru')->headers->get('Strict-Transport-Security'))->toBeNull();
 });
+
+/**
+ * The session cookie carries the identity of whoever is signed in, so its
+ * flags matter as much as any header.
+ *
+ * `SESSION_SECURE_COOKIE` is unset and `config('session.secure')` is
+ * therefore null, which reads like an oversight and is not: null means
+ * "follow the request", so the cookie is marked Secure over https and
+ * left alone over http, where marking it would stop development working
+ * at all. That was checked rather than assumed, and pinned here because
+ * it rests on framework behaviour nothing else states.
+ *
+ * Behind a TLS-terminating proxy the request looks plaintext to PHP
+ * unless `TRUSTED_PROXIES` is set — the same setting that governs HSTS
+ * and the login limiter. See the Operations section of AGENTS.md.
+ */
+function sessionCookie($response)
+{
+    foreach ($response->headers->getCookies() as $cookie) {
+        if ($cookie->getName() === config('session.cookie')) {
+            return $cookie;
+        }
+    }
+
+    return null;
+}
+
+// ── Correct data ─────────────────────────────────────────────────────
+
+it('marks the session cookie secure over https', function () {
+    $cookie = sessionCookie($this->get('https://localhost/ru'));
+
+    expect($cookie)->not->toBeNull()
+        ->and($cookie->isSecure())->toBeTrue()
+        ->and($cookie->isHttpOnly())->toBeTrue()
+        ->and($cookie->getSameSite())->toBe('lax');
+});
+
+// ── Wrong data ───────────────────────────────────────────────────────
+
+it('leaves the session cookie usable over plain http', function () {
+    // Marking it Secure unconditionally would sign nobody in on a
+    // development machine, and the failure looks like a broken login
+    // rather than a cookie that never came back.
+    $cookie = sessionCookie($this->get('http://localhost/ru'));
+
+    expect($cookie)->not->toBeNull()
+        ->and($cookie->isSecure())->toBeFalse()
+        ->and($cookie->isHttpOnly())->toBeTrue();
+});
+
+// ── Empty data ───────────────────────────────────────────────────────
+
+it('sets a session cookie at all', function () {
+    // Both assertions above pass on a response that sets no cookie.
+    expect(sessionCookie($this->get('https://localhost/ru')))->not->toBeNull();
+});
