@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 // Correct data
 it('has agent instructions in the project root', function () {
@@ -84,6 +85,44 @@ it('keeps agent-facing files free of cyrillic', function () {
     }
 
     expect($offenders)->toBeEmpty();
+});
+
+/*
+ * README is the only file somebody reads before running anything, and a
+ * step missing from it is a step nobody takes.
+ *
+ * Both of these were missing and both produce a failure that looks like
+ * something else. Without `user:admin` the panel answers 403 to everybody
+ * and reads as a broken permission system. Without a build the backend
+ * tests fail on `Vite manifest not found` and read as a broken suite.
+ */
+
+it('tells a new clone how to get its first administrator', function () {
+    // Verified by running it: roles are seeded and permissions declared in
+    // code, but nothing hands a role to a person.
+    expect(File::get(base_path('README.md')))->toContain('php artisan user:admin');
+});
+
+it('tells a new clone to build before the backend tests', function () {
+    // Verified by moving public/build aside: five smoke tests became one.
+    //
+    // Scoped to the section by its real neighbour, not by '##'.
+    // `Str::between` takes the LAST occurrence of the closing needle, so
+    // '##' swallowed the whole rest of the file — including the deploy
+    // section, where `npm run build:ssr` made this pass with the line
+    // deleted. Caught by falsification and by nothing else.
+    $readme = File::get(base_path('README.md'));
+
+    $tests = Str::between($readme, '## Tests', '## Renaming');
+
+    expect($tests)->toContain('npm run build')
+        ->and($tests)->toContain('php artisan test');
+});
+
+it('names the same command the operations section does', function () {
+    // Two documents drifting apart is how a starter ends up with an
+    // install guide that does not install it.
+    expect(File::get(base_path('AGENTS.md')))->toContain('php artisan user:admin');
 });
 
 it('has no orphaned rule comments in the code', function () {

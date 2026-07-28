@@ -23,7 +23,15 @@ Requires PHP 8.5, Node 25, PostgreSQL 18.
     cp .env.example .env && php artisan key:generate
     createdb laravel_starter
     php artisan migrate --seed
+    php artisan user:admin you@example.com
     composer dev
+
+**The `user:admin` line is not optional.** Roles are seeded and permissions
+are declared in code, but nothing hands a role to a person. Skip it and you
+get an application you can register with and a panel that answers 403 to
+everybody, with nothing on screen explaining why. The command creates the
+account or promotes an existing one, asks for a password, and is safe to run
+twice.
 
 `composer dev` starts the server, the queue, the log tail and Vite. SSR needs
 no separate process in development.
@@ -42,9 +50,16 @@ Mail goes to Mailpit on `127.0.0.1:1025`, readable at `:8025`.
 
 Three levels, and a feature is not finished until all three pass.
 
+    npm run build         # once, before the backend tests — see below
     php artisan test      # backend
     npm run test:js       # rendering
     npm run test:e2e      # real clicks in a real browser
+
+The build comes first because the blade template loads the page bundles
+eagerly, so without a manifest every backend test that renders a page fails
+on `Vite manifest not found` — which looks like a broken test suite rather
+than a missing build. `composer dev` needs no build: Vite serves the
+manifest itself.
 
 The end-to-end run builds the assets, resets its own `_e2e` database and
 starts the SSR process, so it takes a minute before the first test runs.
