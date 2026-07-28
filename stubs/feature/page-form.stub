@@ -2,7 +2,7 @@ import { Form, router } from '@inertiajs/react';
 import { useState } from 'react';
 import {{ studly }}Controller from '@/actions/App/Http/Controllers/Dash/{{ studly }}Controller';
 import InputError from '@/components/input-error';
-{{ formImports }}
+{{ formImports }}{{ fileFieldImport }}
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -126,6 +126,7 @@ export default function RecordForm({
                                 )}
 
                                 {/* RULE(mobile): 44px under a finger,
+                                    see AGENTS.md;
                                     dense under a cursor. shadcn's `sm`
                                     is 32px, which is a comfortable
                                     target for a mouse and a miss for a

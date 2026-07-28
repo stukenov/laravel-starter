@@ -2,8 +2,10 @@
 
 use App\Models\User;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Two things the profile page did to the account and then said nothing
@@ -109,4 +111,83 @@ it('deletes an account that was only ever signed in once', function () {
         ->assertRedirect('/');
 
     expect(User::find($user->id))->toBeNull();
+});
+
+/*
+ * RULE(files): the column holds a path, the disk holds the file — AGENTS.md.
+ *
+ * The starter's own use of the upload story, and the reason it exists
+ * here rather than in an example entity: a feature with no consumer is a
+ * feature nobody exercises. The picture is as private as the account —
+ * it is served through the same download route as any other file, by the
+ * account's own policy, never from a public disk.
+ */
+
+it('stores a photo and hands the page a route, not a path', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->patch(route('profile.update'), [
+        'name' => $user->name,
+        'email' => $user->email,
+        'avatar' => UploadedFile::fake()->image('снимок.jpg'),
+    ]);
+
+    $stored = $user->fresh();
+
+    expect($stored->avatar)->toStartWith('files/users/')
+        ->and(Storage::disk('local')->exists($stored->avatar))->toBeTrue()
+        // What the front end receives is a URL it may fetch, never a
+        // disk path it could not fetch anyway.
+        ->and($stored->toSharedProps()['avatar'])->toContain('/dash/files/users/');
+});
+
+it('deletes the photo when the account goes', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create(['password' => bcrypt('a-password-123')]);
+
+    $this->actingAs($user)->patch(route('profile.update'), [
+        'name' => $user->name,
+        'email' => $user->email,
+        'avatar' => UploadedFile::fake()->image('снимок.jpg'),
+    ]);
+
+    $path = $user->fresh()->avatar;
+
+    $this->actingAs($user->fresh())
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->delete(route('profile.destroy'), ['password' => 'a-password-123']);
+
+    expect(Storage::disk('local')->exists($path))->toBeFalse();
+});
+
+it('refuses something that is not an image', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->patch(route('profile.update'), [
+        'name' => $user->name,
+        'email' => $user->email,
+        'avatar' => UploadedFile::fake()->create('вирус.exe', 10),
+    ])->assertSessionHasErrors('avatar');
+
+    expect($user->fresh()->avatar)->toBeNull()
+        ->and(Storage::disk('local')->allFiles())->toBe([]);
+});
+
+it('leaves the account without one when none was sent', function () {
+    Storage::fake('local');
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->patch(route('profile.update'), [
+        'name' => 'Новое имя',
+        'email' => $user->email,
+    ]);
+
+    expect($user->fresh()->avatar)->toBeNull()
+        ->and($user->fresh()->name)->toBe('Новое имя');
 });

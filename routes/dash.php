@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Dash\ActivityController;
 use App\Http\Controllers\Dash\ActivityStreamController;
-use App\Http\Controllers\Dash\DocController;
 use App\Http\Controllers\Dash\FileController;
 use App\Http\Controllers\Dash\HealthController;
 use App\Http\Controllers\Dash\RoleController;
@@ -52,8 +51,4 @@ Route::middleware(['auth', 'verified'])
         Route::get('health', [HealthController::class, 'index'])
             ->middleware('can:'.Ability::VIEW_HEALTH)
             ->name('health.index');
-        Route::get('docs', [DocController::class, 'index'])->name('docs.index');
-        Route::post('docs', [DocController::class, 'store'])->name('docs.store');
-        Route::put('docs/{doc}', [DocController::class, 'update'])->name('docs.update');
-        Route::delete('docs/{doc}', [DocController::class, 'destroy'])->name('docs.destroy');
     });

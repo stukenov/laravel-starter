@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\{{ studly }};
-use App\Models\User;
+{{ uploadedFileImport }}use App\Models\User;
 
 function {{ snake }}Admin(): User
 {

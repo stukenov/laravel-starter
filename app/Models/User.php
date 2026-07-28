@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Support\Files\HasStoredFiles;
+use App\Support\Files\StoredFile;
 use App\Support\Tenancy\BelongsToTenant;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -30,12 +32,12 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'locale', 'timezone'])]
+#[Fillable(['name', 'email', 'avatar', 'password', 'locale', 'timezone'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use BelongsToTenant, HasApiTokens, HasFactory, HasRoles, HasUuids, LogsActivity, Notifiable;
+    use BelongsToTenant, HasApiTokens, HasFactory, HasRoles, HasStoredFiles, HasUuids, LogsActivity, Notifiable;
 
     /*
      * RULE(db): UUIDv7 keys, generated in two places on purpose.
@@ -150,6 +152,11 @@ class User extends Authenticatable implements MustVerifyEmail
             'email' => $this->email,
             'locale' => $this->locale,
             'timezone' => $this->timezone,
+            // A route, not a path: the disk is private and the file is
+            // served through the policy on the record — AGENTS.md.
+            'avatar' => $this->avatar === null
+                ? null
+                : route('dash.files.show', ['entity' => 'users', 'id' => $this->id, 'field' => 'avatar']),
             'email_verified_at' => $this->email_verified_at?->toIso8601String(),
         ];
     }
@@ -218,6 +225,9 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            // Stored on assignment, deleted when replaced or when the
+            // account goes — see App\Support\Files\HasStoredFiles.
+            'avatar' => StoredFile::class,
             'password' => 'hashed',
         ];
     }

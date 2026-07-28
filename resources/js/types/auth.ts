@@ -12,6 +12,8 @@ export type User = {
     id: string;
     name: string;
     email: string;
+    /** A URL to the private download route, or null. Never a disk path. */
+    avatar: string | null;
     locale: string;
     timezone: string;
     email_verified_at: string | null;

@@ -49,6 +49,8 @@ return [
     ],
 
     'settings' => [
+        'avatar' => 'Photo',
+        'avatar_current' => 'Current photo',
         'title' => 'Settings',
         'description' => 'Your profile and account options',
         'save' => 'Save',

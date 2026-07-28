@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Doc;
+use App\Models\User;
 
 return [
 
@@ -51,7 +51,7 @@ return [
      * likes.
      */
     'entities' => [
-        'docs' => Doc::class,
+        'users' => User::class,
         // 'articles' => App\Models\Article::class,
     ],
 

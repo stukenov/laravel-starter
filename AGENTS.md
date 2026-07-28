@@ -112,20 +112,44 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
    to the endpoint, so what Tiptap offers in its toolbar says nothing
    about what arrives.
 
-6. **No external domain at render time.** No fonts, icons, analytics or
+6. **Uploads live on a private disk and are served through a policy.**
+   Never `public`: that disk is a symlink into the web root, so anything
+   on it is readable by whoever guesses the URL — no session, no policy,
+   no log. A file is exactly as private as the record it hangs off, and
+   one route serves them all, authorised by that record's own `view`.
+
+   Two things keep that route from being a hole. It resolves only the
+   entities named in `config/files.php` — a segment from the URL turned
+   into a class name is a way to instantiate whatever the caller likes —
+   and it serves only columns the model casts as `StoredFile`.
+
+   **Deletion is half the feature.** Replacing a file deletes the one it
+   replaced, or the disk grows with the number of edits rather than
+   records. Deleting a record deletes its files, which no cast can do:
+   nothing assigns to the attribute then. Both halves live in
+   `HasStoredFiles`, on hooks that run once each.
+
+   The uploaded name is discarded but for the extension, and the
+   extension comes from the detected type — a name is written by whoever
+   uploaded it and can carry a path, a null byte, or unicode a
+   filesystem will cut in the middle of. `image` checks the extension
+   and the detected type separately, and refuses svg: it is a document
+   that can carry script.
+
+7. **No external domain at render time.** No fonts, icons, analytics or
    captcha. The browser enforces this through CSP, not goodwill — which
    is why reCAPTCHA is impossible here by construction.
    **Any CSP change ends with opening a page in a real browser and
    reading the console.** Green tests prove nothing here.
 
-7. **Design tokens live in `resources/css/app.css`.** The language is
+8. **Design tokens live in `resources/css/app.css`.** The language is
    dense macOS System Settings: 13px in the panel, 17px on public pages,
    7px radius, hairlines instead of shadows, accent `#0071e3` on one
    line. **Token changes end at `/dev/styleguide` in a browser, not at a
    green test run** — three styling bugs in a row returned HTTP 200 with
    valid markup and nothing for a test to catch.
 
-8. **Mobile first, and that is the base class.** A Tailwind class with
+9. **Mobile first, and that is the base class.** A Tailwind class with
    no prefix is the phone; `sm:` and up are the concession to a big
    screen. Written the other way round the page does not degrade, it
    breaks — a row of fixed columns inside `overflow-hidden` simply cuts
@@ -143,12 +167,12 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
    be overwritten by an update. Mark such a change with a comment saying
    why, so it can be reapplied deliberately rather than found missing.
 
-9. **Light theme only.** There is no dark theme and none is planned. The
+10. **Light theme only.** There is no dark theme and none is planned. The
    `dark:` variants inside `components/ui/` are upstream shadcn and never
    fire without a `dark` class on `<html>`. Do not add `dark:` to your
    own code.
 
-10. **Three locales: `ru`, `kk`, `en`.** New copy goes into all three at
+11. **Three locales: `ru`, `kk`, `en`.** New copy goes into all three at
     once — one test compares the key sets and another refuses a file that
     is byte-identical to the English one. The second exists because the
     first passes perfectly on a "translation" made by copying:
@@ -170,7 +194,7 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     translation **key**, not text: a static object cannot call a hook, so
     the component resolves it.
 
-11. **Errors are pages, not modals.** Inertia draws a modal when the
+12. **Errors are pages, not modals.** Inertia draws a modal when the
     server answers with plain HTML; the handler in `bootstrap/app.php`
     removes the cause. **Every status at or above 400**, not a list — the
     list was the bug. A 405 from a GET on a POST-only route fell straight
@@ -183,7 +207,7 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     `resources/views/errors/` work when nothing else does: no `@vite`, no
     external links, system font.
 
-12. **A list is a list, a form is a form.** `/entity` lists,
+13. **A list is a list, a form is a form.** `/entity` lists,
     `/entity/new` creates, `/entity/:id` edits. A short form may be a
     dialog, a long one gets its own page. Never both on one route.
 
@@ -202,7 +226,7 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     its own page by hand. The command says so when it generates more than
     six, rather than leaving you to notice.
 
-13. **Access is gated by permissions, never by a flag.** Permissions are
+14. **Access is gated by permissions, never by a flag.** Permissions are
     declared in `App\Support\Access\Ability` because a permission means
     something only when code checks it; inventing one through the UI
     produces a name nothing enforces. Which permissions a role carries is
@@ -231,7 +255,7 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     it too — roles are infrastructure, not fixtures, and without them
     every policy denies everything for the wrong reason.
 
-14. **Tenancy is an option, and off means nothing changes.**
+15. **Tenancy is an option, and off means nothing changes.**
     `TENANCY_ENABLED=false` by default: every table the application owns
     carries a nullable `tenant_id` that stays empty and the global scope
     never applies. One database, one set of migrations, one backup.
@@ -251,7 +275,7 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     **A raw query bypasses all of this**, which is one more reason
     controllers may not reach the database directly.
 
-15. **There is an API, and it runs through the same controllers.**
+16. **There is an API, and it runs through the same controllers.**
     `/api/v1`, Sanctum tokens, `auth:sanctum`. Every action, policy and
     form request is shared with the panel, so a rule enforced in one is
     enforced in the other because it is literally the same method — the
@@ -283,7 +307,7 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     group, and an API request never passes through that one — without it
     a token reads every organisation while the panel shows one.
 
-16. **No demo content.** Everything that ships is working functionality.
+17. **No demo content.** Everything that ships is working functionality.
 
 ## Conventions over configuration
 

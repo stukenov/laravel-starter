@@ -59,7 +59,7 @@ it('sends nothing else', function () {
     sort($keys);
 
     expect($keys)->toBe([
-        'email', 'email_verified_at', 'id', 'locale', 'name', 'timezone',
+        'avatar', 'email', 'email_verified_at', 'id', 'locale', 'name', 'timezone',
     ]);
 });
 

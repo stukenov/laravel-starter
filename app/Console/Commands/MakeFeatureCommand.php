@@ -398,6 +398,12 @@ class MakeFeatureCommand extends Command
             '{{ searchSecondScenario }}' => $this->searchSecondScenario(),
             '{{ richTextScenario }}' => $this->richTextScenario(),
             '{{ fileTrait }}' => $this->hasFiles() ? ', HasStoredFiles' : '',
+            '{{ fileFieldImport }}' => $this->hasFiles()
+                ? "import FileField from '@/components/file-field';\n"
+                : '',
+            '{{ uploadedFileImport }}' => $this->hasFiles()
+                ? "use Illuminate\\Http\\UploadedFile;\n"
+                : '',
             '{{ fileTraitImport }}' => $this->hasFiles()
                 ? "use App\\Support\\Files\\HasStoredFiles;\n"
                 : '',
@@ -926,6 +932,13 @@ PHP;
      * it reports from a line number in this file and not from the
      * template.
      */
+    private function acceptFor(string $type): string
+    {
+        return $type === 'image'
+            ? implode(',', array_map(fn (string $ext) => ".{$ext}", config('files.image_mimes')))
+            : '';
+    }
+
     private function hasFiles(): bool
     {
         return (bool) array_intersect(['file', 'image'], array_column($this->fields, 'type'));
@@ -1331,6 +1344,16 @@ PHP;
             // free-text box for a foreign key.
             'belongsTo' => $this->relationField($f['name']),
             'enum' => $this->enumField($f['name']),
+            'file', 'image' => $this->field($f['name'], <<<TSX
+        <FileField
+                                    id="{$f['name']}"
+                                    name="{$f['name']}"
+                                    current={record?.{$f['name']}}
+                                    href={record ? `/dash/files/{$this->kebabPlural}/\${record.id}/{$f['name']}` : null}
+                                    accept="{$this->acceptFor($f['type'])}"
+                                    data-test="{$this->snake}-{$f['name']}"
+                                />
+        TSX),
             'richtext' => $this->field($f['name'], <<<TSX
         <RichText
                                     id="{$f['name']}"

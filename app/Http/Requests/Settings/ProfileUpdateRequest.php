@@ -17,6 +17,15 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        return $this->profileRules($this->user()->id);
+        return $this->profileRules($this->user()->id) + [
+            // Extension and detected type checked separately: a .png that
+            // is really a script passes the first and fails the second.
+            'avatar' => [
+                'nullable',
+                'image',
+                'mimes:'.implode(',', config('files.image_mimes')),
+                'max:'.config('files.max_kilobytes'),
+            ],
+        ];
     }
 }

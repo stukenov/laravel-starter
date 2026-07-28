@@ -2,6 +2,7 @@ import { Form, Head, usePage } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
+import FileField from '@/components/file-field';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,25 @@ export default function Profile({
                 >
                     {({ processing, errors }) => (
                         <>
+                            <div className="grid gap-2">
+                                <Label htmlFor="avatar">
+                                    {t('settings.avatar')}
+                                </Label>
+                                <FileField
+                                    id="avatar"
+                                    name="avatar"
+                                    current={
+                                        auth.user.avatar
+                                            ? t('settings.avatar_current')
+                                            : null
+                                    }
+                                    href={auth.user.avatar}
+                                    accept=".jpg,.jpeg,.png,.webp,.avif"
+                                    data-test="profile-avatar"
+                                />
+                                <InputError message={errors.avatar} />
+                            </div>
+
                             <div className="grid gap-2">
                                 <Label htmlFor="name">
                                     {t('settings.name')}
