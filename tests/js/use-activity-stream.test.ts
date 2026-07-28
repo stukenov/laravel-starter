@@ -89,6 +89,38 @@ describe('activity stream', () => {
         expect(result.current.live.map((item) => item.id)).toEqual(['b', 'a']);
     });
 
+    it('keeps at most a hundred live entries', () => {
+        // Neither the list nor the seen set was ever trimmed, and this
+        // page is built to be left open — that is the whole point of the
+        // stream. A busy project makes thousands of rows in a working
+        // day, and every one of them stayed in memory and in the DOM.
+        const { result } = renderHook(() =>
+            useActivityStream('/dash/activity/stream'),
+        );
+
+        for (let i = 0; i < 150; i++) {
+            FakeEventSource.last.emit('activity', entry({ id: `e${i}` }));
+        }
+
+        expect(result.current.live).toHaveLength(100);
+        // Newest kept, oldest dropped.
+        expect(result.current.live[0].id).toBe('e149');
+        expect(result.current.live.at(-1)?.id).toBe('e50');
+    });
+
+    it('still refuses a replayed entry that is on screen', () => {
+        // Trimming the set is what makes this worth checking: an entry
+        // still visible must not arrive twice after a reconnect.
+        const { result } = renderHook(() =>
+            useActivityStream('/dash/activity/stream'),
+        );
+
+        FakeEventSource.last.emit('activity', entry({ id: 'same' }));
+        FakeEventSource.last.emit('activity', entry({ id: 'same' }));
+
+        expect(result.current.live).toHaveLength(1);
+    });
+
     it('reports the connection once it opens', () => {
         const { result } = renderHook(() =>
             useActivityStream('/dash/activity/stream'),

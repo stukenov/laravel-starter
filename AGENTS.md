@@ -651,6 +651,11 @@ are easy to get wrong and impossible to catch with a green test run:
 
   The built-in dev server is single threaded, so one viewer blocks the
   whole app: start it as `PHP_CLI_SERVER_WORKERS=6 php artisan serve`.
+- **The page keeps a hundred live entries and no more.** Neither the
+  list nor the set guarding against replays was ever trimmed, and this
+  page exists to be left open — a busy project makes thousands of rows in
+  a working day and every one of them stayed in memory and in the DOM.
+  The rest of the history is on the page behind it, paginated.
 - **`NOTIFY` is delivered at COMMIT.** Inside an uncommitted transaction
   no listener ever hears it, which is why two tests write through a
   connection of their own.

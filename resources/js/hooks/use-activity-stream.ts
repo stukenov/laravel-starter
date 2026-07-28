@@ -10,6 +10,20 @@ import type { Entry } from '@/pages/dash/activity/index';
  *
  * See AGENTS.md.
  */
+/**
+ * How many live entries the page keeps.
+ *
+ * Neither the list nor the `seen` set was ever trimmed, and this page is
+ * built to be left open — that is the entire point of the stream. A busy
+ * project produces thousands of rows over a working day, and every one of
+ * them stayed in memory and in the DOM.
+ *
+ * A hundred is more than fits on a screen and far more than anybody
+ * scrolls back through in a live feed; the rest of the history is on the
+ * page behind it, paginated, where it belongs.
+ */
+const LIVE_LIMIT = 100;
+
 export function useActivityStream(url: string, enabled = true, known: string[] = []) {
     const [live, setLive] = useState<Entry[]>([]);
     const [connected, setConnected] = useState(false);
@@ -39,7 +53,21 @@ export function useActivityStream(url: string, enabled = true, known: string[] =
             }
 
             seen.current.add(entry.id);
-            setLive((current) => [entry, ...current]);
+
+            setLive((current) => {
+                const next = [entry, ...current].slice(0, LIVE_LIMIT);
+
+                // The set exists to stop a reconnect replaying a row, so
+                // it only has to remember what is still on screen plus
+                // what the page rendered. Left to grow it outlives every
+                // row it describes.
+                seen.current = new Set([
+                    ...known,
+                    ...next.map((item) => item.id),
+                ]);
+
+                return next;
+            });
         });
 
         // Not an error state: the server closes on purpose and the browser
