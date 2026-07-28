@@ -603,6 +603,17 @@ every test after that waits for a redirect that never comes.
 whatever language the browser asks for. Tests select by `data-test`, never
 by copy.
 
+**Changing an address sends a new verification mail.** Clearing
+`email_verified_at` without sending anything leaves the person unverified
+and uninformed: the new address gets nothing, and the first sign of
+trouble is `/dash` bouncing to a verify screen. Somebody who changes
+their address and closes the tab gets no notice at all.
+
+**Deleting an account ends every session it had,** not only the browser
+doing the deleting. `sessions.user_id` carries no foreign key, so the
+rows otherwise sit in the table pointing at somebody who no longer
+exists until the session lifetime runs out.
+
 **Changing or resetting a password ends every other session.** A session
 is authenticated by its own row, not by the password, so without this the
 intruder stays signed in through the one action taken to remove them —
