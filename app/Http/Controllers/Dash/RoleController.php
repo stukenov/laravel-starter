@@ -8,6 +8,7 @@ use App\Http\Requests\Role\UpdateRequest;
 use App\Models\Role;
 use App\Support\Access\Ability;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -15,11 +16,11 @@ use Inertia\Response;
 
 class RoleController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response|JsonResponse
     {
         $this->authorize('viewAny', Role::class);
 
-        return Inertia::render('dash/roles/index', [
+        return $this->page($request, 'dash/roles/index', [
             // Paginated like every other list. Roles are few in most
             // projects and unbounded in principle: a list with no ceiling
             // is a page that works until the day it does not.
@@ -35,7 +36,7 @@ class RoleController extends Controller
                     // needs to know so it does not offer the button.
                     'is_protected' => $role->name === RoleSeeder::ADMIN,
                 ]),
-        ]);
+        ], 'roles');
     }
 
     /**

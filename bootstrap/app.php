@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -29,6 +30,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append([
             SecurityHeaders::class,
             AddCspHeaders::class,
+        ]);
+
+        // The API needs the tenant too. Without this a token would read
+        // every organisation — the middleware lives in the web group, and
+        // an API request never passes through it.
+        $middleware->api(append: [
+            SetTenant::class,
         ]);
 
         $middleware->web(append: [

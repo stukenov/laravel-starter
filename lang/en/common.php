@@ -100,6 +100,7 @@ return [
     'nav' => [
         'section' => 'Sections',
         'sessions' => 'Devices',
+        'tokens' => 'API tokens',
         'health' => 'Health',
         'dashboard' => 'Dashboard',
         'settings' => 'Settings',
@@ -206,4 +207,21 @@ return [
         'terms' => 'The terms this service is used under.',
     ],
 
+    'tokens' => [
+        'title' => 'API tokens',
+        'description' => 'Keys for programmatic access. A token is a password that does not expire: issue one per application and revoke it when that application is gone.',
+        'name' => 'Name',
+        'name_hint' => 'So you know which one to revoke later.',
+        'create' => 'Create token',
+        'created' => 'Token created.',
+        'revoke' => 'Revoke',
+        'revoke_confirm' => 'Revoke for good?',
+        'revoked' => 'Token revoked.',
+        'empty' => 'No tokens yet.',
+        'last_used' => 'Last used',
+        'never_used' => 'Never',
+        'copy_once' => 'Copy it now — it will not be shown again.',
+        'copy' => 'Copy',
+        'copied' => 'Copied',
+    ],
 ];

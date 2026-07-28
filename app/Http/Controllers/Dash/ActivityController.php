@@ -4,20 +4,20 @@ namespace App\Http\Controllers\Dash;
 
 use App\Http\Controllers\Controller;
 use App\Models\Activity;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 use Inertia\Response;
 
 class ActivityController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request): Response|JsonResponse
     {
         $this->authorize('viewAny', Activity::class);
 
         $log = trim((string) $request->query('log', ''));
         $event = trim((string) $request->query('event', ''));
 
-        return Inertia::render('dash/activity/index', [
+        return $this->page($request, 'dash/activity/index', [
             'entries' => Activity::query()
                 // Named columns, not `select *`. `properties` is a jsonb
                 // blob the feed never shows, and fifty rows of it travel
@@ -36,6 +36,6 @@ class ActivityController extends Controller
             'filters' => ['log' => $log, 'event' => $event],
             'logs' => Activity::distinctLogNames(),
             'events' => Activity::distinctEvents(),
-        ]);
+        ], 'entries');
     }
 }

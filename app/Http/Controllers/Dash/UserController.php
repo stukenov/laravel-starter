@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Support\Access\Ability;
 use Database\Seeders\RoleSeeder;
 use DateTimeZone;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -18,29 +19,23 @@ use Inertia\Response;
 
 class UserController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request): Response|JsonResponse
     {
         $this->authorize('viewAny', User::class);
 
         $search = trim((string) $request->query('search', ''));
 
-        return Inertia::render('dash/users/index', [
+        return $this->page($request, 'dash/users/index', [
             'users' => User::search($search)
                 // Without this the roles column is one query per row.
                 ->with('roles:id,name')
                 ->orderByDesc('created_at')
                 ->paginate(20)
                 ->withQueryString()
-                ->through(fn (User $user) => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'locale' => $user->locale,
-                    'timezone' => $user->timezone,
-                    'email_verified_at' => $user->email_verified_at?->toIso8601String(),
-                    'created_at' => $user->created_at?->toIso8601String(),
-                    'roles' => $user->roles->pluck('name')->all(),
-                ]),
+                // The model says what may leave it — AGENTS.md. Built
+                // here in a closure it would be a shape only the panel
+                // could rely on, and the API shares these actions.
+                ->through(fn (User $user) => $user->toPanelItem()),
             'search' => $search,
             // 419 names, 8 KB of JSON, and the list changes when the
             // tzdata package does — which is to say a few times a year.
@@ -55,10 +50,10 @@ class UserController extends Controller
             // name, so the form only offers it to somebody who may make
             // that decision.
             'canManageRoles' => $request->user()->can(Ability::MANAGE_ROLES),
-        ]);
+        ], 'users');
     }
 
-    public function store(StoreRequest $request): RedirectResponse
+    public function store(StoreRequest $request): RedirectResponse|JsonResponse
     {
         $data = $request->validated();
         $roles = $this->rolesFrom($request, $data);
@@ -71,10 +66,12 @@ class UserController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('entities/users.created')]);
 
-        return back();
+        // 201 and the record: an API caller cannot work out the id it
+        // just created any other way.
+        return $this->saved($request, $user->load('roles')->toPanelItem(), 201);
     }
 
-    public function update(UpdateRequest $request, User $user): RedirectResponse
+    public function update(UpdateRequest $request, User $user): RedirectResponse|JsonResponse
     {
         $data = $request->validated();
 
@@ -93,7 +90,7 @@ class UserController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('entities/users.updated')]);
 
-        return back();
+        return $this->saved($request, $user->fresh()->load('roles')->toPanelItem());
     }
 
     /**
@@ -151,7 +148,7 @@ class UserController extends Controller
         $user->syncRolesAudited($roles, $request->user());
     }
 
-    public function destroy(Request $request, User $user): RedirectResponse
+    public function destroy(Request $request, User $user): RedirectResponse|JsonResponse
     {
         $this->authorize('delete', $user);
 
@@ -159,6 +156,6 @@ class UserController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('entities/users.deleted')]);
 
-        return back();
+        return $this->saved($request);
     }
 }

@@ -4,6 +4,7 @@ use App\Http\Controllers\Settings\LocaleController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Controllers\Settings\SessionController;
+use App\Http\Controllers\Settings\TokenController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +30,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('user-password.update');
 
     Route::get('settings/sessions', [SessionController::class, 'index'])->name('sessions.index');
+
+    // RULE(api): a token nobody can create is an API nobody has —
+    // AGENTS.md. Creating one asks for the password first: a token is a
+    // password that does not expire, and anybody who found an unlocked
+    // screen could otherwise walk away with permanent access.
+    Route::get('settings/tokens', [TokenController::class, 'index'])->name('tokens.index');
+    Route::post('settings/tokens', [TokenController::class, 'store'])
+        ->middleware(RequirePassword::class)
+        ->name('tokens.store');
+    Route::delete('settings/tokens/{token}', [TokenController::class, 'destroy'])->name('tokens.destroy');
 
     // Password confirmation: logging out everywhere is irreversible and
     // belongs to somebody who knows the password, not to whoever found

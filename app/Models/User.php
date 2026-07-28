@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
@@ -34,7 +35,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use BelongsToTenant, HasFactory, HasRoles, HasUuids, LogsActivity, Notifiable;
+    use BelongsToTenant, HasApiTokens, HasFactory, HasRoles, HasUuids, LogsActivity, Notifiable;
 
     /*
      * RULE(db): UUIDv7 keys, generated in two places on purpose.
@@ -96,6 +97,34 @@ class User extends Authenticatable implements MustVerifyEmail
      * dontSubmitEmptyLogs keeps the feed free of entries recording that
      * nothing happened.
      */
+    /**
+     * What a list of people is allowed to show.
+     *
+     * Named here rather than written inline in the controller, like
+     * `toPanelItem()` on a generated entity — and for one more reason
+     * now: the API and the panel share the actions, so a shape built in
+     * a closure would be a shape only one of them could rely on. This is
+     * the record an API caller gets back from a write.
+     *
+     * @return array<string, mixed>
+     */
+    public function toPanelItem(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+            'locale' => $this->locale,
+            'timezone' => $this->timezone,
+            // RULE(time): ISO 8601 out, the client formats it — AGENTS.md.
+            'email_verified_at' => $this->email_verified_at?->toIso8601String(),
+            'created_at' => $this->created_at?->toIso8601String(),
+            'roles' => $this->relationLoaded('roles')
+                ? $this->roles->pluck('name')->all()
+                : [],
+        ];
+    }
+
     /**
      * What the signed-in person's own pages are allowed to see.
      *

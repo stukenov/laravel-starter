@@ -238,7 +238,39 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     **A raw query bypasses all of this**, which is one more reason
     controllers may not reach the database directly.
 
-15. **No demo content.** Everything that ships is working functionality.
+15. **There is an API, and it runs through the same controllers.**
+    `/api/v1`, Sanctum tokens, `auth:sanctum`. Every action, policy and
+    form request is shared with the panel, so a rule enforced in one is
+    enforced in the other because it is literally the same method — the
+    API classes under `Api/V1` are empty subclasses.
+
+    They exist for one mechanical reason: Wayfinder generates a helper
+    per controller action, and an action reachable at two URLs loses its
+    `.form()` variant, which the auth flow uses. One class per surface
+    costs a file with no body.
+
+    The envelope lives on the base controller — `page()` for reads,
+    `saved()` for writes — and not as a branch in each action, because a
+    dozen copies of `if ($request->expectsJson())` is how two surfaces
+    drift apart while both look maintained. Reads answer `{"data": …}`,
+    a create answers 201 with the record, a delete answers 204.
+
+    **Tokens are cookie-free.** `sanctum.stateful` is empty on purpose:
+    stateful mode would give `/api/v1` a second way in, needing a cookie
+    and a CSRF token, and the second way is the one nobody tests. The
+    panel does not call the API — it is Inertia and calls the actions
+    directly.
+
+    **A token is created in the browser and nowhere else.** Creating one
+    asks for the password first; a token that can mint another cannot be
+    revoked in any meaningful sense. The plaintext is shown once, because
+    only the hash is stored.
+
+    **`SetTenant` is on the api group too.** It was written for the web
+    group, and an API request never passes through that one — without it
+    a token reads every organisation while the panel shows one.
+
+16. **No demo content.** Everything that ships is working functionality.
 
 ## Conventions over configuration
 

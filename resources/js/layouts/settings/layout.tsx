@@ -10,6 +10,7 @@ import { edit as editLocale } from '@/routes/locale';
 import { edit } from '@/routes/profile';
 import { edit as editSecurity } from '@/routes/security';
 import { index as sessionsIndex } from '@/routes/sessions';
+import { index as tokensIndex } from '@/routes/tokens';
 import type { NavItem } from '@/types';
 
 // RULE(theme): there is no "Appearance" item here and never will be —
@@ -34,6 +35,10 @@ const sidebarNavItems: NavItem[] = [
         title: 'nav.sessions',
         href: sessionsIndex(),
         icon: null,
+    },
+    {
+        title: 'nav.tokens',
+        href: tokensIndex(),
     },
 ];
 

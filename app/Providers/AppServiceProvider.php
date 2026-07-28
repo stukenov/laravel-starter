@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Exceptions\UnsupportedDatabaseDriver;
+use App\Models\PersonalAccessToken;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Http\Middleware\TrustProxies;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Sanctum\Sanctum;
 use Spatie\Honeypot\ProtectAgainstSpam;
 
 class AppServiceProvider extends ServiceProvider
@@ -32,6 +34,10 @@ class AppServiceProvider extends ServiceProvider
         self::assertSupportedDriver(DB::connection()->getDriverName());
 
         $this->configureDefaults();
+        // RULE(db): uuid keys — Sanctum's own model assumes an
+        // auto-increment one. See AGENTS.md.
+        Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
+
         $this->protectPublicFormsFromBots();
         $this->trustConfiguredProxies();
 
