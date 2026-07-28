@@ -229,6 +229,19 @@ later tidy-up.
 Field types: `string`, `text`, `integer`, `boolean`, `date`, `datetime`,
 `belongsTo`, and `enum(a,b,c)`.
 
+**A trailing `?` makes a field optional:** `age:integer?`. Without it
+there was one shape for two different things — a view counter that starts
+at zero and an age nobody filled in were both `integer not null default
+0`, so "not given" reached the database as a real number and nothing
+downstream could tell the difference. Zero is a fact; the absence of one
+is not zero. `text`, `date`, `datetime` and `belongsTo` are optional
+already, and the command says so rather than accepting a redundant marker
+in silence.
+
+An optional `enum` accepts null and still rejects anything outside its
+list: `null in (…)` is null, not false, and a check constraint passes on
+null. Verified rather than assumed.
+
     php artisan make:feature Ticket --fields=title:string,status:enum(open,closed)
 
 An `enum` is a string with a check constraint, not a native Postgres

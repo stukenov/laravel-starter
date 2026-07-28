@@ -510,6 +510,71 @@ describe('relations', function () {
     });
 });
 
+describe('an optional field', function () {
+    // Without the marker there was one shape for two different things. A
+    // view counter that starts at zero and an age nobody filled in were
+    // both `integer not null default 0`, so "not given" reached the
+    // database as a real number and nothing downstream could tell the
+    // difference. Zero is a fact; the absence of one is not zero.
+    beforeEach(function () {
+        cleanupGenerated('Gadget', 'gadgets', 'gadgets');
+
+        Artisan::call('make:feature', [
+            'name' => 'Gadget',
+            '--fields' => 'title:string,age:integer?,nickname:string?,state:enum(new,done)?',
+            '--force' => true,
+        ]);
+    });
+
+    afterEach(fn () => cleanupGenerated('Gadget', 'gadgets', 'gadgets'));
+
+    it('makes the column nullable and drops the zero default', function () {
+        $migration = File::get(glob(database_path('migrations/*_create_gadgets_table.php'))[0]);
+
+        expect($migration)->toContain("\$table->integer('age')->nullable();")
+            ->and($migration)->not->toContain("integer('age')->default(0)")
+            ->and($migration)->toContain("\$table->string('nickname')->nullable();");
+    });
+
+    it('validates it as nullable rather than required', function () {
+        $rules = File::get(base_path('app/Http/Requests/Gadget/StoreRequest.php'));
+
+        expect($rules)->toContain("'age' => ['nullable', 'integer']")
+            ->and($rules)->toContain("'nickname' => ['nullable', 'string', 'max:255']")
+            ->and($rules)->toContain("'state' => ['nullable', Rule::in(");
+    });
+
+    it('says so in the TypeScript type', function () {
+        // A type that promises a number where null can arrive makes the
+        // compiler agree with a lie.
+        $form = File::get(base_path('resources/js/pages/dash/gadgets/form.tsx'));
+
+        expect($form)->toContain('age: number | null;')
+            ->and($form)->toContain('nickname: string | null;')
+            ->and($form)->toContain('state: string | null;');
+    });
+
+    it('keeps the unmarked field required', function () {
+        // The marker has to mean something, which means its absence does
+        // too.
+        $rules = File::get(base_path('app/Http/Requests/Gadget/StoreRequest.php'));
+        $migration = File::get(glob(database_path('migrations/*_create_gadgets_table.php'))[0]);
+
+        expect($rules)->toContain("'title' => ['required', 'string', 'max:255']")
+            ->and($migration)->toContain("\$table->string('title');");
+    });
+
+    it('survives the enum placeholder eating the marker', function () {
+        // `enum(a,b)?` is rewritten to `enum#0?` before the fields are
+        // split, and overwriting the type there dropped the `?` before
+        // anything looked for it. Found by generating and reading.
+        $migration = File::get(glob(database_path('migrations/*_create_gadgets_table.php'))[0]);
+
+        expect($migration)->toContain("\$table->string('state')->nullable();")
+            ->and($migration)->not->toContain("string('state')->default('new')");
+    });
+});
+
 it('emits a list that survives a phone', function () {
     // The reference list was made mobile-first and the template that
     // stamps out every future one was not, so the fix reached exactly one

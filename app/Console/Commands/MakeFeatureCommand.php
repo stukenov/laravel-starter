@@ -29,7 +29,10 @@ class MakeFeatureCommand extends Command
 
     protected $description = 'Generate a full vertical slice: model, policy, controller, pages, translations and tests';
 
-    /** @var array<int, array{name: string, type: string, values: array<int, string>}> */
+    /** Types the generator has always made nullable. */
+    private const ALREADY_OPTIONAL = ['text', 'date', 'datetime', 'belongsTo'];
+
+    /** @var array<int, array{name: string, type: string, optional: bool, values: array<int, string>}> */
     private array $fields = [];
 
     private string $studly;      // Post
@@ -100,7 +103,19 @@ class MakeFeatureCommand extends Command
     }
 
     /**
-     * @return array<int, array{name: string, type: string, values: array<int, string>}>
+     * A trailing `?` marks a field optional: `age:integer?`.
+     *
+     * Without it there was one shape for two different things. A view
+     * counter that starts at zero and an age nobody filled in were both
+     * `integer not null default 0`, so "not given" arrived in the
+     * database as a real number and nothing downstream could tell the
+     * difference. Zero is a fact; the absence of a fact is not zero.
+     *
+     * `text`, `date`, `datetime` and `belongsTo` are already optional —
+     * the marker is redundant there and the command says so rather than
+     * accepting it silently.
+     *
+     * @return array<int, array{name: string, type: string, optional: bool, values: array<int, string>}>
      */
     private function parseFields(string $raw): array
     {
@@ -132,7 +147,10 @@ class MakeFeatureCommand extends Command
 
             if (str_starts_with($type, 'enum#')) {
                 $values = $enums[(int) substr($type, 5)] ?? [];
-                $type = 'enum';
+                // The placeholder swallowed the marker: `enum(a,b)?`
+                // became `enum#0?`, and overwriting the type here dropped
+                // the `?` before anything looked for it.
+                $type = 'enum'.(str_ends_with($type, '?') ? '?' : '');
 
                 if (count($values) < 2) {
                     throw new RuntimeException(
@@ -144,6 +162,9 @@ class MakeFeatureCommand extends Command
             $field = Str::snake(trim($field));
             $type = trim($type);
 
+            $optional = str_ends_with($type, '?');
+            $type = rtrim($type, '?');
+
             if (! preg_match('/^[a-z][a-z0-9_]*$/', $field)) {
                 throw new RuntimeException("Bad field name: {$field}");
             }
@@ -152,7 +173,18 @@ class MakeFeatureCommand extends Command
                 throw new RuntimeException("Unsupported type {$type}, allowed: ".implode(', ', $allowed));
             }
 
-            $fields[] = ['name' => $field, 'type' => $type, 'values' => $values];
+            if ($optional && in_array($type, self::ALREADY_OPTIONAL, true)) {
+                $this->components->warn(
+                    "`{$field}:{$type}` is optional already — the `?` changes nothing here."
+                );
+            }
+
+            $fields[] = [
+                'name' => $field,
+                'type' => $type,
+                'optional' => $optional || in_array($type, self::ALREADY_OPTIONAL, true),
+                'values' => $values,
+            ];
         }
 
         return $fields;
@@ -303,6 +335,9 @@ class MakeFeatureCommand extends Command
         $types = [
             'string' => "\$table->string('%s');",
             'text' => "\$table->text('%s')->nullable();",
+            // `default(0)` only where zero is the honest starting value.
+            // An optional number has no default: a counter starts at
+            // nothing, an unknown age is not nought.
             'integer' => "\$table->integer('%s')->default(0);",
             'boolean' => "\$table->boolean('%s')->default(false);",
             // `date`, not `dateTz`: that method does not exist, and a
@@ -321,7 +356,9 @@ class MakeFeatureCommand extends Command
                 // gives the same guarantee and can be replaced in a
                 // migration like anything else.
                 ? sprintf(
-                    "\$table->string('%s')->default('%s');",
+                    $f['optional']
+                        ? "\$table->string('%s')->nullable();"
+                        : "\$table->string('%s')->default('%s');",
                     $f['name'],
                     $f['values'][0],
                 )
@@ -335,7 +372,12 @@ class MakeFeatureCommand extends Command
                     $this->foreignKey($f['name']),
                     Str::snake(Str::plural($f['name'])),
                 )
-                : sprintf($types[$f['type']], $f['name'])),
+                : sprintf(
+                    $f['optional'] && ! in_array($f['type'], self::ALREADY_OPTIONAL, true)
+                        ? str_replace(['->default(0)', ';'], ['', '->nullable();'], $types[$f['type']])
+                        : $types[$f['type']],
+                    $f['name'],
+                )),
             indent: 12,
         );
     }
@@ -454,7 +496,7 @@ PHP;
         ));
     }
 
-    /** @return array<int, array{name: string, type: string, values: array<int, string>}> */
+    /** @return array<int, array{name: string, type: string, optional: bool, values: array<int, string>}> */
     private function relationFields(): array
     {
         return array_values(array_filter(
@@ -530,7 +572,7 @@ PHP;
         return Str::studly(Str::singular($name));
     }
 
-    /** @return array<int, array{name: string, type: string, values: array<int, string>}> */
+    /** @return array<int, array{name: string, type: string, optional: bool, values: array<int, string>}> */
     private function enumFields(): array
     {
         return array_values(array_filter($this->fields, fn (array $f) => $f['type'] === 'enum'));
@@ -829,8 +871,9 @@ PHP;
                 // Named after the field, not the model: two enum
                 // fields on one entity would otherwise share a constant.
                 ? sprintf(
-                    "'%s' => ['required', Rule::in(%s::%s_VALUES)],",
+                    "'%s' => ['%s', Rule::in(%s::%s_VALUES)],",
                     $f['name'],
+                    $f['optional'] ? 'nullable' : 'required',
                     $this->studly,
                     Str::upper($f['name']),
                 )
@@ -840,7 +883,13 @@ PHP;
                     $this->foreignKey($f['name']),
                     Str::snake(Str::plural($f['name'])),
                 )
-                : "'{$f['name']}' => {$types[$f['type']]},"),
+                : sprintf(
+                    "'%s' => %s,",
+                    $f['name'],
+                    $f['optional']
+                        ? str_replace("'required'", "'nullable'", $types[$f['type']])
+                        : $types[$f['type']],
+                )),
             indent: 12,
         );
     }
@@ -865,7 +914,13 @@ PHP;
                 // fills it never exercises the relation. The test sets
                 // it when it needs it.
                 ? "'{$this->foreignKey($f['name'])}' => null,"
-                : "'{$f['name']}' => {$types[$f['type']]},"),
+                : sprintf(
+                    "'%s' => %s,",
+                    $f['name'],
+                    $f['optional']
+                        ? str_replace("'required'", "'nullable'", $types[$f['type']])
+                        : $types[$f['type']],
+                )),
             indent: 12,
         );
     }
@@ -900,13 +955,17 @@ PHP;
         ];
 
         return $this->lines(
+            // An optional column really can be null, and a type that
+            // says otherwise makes the compiler agree with a lie.
             fn (array $f) => $f['type'] === 'enum'
-                ? "{$f['name']}: string;"
+                ? "{$f['name']}: string".($f['optional'] ? ' | null' : '').';'
                 : ($f['type'] === 'belongsTo'
                 // Both: the key is what the form submits, the object is
                 // what the list shows.
                 ? "{$this->foreignKey($f['name'])}: string | null;\n    {$f['name']}: { id: string; name: string } | null;"
-                : "{$f['name']}: {$types[$f['type']]};"),
+                : "{$f['name']}: {$types[$f['type']]}".(
+                    $f['optional'] && ! str_contains($types[$f['type']], 'null') ? ' | null' : ''
+                ).';'),
             indent: 4,
         );
     }
@@ -1082,7 +1141,7 @@ PHP;
     }
 
     /**
-     * @param  callable(array{name: string, type: string}): string  $format
+     * @param  callable(array{name: string, type: string, optional: bool, values: array<int, string>}): string  $format
      */
     /**
      * Formats one line per field, indenting all but the first.
@@ -1091,7 +1150,7 @@ PHP;
      * without it, a branch on `type === 'enum'` narrows the array to the
      * two keys it saw and forgets `values` exists.
      *
-     * @param  callable(array{name: string, type: string, values: array<int, string>}): string  $format
+     * @param  callable(array{name: string, type: string, optional: bool, values: array<int, string>}): string  $format
      */
     private function lines(callable $format, int $indent): string
     {
