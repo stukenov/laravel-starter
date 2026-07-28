@@ -16,6 +16,7 @@ return [
     'save' => 'Save',
     'cancel' => 'Cancel',
     'delete' => 'Delete role',
+    'delete_confirm' => 'Delete for good?',
     'created' => 'Role created.',
     'updated' => 'Changes saved.',
     'deleted' => 'Role deleted.',

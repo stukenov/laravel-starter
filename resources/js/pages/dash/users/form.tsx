@@ -1,4 +1,5 @@
 import { Form, router, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 import UserController from '@/actions/App/Http/Controllers/Dash/UserController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -57,6 +58,13 @@ export default function UserForm({
     onClose,
 }: Props) {
     const t = useTranslations();
+
+    // Two clicks to delete. It is the only irreversible control here and
+    // it sat next to Cancel, 44px under a thumb, one tap from gone.
+    // Reopening disarms it, so a form opened later never starts one click
+    // away from removing somebody.
+    const [confirming, setConfirming] = useState(false);
+
     const { locales } = usePage().props;
 
     const action = user
@@ -64,7 +72,16 @@ export default function UserForm({
         : UserController.store.form();
 
     return (
-        <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+        <Dialog
+            open={open}
+            onOpenChange={(next) => {
+                setConfirming(false);
+
+                if (!next) {
+                    onClose();
+                }
+            }}
+        >
             <DialogContent className="density-panel">
                 <DialogHeader>
                     <DialogTitle>
@@ -242,11 +259,20 @@ export default function UserForm({
                                         size="sm"
                                         onClick={() => {
                                             onClose();
+
+                                            if (!confirming) {
+                                                setConfirming(true);
+
+                                                return;
+                                            }
+
                                             router.delete(destroy(user.id));
                                         }}
                                         data-test="user-delete"
                                     >
-                                        {t('users.delete')}
+                                        {confirming
+                                            ? t('users.delete_confirm')
+                                            : t('users.delete')}
                                     </Button>
                                 ) : (
                                     <span />

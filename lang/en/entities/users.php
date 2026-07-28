@@ -20,6 +20,7 @@ return [
     'save' => 'Save',
     'cancel' => 'Cancel',
     'delete' => 'Delete',
+    'delete_confirm' => 'Delete for good?',
     'delete_explain' => 'The account will be removed permanently.',
     'created' => 'User created.',
     'updated' => 'Changes saved.',

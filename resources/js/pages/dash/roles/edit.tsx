@@ -1,4 +1,5 @@
 import { Form, Head, router } from '@inertiajs/react';
+import { useState } from 'react';
 import RoleController from '@/actions/App/Http/Controllers/Dash/RoleController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -25,6 +26,12 @@ type Props = {
  */
 export default function RoleEdit({ role, abilities, granted }: Props) {
     const t = useTranslations();
+
+    // Two clicks to delete. It is the only irreversible control here and
+    // it sat next to Cancel, 44px under a thumb, one tap from gone.
+    // This is a page, mounted afresh for each role, so nothing has to
+    // disarm it — leaving the edit screen is what resets it.
+    const [confirming, setConfirming] = useState(false);
 
     const label = (ability: string) =>
         t(`roles.abilities.${ability.replace('.', '_')}`);
@@ -109,12 +116,20 @@ export default function RoleEdit({ role, abilities, granted }: Props) {
                                         type="button"
                                         variant="destructive"
                                         size="sm"
-                                        onClick={() =>
-                                            router.delete(destroy(role.id))
-                                        }
+                                        onClick={() => {
+                                            if (!confirming) {
+                                                setConfirming(true);
+
+                                                return;
+                                            }
+
+                                            router.delete(destroy(role.id));
+                                        }}
                                         data-test="role-delete"
                                     >
-                                        {t('roles.delete')}
+                                        {confirming
+                                            ? t('roles.delete_confirm')
+                                            : t('roles.delete')}
                                     </Button>
                                 )}
                             </div>

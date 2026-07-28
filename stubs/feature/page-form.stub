@@ -1,5 +1,5 @@
 import { Form, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {{ studly }}Controller from '@/actions/App/Http/Controllers/Dash/{{ studly }}Controller';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -43,18 +43,27 @@ export default function RecordForm({
     const t = useTranslations();
 
     // Armed by the first click on Delete, disarmed whenever the dialog
-    // opens again — so a dialog reopened later never starts one click
-    // away from removing something.
+    // opens or closes — so a dialog reopened later never starts one click
+    // away from removing something. Reset where it happens rather than in
+    // an effect: calling setState from one triggers a cascading render,
+    // and the lint rule says so.
     const [confirming, setConfirming] = useState(false);
-
-    useEffect(() => setConfirming(false), [open, record?.id]);
 
     const action = record
         ? {{ studly }}Controller.update.form(record.id)
         : {{ studly }}Controller.store.form();
 
     return (
-        <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+        <Dialog
+            open={open}
+            onOpenChange={(next) => {
+                setConfirming(false);
+
+                if (!next) {
+                    onClose();
+                }
+            }}
+        >
             <DialogContent className="density-panel">
                 <DialogHeader>
                     <DialogTitle>
