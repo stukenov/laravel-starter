@@ -15,6 +15,6 @@ Three concrete consequences:
 - Google or Cloudflare captcha is impossible, so honeypot instead.
 
 The last one is telling: a security requirement ruled out the most common
-way to protect a form. See [[honeypot-instead-of-captcha]].
+way to protect a form. See [[a-honeypot-instead-of-a-captcha]].
 
 And the ban itself can misfire — see [[csp-breaks-the-page-silently]].

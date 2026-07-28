@@ -45,16 +45,23 @@ it('covers every kazakh letter across the declared ranges', function () {
     // ұ and і in cyrillic. Drop either subset and those letters
     // silently fall back to a system font — only a Kazakh-speaking
     // user would notice.
+    //
+    // Both cases. The list was lower case only, and the capitals sit in a
+    // different part of the range — so a capitalised Kazakh heading could
+    // have fallen back to a system font with this file still green.
     $letters = [
         'ә' => 0x04D9, 'ғ' => 0x0493, 'қ' => 0x049B,
         'ң' => 0x04A3, 'ө' => 0x04E9, 'ұ' => 0x04B1,
         'ү' => 0x04AF, 'һ' => 0x04BB, 'і' => 0x0456,
+        'Ә' => 0x04D8, 'Ғ' => 0x0492, 'Қ' => 0x049A,
+        'Ң' => 0x04A2, 'Ө' => 0x04E8, 'Ұ' => 0x04B0,
+        'Ү' => 0x04AE, 'Һ' => 0x04BA, 'І' => 0x0406,
     ];
 
     $manifest = json_decode(file_get_contents(public_path('build/fonts-manifest.json')), true);
     $css = $manifest['style']['familyStyles']['inter'] ?? '';
 
-    expect($css)->not->toBeEmpty('в манифесте нет семейства inter');
+    expect($css)->not->toBeEmpty('the manifest has no inter family');
 
     preg_match_all('/unicode-range:\s*([^;]+);/', $css, $matches);
 
