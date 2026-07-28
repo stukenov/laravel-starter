@@ -83,7 +83,6 @@ nginx, PostgreSQL and cron is enough.
 
     git clone <repo> /var/www/app && cd /var/www/app
     composer install --no-dev --optimize-autoloader
-    npm ci && npm run build:ssr
     cp .env.example .env && php artisan key:generate
 
 Set in `.env`:
@@ -99,7 +98,14 @@ Set in `.env`:
     BACKUP_NOTIFICATION_EMAIL=ops@example.com
     FAILED_JOB_EMAILS=ops@example.com
 
-Then:
+Then build — **after** `.env` exists, not before. Vite bakes
+`import.meta.env.VITE_APP_NAME` into the bundle at build time, so a build
+that runs first ships the placeholder name in every browser tab until
+somebody rebuilds:
+
+    npm ci && npm run build:ssr
+
+    chown -R www-data:www-data storage bootstrap/cache
 
     php artisan migrate --force --seed
     php artisan schedule-monitor:sync
@@ -116,15 +122,40 @@ a missing step.
 The web server alone is not enough. Each of these fails silently if you
 forget it — nothing errors, work simply stops happening.
 
-**Queue.** Systemd unit, restarted on exit:
+**Queue.** `/etc/systemd/system/app-queue.service`:
 
+    [Unit]
+    Description=app queue worker
+    After=network.target
+
+    [Service]
+    User=www-data
+    WorkingDirectory=/var/www/app
     ExecStart=/usr/bin/php /var/www/app/artisan queue:work --tries=3 --max-time=3600
     Restart=always
+    RestartSec=5
 
-**SSR.** Same shape, and it must restart on every deploy:
+    [Install]
+    WantedBy=multi-user.target
 
+**SSR.** `/etc/systemd/system/app-ssr.service`, same shape, and it must
+restart on every deploy:
+
+    [Unit]
+    Description=app inertia ssr
+    After=network.target
+
+    [Service]
+    User=www-data
+    WorkingDirectory=/var/www/app
     ExecStart=/usr/bin/php /var/www/app/artisan inertia:start-ssr
     Restart=always
+    RestartSec=5
+
+    [Install]
+    WantedBy=multi-user.target
+
+Then `systemctl daemon-reload && systemctl enable --now app-queue app-ssr`.
 
 **Close port 13714 to the internet.** The renderer binds `0.0.0.0` and
 Inertia's own server exposes an unauthenticated `/shutdown` that calls
@@ -154,12 +185,46 @@ successful and is not.
     php artisan schedule-monitor:sync
     php artisan optimize
     systemctl restart app-ssr app-queue
+    systemctl reload php8.5-fpm
     php artisan up
+
+`php artisan optimize` writes a cached config and route table, and FPM
+keeps the old bytecode when `opcache.validate_timestamps` is off — which
+is the usual production setting. Reloading it is what makes the deploy
+take effect.
 
 ### nginx
 
-Server-sent events need buffering off, or the live feed arrives in one lump
-when the connection closes:
+The whole server block, not only the interesting part:
+
+    server {
+        listen 443 ssl http2;
+        server_name example.com;
+        root /var/www/app/public;
+        index index.php;
+
+        ssl_certificate     /etc/letsencrypt/live/example.com/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+
+        client_max_body_size 20m;
+
+        location / {
+            try_files $uri $uri/ /index.php?$query_string;
+        }
+
+        location ~ \.php$ {
+            include fastcgi_params;
+            fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+            fastcgi_pass unix:/run/php/php8.5-fpm.sock;
+        }
+
+        location ~ /\.(?!well-known) {
+            deny all;
+        }
+    }
+
+Server-sent events need buffering off inside that block, or the live feed
+arrives in one lump when the connection closes:
 
     location /dash/activity/stream {
         proxy_buffering off;

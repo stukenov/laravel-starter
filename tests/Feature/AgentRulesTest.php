@@ -133,6 +133,36 @@ it('seeds the roles on every deploy, not only the first', function () {
     expect($repeat)->toContain('RoleSeeder');
 });
 
+it('builds the front end after the env file exists', function () {
+    // Vite bakes `import.meta.env.VITE_APP_NAME` into the bundle at build
+    // time. The recipe built before copying `.env`, so every browser tab
+    // showed the placeholder name until somebody rebuilt — and the
+    // application name is the first thing AGENTS.md says to replace.
+    $first = Str::between(File::get(base_path('README.md')), '### First time', '### Three processes');
+
+    expect(strpos($first, 'cp .env.example .env'))
+        ->toBeLessThan(strpos($first, 'npm run build:ssr'));
+});
+
+it('gives a server block somebody can paste', function () {
+    // The section used to hold one `location` for the event stream and
+    // nothing else — no root, no try_files, no php handler. Followed to
+    // the letter the site does not answer /login.
+    $nginx = Str::between(File::get(base_path('README.md')), '### nginx', '### The activity feed');
+
+    expect($nginx)->toContain('server {')
+        ->and($nginx)->toContain('try_files')
+        ->and($nginx)->toContain('root /var/www/app/public');
+});
+
+it('gives systemd units somebody can paste', function () {
+    $processes = Str::between(File::get(base_path('README.md')), '### Three processes', '### nginx');
+
+    expect(substr_count($processes, '[Service]'))->toBe(2)
+        ->and(substr_count($processes, '[Install]'))->toBe(2)
+        ->and($processes)->toContain('WorkingDirectory=');
+});
+
 it('says to close the renderer port', function () {
     // It binds 0.0.0.0 and Inertia's own server exposes an
     // unauthenticated /shutdown that calls process.exit().
