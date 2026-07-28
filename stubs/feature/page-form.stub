@@ -1,4 +1,5 @@
 import { Form, router } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import {{ studly }}Controller from '@/actions/App/Http/Controllers/Dash/{{ studly }}Controller';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -41,6 +42,13 @@ export default function RecordForm({
 }: Props) {
     const t = useTranslations();
 
+    // Armed by the first click on Delete, disarmed whenever the dialog
+    // opens again — so a dialog reopened later never starts one click
+    // away from removing something.
+    const [confirming, setConfirming] = useState(false);
+
+    useEffect(() => setConfirming(false), [open, record?.id]);
+
     const action = record
         ? {{ studly }}Controller.update.form(record.id)
         : {{ studly }}Controller.store.form();
@@ -77,6 +85,12 @@ export default function RecordForm({
                                     and edited and never removed. Only
                                     when editing — there is nothing to
                                     delete while creating. */}
+                                {/* Two clicks, not one. Deleting is the
+                                    only irreversible thing on this
+                                    screen and it used to happen on a
+                                    single click, next to Cancel, at 44px
+                                    under a thumb. The second click says
+                                    what it will do. */}
                                 {record ? (
                                     <Button
                                         type="button"
@@ -84,12 +98,20 @@ export default function RecordForm({
                                         size="sm"
                                         className="min-h-11 sm:min-h-8"
                                         onClick={() => {
+                                            if (!confirming) {
+                                                setConfirming(true);
+
+                                                return;
+                                            }
+
                                             onClose();
                                             router.delete(destroy(record.id));
                                         }}
                                         data-test="{{ snake }}-delete"
                                     >
-                                        {t('{{ snakePlural }}.delete')}
+                                        {confirming
+                                            ? t('{{ snakePlural }}.delete_confirm')
+                                            : t('{{ snakePlural }}.delete')}
                                     </Button>
                                 ) : (
                                     <span />

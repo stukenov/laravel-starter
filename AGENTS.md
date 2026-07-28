@@ -177,6 +177,12 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     The panel root is `/dash` (route `dash.home`) and every panel
     resource sits under it. Nothing may live at `/dashboard`.
 
+    **Deleting takes two clicks.** It is the only irreversible control on
+    the form and it sat next to Cancel, 44px under a thumb, one tap from
+    gone. The first click arms the button and it says what the second one
+    will do; reopening the dialog disarms it, so a form opened later never
+    starts one click away from removing something.
+
     **`make:feature` only writes the dialog.** It is the right shape for
     the three or four fields most entities have, and the wrong one past
     about six — at which point this rule applies and the form is moved to

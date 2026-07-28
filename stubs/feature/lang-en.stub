@@ -9,6 +9,7 @@ return [
     'empty' => 'Nothing here yet',
     'empty_search' => 'Nothing found',
     'save' => 'Save',
+    'delete_confirm' => 'Delete for good?',
     'delete' => 'Delete',
     'cancel' => 'Cancel',
     'created' => 'Record created.',

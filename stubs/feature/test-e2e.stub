@@ -48,6 +48,27 @@ test('the page fits a phone', async ({ page }) => {
     expect(size.document).toBeLessThanOrEqual(size.window + 1);
 });
 
+test('deleting takes two clicks, not one', async ({ page }) => {
+    // The only irreversible control on the screen, sitting next to
+    // Cancel at 44px under a thumb. One click used to be enough.
+    const title = `Удалить ${Date.now()}`;
+
+    await page.getByTestId('{{ snakePlural }}-add').click();
+    await page.getByTestId('{{ snake }}-{{ firstField }}').fill(title);
+    await page.getByTestId('{{ snake }}-save').click();
+    await expect(page.getByText(title)).toBeVisible();
+
+    await page.getByText(title).click();
+    await page.getByTestId('{{ snake }}-delete').click();
+
+    // Still there after the first click.
+    await expect(page.getByTestId('{{ snake }}-delete')).toBeVisible();
+
+    await page.getByTestId('{{ snake }}-delete').click();
+
+    await expect(page.getByText(title)).toBeHidden();
+});
+
 // ── Wrong data ───────────────────────────────────────────────────────
 
 test('refuses an empty form', async ({ page }) => {
