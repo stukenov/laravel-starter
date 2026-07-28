@@ -32,7 +32,7 @@ class AppServiceProvider extends ServiceProvider
         self::assertSupportedDriver(DB::connection()->getDriverName());
 
         $this->configureDefaults();
-        $this->protectRegistrationFromBots();
+        $this->protectPublicFormsFromBots();
         $this->trustConfiguredProxies();
 
         // Where an already signed-in person goes if they open /login or
@@ -87,11 +87,17 @@ class AppServiceProvider extends ServiceProvider
      * so the lookup finds nothing and leaves registration unguarded with
      * no sign that anything went wrong.
      */
-    private function protectRegistrationFromBots(): void
+    private function protectPublicFormsFromBots(): void
     {
         $this->app->booted(function (): void {
+            // Named in config, not here. One hard-coded route name was
+            // right for a starter with one public form and wrong the
+            // moment a project added a second: the new form would be
+            // unprotected and nothing would say so.
+            $protected = (array) config('security.spam_protected_routes', []);
+
             foreach (Route::getRoutes()->getRoutes() as $route) {
-                if ($route->getName() === 'register.store') {
+                if (in_array($route->getName(), $protected, true)) {
                     $route->middleware(ProtectAgainstSpam::class);
                 }
             }

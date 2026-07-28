@@ -24,4 +24,22 @@ return [
         array_map('trim', explode(',', (string) env('TRUSTED_PROXIES', ''))),
     )),
 
+    /*
+     * RULE(security): a honeypot instead of a captcha — AGENTS.md.
+     *
+     * Every public form that writes something belongs here, by route
+     * name. The list existed as one hard-coded string, which was right
+     * for a starter with exactly one public form and wrong the moment a
+     * project added a second — the new form would be unprotected, and
+     * nothing would say so. A spammer finds it before anybody else does.
+     *
+     * Sign-in is deliberately absent. A honeypot field on a login form
+     * is a nuisance to password managers and buys nothing: what protects
+     * that route is the rate limiter, five attempts a minute per email
+     * and address.
+     */
+    'spam_protected_routes' => [
+        'register.store',
+    ],
+
 ];

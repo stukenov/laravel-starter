@@ -434,6 +434,7 @@ Mail in development is Mailpit on `127.0.0.1:1025`, web UI on `:8025`.
     app/Support/Csp/AppPreset.php            CSP policy
     app/Support/Sessions/SessionList.php     active sessions and devices
     app/Support/Spam/SilentRedirectResponder.php  what happens on honeypot spam
+    config/security.php                      which public forms carry the honeypot
     app/Providers/HealthServiceProvider.php  which health checks run
     app/Http/Controllers/SitemapController.php  sitemap.xml and robots.txt
     routes/console.php                       the schedule
@@ -544,6 +545,14 @@ seeded and permissions are declared in code, but nothing hands a role to
 a person: without this every policy denies, `/dash` answers 403, and the
 only way in is tinker. The command creates the account or promotes it,
 and is safe to run twice.
+
+**Every public form that writes something goes in
+`security.spam_protected_routes`,** by route name. It was one hard-coded
+string in a provider, which was right for a starter with exactly one
+public form and wrong the moment a project adds a second: the new form
+would be unprotected and nothing would say so. Sign-in is deliberately
+absent — a honeypot field there fights password managers and buys
+nothing, and what guards that route is the limiter.
 
 **`REGISTRATION_ENABLED=false` closes registration** — the routes stop
 existing. Most projects built on this want that: accounts are made by an
