@@ -3,6 +3,7 @@
 use App\Models\Activity;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Support\Facades\Artisan;
 
 /**
  * The activity log exists to answer "who gave this person access".
@@ -112,4 +113,21 @@ it('records the removal of every role', function () {
 
     expect($entry)->not->toBeNull()
         ->and($entry->attribute_changes['attributes']['roles'])->toBe([]);
+});
+
+it('records a grant made from the command line', function () {
+    // `php artisan user:admin` is the most privileged grant there is and
+    // it used to leave no trace. No causer, because whoever ran it holds
+    // a shell rather than a session — the page shows that as "system",
+    // which is honest.
+    $user = User::factory()->create();
+
+    Artisan::call('user:admin', ['email' => $user->email]);
+
+    $entry = Activity::where('event', 'roles')->latest('id')->first();
+
+    expect($entry)->not->toBeNull()
+        ->and($entry->causer_id)->toBeNull()
+        ->and($entry->subject_id)->toBe($user->id)
+        ->and($entry->attribute_changes['attributes']['roles'])->toBe([RoleSeeder::ADMIN]);
 });

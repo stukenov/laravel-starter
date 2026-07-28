@@ -108,9 +108,15 @@ class User extends Authenticatable implements MustVerifyEmail
      * recorded: "roles: member → admin, member" is an audit entry, "roles
      * changed" is not.
      *
+     * The causer is nullable because `php artisan user:admin` has none:
+     * it is run by whoever holds the shell. An entry with no causer reads
+     * as "system" on the page, which is honest — the grant happened, and
+     * outside the application. Leaving it out entirely would mean the
+     * most privileged grant of all was the one nothing recorded.
+     *
      * @param  array<int, string>  $roles
      */
-    public function syncRolesAudited(array $roles, self $causer): void
+    public function syncRolesAudited(array $roles, ?self $causer = null): void
     {
         $before = $this->roles->pluck('name')->sort()->values()->all();
 

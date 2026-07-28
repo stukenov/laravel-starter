@@ -54,7 +54,9 @@ class MakeAdminCommand extends Command
             }
         }
 
-        $user->syncRoles([RoleSeeder::ADMIN]);
+        // Recorded with no causer: this is run from a shell, not by a
+        // signed-in person. See User::syncRolesAudited().
+        $user->syncRolesAudited([RoleSeeder::ADMIN]);
 
         $this->components->info("{$email} is an administrator.");
 
