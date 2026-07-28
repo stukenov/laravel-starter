@@ -85,3 +85,45 @@ it('has no dark variants left in our own components', function () {
 
     expect($offenders)->toBeEmpty();
 });
+
+/*
+ * "The styleguide never ships" was a comment in `routes/web.php` and
+ * nothing else. It is gated on `app()->environment('local')`, which is
+ * correct — and one careless edit from being a public page listing every
+ * component and token the project has.
+ *
+ * Verified separately that the page is a lazy chunk of its own — 12 KB
+ * on disk that production never fetches — rather than part of the main
+ * bundle.
+ */
+
+// ── Correct data ─────────────────────────────────────────────────────
+
+it('does not register the styleguide outside local', function () {
+    // The suite runs in `testing`, which is every environment that is not
+    // a developer's laptop, production included.
+    expect(app()->environment())->not->toBe('local')
+        ->and(Route::has('dev.styleguide'))->toBeFalse();
+});
+
+it('answers 404 for the styleguide address', function () {
+    $this->get('/dev/styleguide')->assertNotFound();
+});
+
+// ── Wrong data ───────────────────────────────────────────────────────
+
+it('gates it on the environment rather than on debug', function () {
+    // `APP_DEBUG` is a display setting and gets turned on in production
+    // to chase a bug. The environment is the thing that stays true.
+    $routes = File::get(base_path('routes/web.php'));
+
+    expect($routes)->toContain("app()->environment('local')")
+        ->and($routes)->not->toContain('config(\'app.debug\')');
+});
+
+// ── Empty data ───────────────────────────────────────────────────────
+
+it('still has the page to show on a laptop', function () {
+    // A gate that works because the file was deleted is not a gate.
+    expect(resource_path('js/pages/dev/styleguide.tsx'))->toBeFile();
+});
