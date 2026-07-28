@@ -33,7 +33,8 @@ away.
 - `seo.*` in the same files — the descriptions search engines show. They
   ship describing the starter rather than your product, so leaving them
   reads as obviously wrong.
-- `BACKUP_NOTIFICATION_EMAIL`, `FAILED_JOB_EMAILS`, `HEALTH_JSON_SECRET`
+- `BACKUP_NOTIFICATION_EMAIL`, `FAILED_JOB_EMAILS`, `HEALTH_TO_ADDRESS`,
+  `HEALTH_JSON_SECRET`
 - This section
 
 ## Stack
@@ -565,6 +566,20 @@ permanently red, and a dashboard that is always red is one nobody reads.
 be on the PATH of whoever runs cron. Success notifications are off on
 purpose: a mail every night is a mail nobody opens, and then the failure
 mail goes unread too.
+
+**Mail has to work in production, or the alerts are decoration.** An
+empty recipient makes Laravel's mail channel return without sending and
+without erroring — so a failing disk, queue or database would tell
+nobody, and the only way to find out would be to open `/dash/health` by
+hand. `HEALTH_TO_ADDRESS` falls back to `MAIL_FROM_ADDRESS`; both are
+worthless if `MAIL_HOST` still points at the development Mailpit.
+
+`health:check` sends its notification **before** it stores its results,
+so a broken transport does not merely lose the alert — it loses the run,
+and the page goes on showing the last green result at the moment
+something is wrong. The task logs its own failure now, because a
+scheduled command writes to `/dev/null` by default and a crash otherwise
+leaves no trace at all.
 
 **Run `schedule-monitor:sync` after touching `routes/console.php`,** or the
 monitor keeps watching for a task that no longer exists.

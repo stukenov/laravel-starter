@@ -93,6 +93,9 @@ Set in `.env`:
     APP_URL=https://example.com
     DB_CONNECTION=pgsql
     HEALTH_JSON_SECRET=<a long random string>
+    HEALTH_TO_ADDRESS=<who hears about a failing check>
+    MAIL_MAILER=smtp
+    MAIL_HOST=<a real host — .env.example points at development Mailpit>
     BACKUP_NOTIFICATION_EMAIL=ops@example.com
     FAILED_JOB_EMAILS=ops@example.com
 

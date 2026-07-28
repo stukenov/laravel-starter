@@ -79,7 +79,14 @@ return [
         'only_on_failure' => false,
 
         'mail' => [
-            'to' => env('HEALTH_TO_ADDRESS', ''),
+            /*
+             * Falls back the way the backup config does, and for the same
+             * reason: an empty address makes `MailChannel::send()` return
+             * without sending and without erroring. A failing disk, queue
+             * or database would then alert nobody at all, and the only way
+             * to find out would be to open /dash/health by hand.
+             */
+            'to' => env('HEALTH_TO_ADDRESS', env('MAIL_FROM_ADDRESS', '')),
 
             'from' => [
                 'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
