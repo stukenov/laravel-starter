@@ -18,16 +18,27 @@ use Illuminate\Support\Facades\File;
  * run scripts against every visitor. One port did precisely this, in five
  * files, and the only thing that flagged it was a person reading the diff.
  *
- * So the door stays visibly shut rather than quietly unlocked. Opening it
- * means a sanitizer, and a sanitizer means a dependency the owner picks —
- * see the open questions in the migration report.
+ * The door is open now, in exactly one place. `components/safe-html.tsx`
+ * renders formatted text that has already been through
+ * `App\Support\Html\Sanitizer` on the way into the database — nothing
+ * it receives was written by a browser, it was written by HTMLPurifier.
+ *
+ * Everywhere else is still refused. One place to remember is a place
+ * people remember; two is a place somebody forgets.
  */
+
+/** The single component allowed to render stored, sanitized HTML. */
+const SAFE_HTML = 'resources/js/components/safe-html.tsx';
 function rawHtmlSites(): array
 {
     $sites = [];
 
     foreach (File::allFiles(resource_path('js')) as $file) {
         if (! in_array($file->getExtension(), ['ts', 'tsx'], true)) {
+            continue;
+        }
+
+        if (str_ends_with($file->getPathname(), basename(SAFE_HTML))) {
             continue;
         }
 
@@ -51,13 +62,15 @@ it('renders no unescaped html', function () {
     expect(rawHtmlSites())->toBe([]);
 });
 
-it('ships no field type that stores html', function () {
-    // The reason the assertion above can hold at all. Lose this and the
-    // pressure to open the door arrives with it.
-    $generator = File::get(app_path('Console/Commands/MakeFeatureCommand.php'));
+it('keeps the one exception where the test can see it', function () {
+    // An exemption that drifts out of date exempts a file nobody decided
+    // to exempt — the same reasoning as the foreign-table list in
+    // KeyTypesTest.
+    expect(base_path(SAFE_HTML))->toBeFile();
 
-    expect($generator)->not->toContain("'html'")
-        ->and($generator)->not->toContain("'richtext'");
+    expect(File::get(base_path(SAFE_HTML)))
+        ->toContain('dangerouslySetInnerHTML')
+        ->and(File::get(base_path(SAFE_HTML)))->toContain('Sanitizer');
 });
 
 // ── Wrong data ───────────────────────────────────────────────────────

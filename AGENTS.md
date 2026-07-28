@@ -85,19 +85,32 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
    preformatted date** — only ISO 8601; the client formats it through
    `Intl.DateTimeFormat` in `resources/js/lib/datetime.ts`.
 
-5. **Nothing renders unescaped HTML.** React escapes what it draws;
-   `dangerouslySetInnerHTML` is the way out of that, and it is how stored
-   XSS gets in. No field type here stores HTML, so nothing needs it —
-   which is what makes it a trap: the first project with a formatting
-   editor reaches for it, finds no sanitizer, and gives every editor
-   account a way to run scripts against every visitor. One port did this
-   in five files and only a person reading the diff caught it.
+5. **Formatted text is cleaned on the way in, once.** A `richtext` field
+   is a `text` column with a `SanitizedHtml` cast: HTMLPurifier runs on
+   write, so what the database holds is already safe and every reader of
+   it is safe without knowing the sanitizer exists.
 
-   `tests/Feature/RawHtmlTest.php` keeps the door shut. If you need it
-   open, sanitize on write — in PHP, once, so the database holds
-   something already safe — not on read in each of the places that
-   display it. That needs a dependency, and adding one is the owner's
-   call.
+   On write, not on read. Cleaning on read means each place that displays
+   the value has to remember, and the one that forgets is the one that
+   ships. A cast rather than a form request, because a seeder, a console
+   command and a queued import all write to the column and none of them
+   pass through validation.
+
+   The allowlist is small and holds no `style`, `class`, `id`, `img`,
+   `iframe` or `h1`. Content that can style itself can cover the page,
+   and a heading the size of the page's own impersonates it. Links get
+   `noopener`; only http, https and mailto survive as schemes — `data:`
+   is the one everybody forgets and it is a script.
+
+   **`dangerouslySetInnerHTML` lives in exactly one file**, and
+   `RawHtmlTest` refuses it anywhere else. Render stored HTML through
+   `components/safe-html.tsx` — one place to remember is a place people
+   remember, two is a place somebody forgets. Never pass it a string
+   built at render time: that has been through nothing.
+
+   **The editor is not a security boundary.** Anybody can post straight
+   to the endpoint, so what Tiptap offers in its toolbar says nothing
+   about what arrives.
 
 6. **No external domain at render time.** No fonts, icons, analytics or
    captcha. The browser enforces this through CSP, not goodwill — which

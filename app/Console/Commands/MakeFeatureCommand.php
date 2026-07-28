@@ -7,6 +7,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Symfony\Component\Process\Process;
 
 /**
  * RULE(conventions): the whole slice at once, or nothing — AGENTS.md.
@@ -99,11 +100,67 @@ class MakeFeatureCommand extends Command
             ));
         }
 
+        $this->tidyGeneratedFiles();
+
         $this->warnAboutMissingRelations();
 
         $this->components->info("Feature {$this->studly} generated. Run: php artisan migrate && php artisan test");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Runs the project's own formatters over what was just written.
+     *
+     * Import order depends on the entity's name — where `NoteController`
+     * sorts against `use-translations` is not something a template can
+     * know — so the stubs cannot be written to satisfy the linter for
+     * every possible name. Predicting it was three rounds of chasing
+     * alphabetical order before this became obvious.
+     *
+     * Every entity this command has ever produced failed `npm run lint`,
+     * and nobody saw it because the linter was not in the documented
+     * commands until this morning and its output had never been read.
+     *
+     * Best effort: a machine without node still gets a working slice,
+     * and is told what to run.
+     */
+    private function tidyGeneratedFiles(): void
+    {
+        $paths = [
+            "resources/js/pages/dash/{$this->kebabPlural}",
+            "tests/js/dash-{$this->kebabPlural}.test.tsx",
+            "tests/e2e/{$this->kebabPlural}.spec.ts",
+        ];
+
+        $existing = array_values(array_filter($paths, fn (string $path) => file_exists(base_path($path))));
+
+        if ($existing === []) {
+            return;
+        }
+
+        $ok = $this->runQuietly(array_merge(['npx', 'prettier', '--write'], $existing))
+            && $this->runQuietly(array_merge(['npx', 'eslint', '--fix'], $existing));
+
+        if ($ok) {
+            $this->components->task('formatted with prettier and eslint', fn () => true);
+
+            return;
+        }
+
+        $this->components->warn('Could not run prettier and eslint. Run `npm run lint` before committing.');
+    }
+
+    /**
+     * @param  array<int, string>  $command
+     */
+    private function runQuietly(array $command): bool
+    {
+        $process = new Process($command, base_path(), timeout: 120);
+
+        $process->run();
+
+        return $process->isSuccessful();
     }
 
     /**
@@ -162,7 +219,7 @@ class MakeFeatureCommand extends Command
         // the side that carries the column. `hasMany` is its inverse and
         // needs no schema here; `belongsToMany` needs a pivot table and a
         // multi-select, and stays hand-written — see AGENTS.md.
-        $allowed = ['string', 'text', 'integer', 'boolean', 'date', 'datetime', 'belongsTo', 'enum'];
+        $allowed = ['string', 'text', 'richtext', 'integer', 'boolean', 'date', 'datetime', 'belongsTo', 'enum'];
         $fields = [];
 
         // `status:enum(draft,published)` — the parentheses hold commas,
@@ -330,7 +387,14 @@ class MakeFeatureCommand extends Command
             '{{ kebabPlural }}' => $this->kebabPlural,
             '{{ firstField }}' => $first,
             '{{ searchColumns }}' => $this->searchColumns(),
+            '{{ formImports }}' => $this->formImports(),
+            '{{ indexImports }}' => $this->indexImports(),
+            '{{ timeContext }}' => $this->timeContext(),
+            '{{ inertiaImport }}' => $this->timeContext() === ''
+                ? "import { Head, router } from '@inertiajs/react';"
+                : "import { Head, router, usePage } from '@inertiajs/react';",
             '{{ searchSecondScenario }}' => $this->searchSecondScenario(),
+            '{{ richTextScenario }}' => $this->richTextScenario(),
             '{{ migrationColumns }}' => $this->migrationColumns(),
             '{{ fillable }}' => $this->fillable(),
             '{{ rules }}' => $this->rules(),
@@ -393,6 +457,9 @@ class MakeFeatureCommand extends Command
         $types = [
             'string' => "\$table->string('%s');",
             'text' => "\$table->text('%s')->nullable();",
+            // Formatted text is text. The cleaning happens in the cast,
+            // not in the column type.
+            'richtext' => "\$table->text('%s')->nullable();",
             // `default(0)` only where zero is the honest starting value.
             // An optional number has no default: a counter starts at
             // nothing, an unknown age is not nought.
@@ -735,6 +802,81 @@ PHP;
      * not its label — so searching it matches a string that appears
      * nowhere on screen.
      */
+    /**
+     * Only the imports the generated file actually uses.
+     *
+     * The stubs imported `Checkbox`, `Textarea`, `formatDate` and the
+     * rest unconditionally, so an entity of two string fields arrived
+     * with four unused imports — and `npm run lint` refuses those. Every
+     * entity this command has ever made failed the project's own linter,
+     * which nobody noticed because the linter was not in the documented
+     * commands until this morning.
+     */
+    private function formImports(): string
+    {
+        $types = array_column($this->fields, 'type');
+
+        $imports = [];
+
+        if (in_array('richtext', $types, true)) {
+            $imports[] = "import RichText from '@/components/rich-text';";
+        }
+
+        if (in_array('boolean', $types, true)) {
+            $imports[] = "import { Checkbox } from '@/components/ui/checkbox';";
+        }
+
+        if (in_array('text', $types, true)) {
+            $imports[] = "import { Textarea } from '@/components/ui/textarea';";
+        }
+
+        return implode("\n", $imports);
+    }
+
+    private function indexImports(): string
+    {
+        $types = array_column($this->fields, 'type');
+
+        $datetime = array_values(array_filter(
+            ['date' => 'formatDate', 'datetime' => 'formatDateTime'],
+            fn (string $type) => in_array($type, $types, true),
+            ARRAY_FILTER_USE_KEY,
+        ));
+
+        $imports = [];
+
+        if ($datetime !== []) {
+            $imports[] = 'import { '.implode(', ', $datetime)." } from '@/lib/datetime';";
+        }
+
+        if (in_array('richtext', $types, true)) {
+            $imports[] = "import { excerpt } from '@/lib/html';";
+        }
+
+        return implode("\n", $imports).($imports === [] ? '' : "\n");
+    }
+
+    /**
+     * The reader's zone and language, pulled in only where a date is
+     * rendered — they are the arguments `formatDate` takes and nothing
+     * else on the page uses them.
+     */
+    private function timeContext(): string
+    {
+        $types = array_column($this->fields, 'type');
+
+        if (! array_intersect(['date', 'datetime'], $types)) {
+            return '';
+        }
+
+        return <<<'TSX'
+                // RULE(time): the server sends ISO 8601, the client formats it
+                // in the reader's zone — AGENTS.md.
+                const { auth, locale } = usePage().props;
+                const timezone = (auth.user.timezone as string) ?? 'UTC';
+        TSX;
+    }
+
     private function searchColumns(): string
     {
         $columns = array_values(array_filter(
@@ -761,6 +903,68 @@ PHP;
      * entity there is nothing to say, and an empty scenario would be a
      * test that asserts nothing.
      */
+    /**
+     * A browser scenario for the editor, when the entity has one.
+     *
+     * The other two levels cannot answer this. Pest sees the value the
+     * request carried; Vitest sees a component in isolation. Only a real
+     * browser can say whether typing into Tiptap puts anything into the
+     * hidden input the form actually submits — and that wiring is the one
+     * part of a rich-text field that silently does nothing.
+     *
+     * `\${Date.now()}` is escaped: inside a heredoc PHP reads `${Date`
+     * as its own interpolation and fails on a constant named Date, which
+     * it reports from a line number in this file and not from the
+     * template.
+     */
+    private function richTextScenario(): string
+    {
+        $field = collect($this->fields)->firstWhere('type', 'richtext');
+
+        if ($field === null) {
+            return '';
+        }
+
+        $name = $field['name'];
+
+        // The first field by name, not `{{ firstField }}`: this string is
+        // built after the placeholder pass, so a token left here would
+        // reach the generated file verbatim — which it did.
+        $first = $this->fields[0]['name'];
+
+        return <<<TSX
+
+
+        test('types formatted text and stores it', async ({ page }) => {
+            const words = `Абзац \${Date.now()}`;
+
+            await page.getByTestId('{$this->snakePlural}-add').click();
+            await page.getByTestId('{$this->snake}-{$first}').fill(words);
+
+            // Into the editor surface, not the hidden input: the point is
+            // that Tiptap writes through to what the form submits.
+            await page.getByTestId('{$this->snake}-{$name}-surface').click();
+            await page.keyboard.type('Первый абзац');
+
+            await page.getByTestId('{$this->snake}-save').click();
+
+            // Scoped to the row, not the page. Looking anywhere found the
+            // text inside the still-mounted editor, so the scenario passed
+            // with the hidden input wired to nothing — which is the one
+            // thing it exists to catch.
+            const row = page.locator('[data-test="{$this->snakePlural}-row"]', {
+                hasText: words,
+            });
+
+            await expect(row).toBeVisible();
+            await expect(row).toContainText('Первый абзац');
+
+            // Words, not markup — see lib/html.ts.
+            await expect(row).not.toContainText('<p>');
+        });
+        TSX;
+    }
+
     private function searchSecondScenario(): string
     {
         $columns = array_values(array_filter(
@@ -802,6 +1006,11 @@ PHP;
             $cast = match ($field['type']) {
                 'date' => 'date',
                 'datetime' => 'datetime',
+                // The cleaning lives on the column, not on a form
+                // request: a seeder, a console command and a queued
+                // import all write here and none of them pass through
+                // one. See App\Support\Html\SanitizedHtml.
+                'richtext' => 'App\\Support\\Html\\SanitizedHtml',
                 default => null,
             };
 
@@ -916,6 +1125,9 @@ PHP;
         $types = [
             'string' => "['required', 'string', 'max:255']",
             'text' => "['nullable', 'string']",
+            // No length limit and no html rule: what survives is decided
+            // by the allowlist in Sanitizer, not by validation.
+            'richtext' => "['nullable', 'string']",
             'integer' => "['required', 'integer']",
             // Not `required`: a false checkbox is a legitimate answer,
             // and `required` rejects it along with the empty string.
@@ -957,6 +1169,7 @@ PHP;
         $types = [
             'string' => 'fake()->sentence(3)',
             'text' => 'fake()->paragraph()',
+            'richtext' => "'<p>'.fake()->paragraph().'</p>'",
             'integer' => 'fake()->numberBetween(1, 100)',
             'boolean' => 'false',
             'date' => 'now()',
@@ -988,6 +1201,7 @@ PHP;
         $types = [
             'string' => "'Тестовое значение'",
             'text' => "'Более длинный текст'",
+            'richtext' => "'<p>Абзац с <strong>акцентом</strong>.</p>'",
             'integer' => '42',
             'boolean' => 'true',
             'date' => "'2026-07-27'",
@@ -1008,6 +1222,7 @@ PHP;
     {
         $types = [
             'string' => 'string', 'text' => 'string | null',
+            'richtext' => 'string | null',
             'integer' => 'number', 'boolean' => 'boolean', 'date' => 'string | null',
             'datetime' => 'string | null',
         ];
@@ -1046,6 +1261,14 @@ PHP;
             // free-text box for a foreign key.
             'belongsTo' => $this->relationField($f['name']),
             'enum' => $this->enumField($f['name']),
+            'richtext' => $this->field($f['name'], <<<TSX
+        <RichText
+                                    id="{$f['name']}"
+                                    name="{$f['name']}"
+                                    defaultValue={record?.{$f['name']} ?? ''}
+                                    data-test="{$this->snake}-{$f['name']}"
+                                />
+        TSX),
             'text' => $this->field($f['name'], <<<TSX
         <Textarea
                                     id="{$f['name']}"
@@ -1180,6 +1403,10 @@ PHP;
                     $f['type'] === 'date' ? 'formatDate' : 'formatDateTime',
                     $f['name'],
                 ),
+                // A row is one line, and headings or lists would wreck
+                // it — while the markup printed as text is worse than
+                // either. See lib/html.ts.
+                $f['type'] === 'richtext' => "{excerpt(record.{$f['name']})}",
                 // The label, not the key: a column of uuids tells the
                 // reader nothing.
                 $f['type'] === 'belongsTo' => "{record.{$f['name']}?.name ?? '—'}",

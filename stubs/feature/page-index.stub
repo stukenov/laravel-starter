@@ -1,13 +1,14 @@
-import { Head, router, usePage } from '@inertiajs/react';
+{{ inertiaImport }}
 import { Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import type { Paginated } from '@/components/pagination';
+import { Pagination } from '@/components/pagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Pagination, type Paginated } from '@/components/pagination';
 import { useTranslations } from '@/hooks/use-translations';
-import { formatDate, formatDateTime } from '@/lib/datetime';
-import { index } from '@/routes/dash/{{ kebabPlural }}';
-import RecordForm, { type {{ studly }}Row } from './form';
+{{ indexImports }}import { index } from '@/routes/dash/{{ kebabPlural }}';
+import type { {{ studly }}Row } from './form';
+import RecordForm from './form';
 
 type Props = {
     records: Paginated<{{ studly }}Row>;
@@ -25,8 +26,7 @@ export default function {{ studlyPlural }}Index({
     const t = useTranslations();
     // RULE(time): the server sends ISO 8601, the client formats it in
     // the reader's zone — AGENTS.md.
-    const { auth, locale } = usePage().props;
-    const timezone = (auth.user.timezone as string) ?? 'UTC';
+{{ timeContext }}
 
     const [term, setTerm] = useState(search);
     const [editing, setEditing] = useState<{{ studly }}Row | null>(null);

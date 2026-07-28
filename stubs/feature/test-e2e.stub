@@ -69,6 +69,7 @@ test('deleting takes two clicks, not one', async ({ page }) => {
     await expect(page.getByText(title)).toBeHidden();
 });
 
+{{ richTextScenario }}
 // ── Wrong data ───────────────────────────────────────────────────────
 
 test('refuses an empty form', async ({ page }) => {
