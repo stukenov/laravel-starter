@@ -98,7 +98,11 @@ export default function HealthIndex({ checks, finished_at, healthy }: Props) {
                         data-test="health-finished-at"
                     >
                         {t('health.checked_at')}{' '}
-                        {formatDateTime(finished_at, timezone, locale as string)}
+                        {formatDateTime(
+                            finished_at,
+                            timezone,
+                            locale as string,
+                        )}
                     </p>
                 )}
             </div>

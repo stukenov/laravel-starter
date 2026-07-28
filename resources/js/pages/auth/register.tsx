@@ -1,5 +1,6 @@
 import { Form, Head } from '@inertiajs/react';
-import { HoneypotFields, type Honeypot } from '@/components/honeypot-fields';
+import { HoneypotFields } from '@/components/honeypot-fields';
+import type { Honeypot } from '@/components/honeypot-fields';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';

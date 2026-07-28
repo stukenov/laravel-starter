@@ -1,4 +1,5 @@
 import { Head, router } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { Badge } from '@/components/ui/badge';
 import {
     Select,
@@ -7,11 +8,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useActivityStream } from '@/hooks/use-activity-stream';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatDateTime } from '@/lib/datetime';
-import { useActivityStream } from '@/hooks/use-activity-stream';
 import { index, stream } from '@/routes/dash/activity';
-import { usePage } from '@inertiajs/react';
 
 export type Change = { field: string; from: unknown; to: unknown };
 

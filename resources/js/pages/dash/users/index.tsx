@@ -1,14 +1,16 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Pagination } from '@/components/pagination';
+import type { Paginated } from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatDate } from '@/lib/datetime';
 import { index } from '@/routes/dash/users';
-import { Pagination, type Paginated } from '@/components/pagination';
-import UserForm, { type UserRow } from './form';
+import UserForm from './form';
+import type { UserRow } from './form';
 
 type Props = {
     users: Paginated<UserRow>;

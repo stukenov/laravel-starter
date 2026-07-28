@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import {
     ADMIN,
     MEMBER,
@@ -22,7 +23,9 @@ test.describe('signing in', () => {
         await signIn(page);
 
         await expect(page).toHaveURL(/\/dash$/);
-        await expect(page.getByRole('link', { name: 'Пользователи' })).toBeVisible();
+        await expect(
+            page.getByRole('link', { name: 'Пользователи' }),
+        ).toBeVisible();
     });
 
     test('runs every script the page asks for', async ({ page }) => {
@@ -111,7 +114,7 @@ test.describe('signing out', () => {
     });
 });
 
-async function xsrf(page: import('@playwright/test').Page): Promise<string> {
+async function xsrf(page: Page): Promise<string> {
     const cookies = await page.context().cookies();
     const token = cookies.find((cookie) => cookie.name === 'XSRF-TOKEN');
 
@@ -119,7 +122,9 @@ async function xsrf(page: import('@playwright/test').Page): Promise<string> {
 }
 
 test.describe('credentials', () => {
-    test('does not accept the password of another account', async ({ page }) => {
+    test('does not accept the password of another account', async ({
+        page,
+    }) => {
         await page.goto('/login');
         await page.getByTestId('login-email').fill(MEMBER);
         await page.getByTestId('login-password').fill(`${PASSWORD}-wrong`);
@@ -145,7 +150,9 @@ test.describe('the language of the login page', () => {
         await expect(page.getByTestId('login-button')).toHaveText(/log in/i);
     });
 
-    test('keeps the fields findable whatever the language', async ({ page }) => {
+    test('keeps the fields findable whatever the language', async ({
+        page,
+    }) => {
         // Which is the reason the suite selects by marker and not by copy.
         await page.goto('/login');
 

@@ -73,7 +73,9 @@ describe('health page', () => {
         );
 
         // Noon UTC is 17:00 in Almaty — same day, so the date holds.
-        expect(screen.getByTestId('health-finished-at')).toHaveTextContent(/27/);
+        expect(screen.getByTestId('health-finished-at')).toHaveTextContent(
+            /27/,
+        );
     });
 
     // Wrong data
@@ -111,9 +113,7 @@ describe('health page', () => {
             />,
         );
 
-        expect(
-            screen.getByText('Развёрнутое объяснение'),
-        ).toBeInTheDocument();
+        expect(screen.getByText('Развёрнутое объяснение')).toBeInTheDocument();
     });
 
     // Empty data
@@ -131,7 +131,9 @@ describe('health page', () => {
     it('prints no time when there is none', () => {
         render(<HealthIndex checks={[]} finished_at={null} healthy={false} />);
 
-        expect(screen.queryByTestId('health-finished-at')).not.toBeInTheDocument();
+        expect(
+            screen.queryByTestId('health-finished-at'),
+        ).not.toBeInTheDocument();
         expect(screen.queryByText(/null/)).not.toBeInTheDocument();
     });
 });

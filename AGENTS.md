@@ -442,6 +442,7 @@ Format: `zettel/README.md`.
     npm run test:js              rendering tests
     npx tsc --noEmit             type check
     vendor/bin/pint              PHP formatting
+    npm run lint                 JS lint and format, fixing what it can
     npm run test:e2e             real clicks in a real browser
     composer types:check         static analysis
     npm run build:ssr            build including the SSR bundle

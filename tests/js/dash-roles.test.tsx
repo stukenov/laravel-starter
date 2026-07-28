@@ -79,8 +79,10 @@ describe('roles list', () => {
     it('renders a row per role', () => {
         render(
             <RolesIndex
-                roles={page([role(),
-                    role({ id: 'r2', name: 'member', is_protected: false }),])}
+                roles={page([
+                    role(),
+                    role({ id: 'r2', name: 'member', is_protected: false }),
+                ])}
             />,
         );
 

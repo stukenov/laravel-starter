@@ -99,7 +99,9 @@ test.describe('the live activity feed', () => {
 
     test('offers no way to write to the log', async ({ page }) => {
         // An audit log that can be edited is not an audit log.
-        await expect(page.getByRole('button', { name: /удал|измен/i })).toHaveCount(0);
+        await expect(
+            page.getByRole('button', { name: /удал|измен/i }),
+        ).toHaveCount(0);
     });
 
     // Empty data
@@ -112,8 +114,13 @@ test.describe('the live activity feed', () => {
         await expect(page.getByTestId('activity-row')).toHaveCount(0);
     });
 
-    test('survives an entry with no causer and no changes', async ({ page }) => {
-        artisan('tinker', '--execute=activity()->useLog("e2e")->log("системное событие");');
+    test('survives an entry with no causer and no changes', async ({
+        page,
+    }) => {
+        artisan(
+            'tinker',
+            '--execute=activity()->useLog("e2e")->log("системное событие");',
+        );
 
         const row = page
             .getByTestId('activity-row')

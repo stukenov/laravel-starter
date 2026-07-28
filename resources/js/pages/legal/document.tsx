@@ -41,7 +41,8 @@ export default function LegalDocument({
                 <div className="mt-10 space-y-8">
                     {sections.map((section) => {
                         const body = t(`legal.${document}.body.${section}`);
-                        const filled = body !== `legal.${document}.body.${section}`;
+                        const filled =
+                            body !== `legal.${document}.body.${section}`;
 
                         return (
                             <section key={section} data-test="legal-section">

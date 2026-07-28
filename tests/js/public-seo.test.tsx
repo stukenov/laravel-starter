@@ -30,6 +30,7 @@ vi.mock('@inertiajs/react', () => ({
     }),
     Head: ({ children }: { children?: unknown }) => {
         captured.children = children;
+
         return null;
     },
     Link: ({ children, ...rest }: Record<string, unknown>) => (
@@ -38,7 +39,9 @@ vi.mock('@inertiajs/react', () => ({
 }));
 
 vi.mock('@/layouts/public-layout', () => ({
-    default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    default: ({ children }: { children: React.ReactNode }) => (
+        <div>{children}</div>
+    ),
 }));
 
 const { default: Home } = await import('@/pages/home');

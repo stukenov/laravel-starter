@@ -65,7 +65,12 @@ describe('what the navigation offers', () => {
     it('shows everything to somebody who may do everything', () => {
         show(['users.view', 'roles.view', 'activity.view', 'health.view']);
 
-        for (const section of ['Пользователи', 'Роли', 'Журнал действий', 'Состояние']) {
+        for (const section of [
+            'Пользователи',
+            'Роли',
+            'Журнал действий',
+            'Состояние',
+        ]) {
             expect(screen.getByText(section)).toBeInTheDocument();
         }
     });
@@ -95,7 +100,12 @@ describe('what the navigation offers', () => {
     it('offers nothing but the home to somebody with no permissions', () => {
         show([]);
 
-        for (const section of ['Пользователи', 'Роли', 'Журнал действий', 'Состояние']) {
+        for (const section of [
+            'Пользователи',
+            'Роли',
+            'Журнал действий',
+            'Состояние',
+        ]) {
             expect(screen.queryByText(section)).not.toBeInTheDocument();
         }
     });

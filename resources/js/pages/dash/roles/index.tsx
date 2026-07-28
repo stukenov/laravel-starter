@@ -1,6 +1,9 @@
 import { Form, Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
 import RoleController from '@/actions/App/Http/Controllers/Dash/RoleController';
 import InputError from '@/components/input-error';
+import { Pagination } from '@/components/pagination';
+import type { Paginated } from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,10 +16,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Pagination, type Paginated } from '@/components/pagination';
 import { useTranslations } from '@/hooks/use-translations';
 import { edit, index } from '@/routes/dash/roles';
-import { useState } from 'react';
 
 type Role = {
     id: string;

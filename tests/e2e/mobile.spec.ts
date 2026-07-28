@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { STATE } from './helpers';
 
 /**
@@ -23,10 +24,16 @@ test.use({
     storageState: STATE.admin,
 });
 
-const PAGES = ['/dash', '/dash/users', '/dash/roles', '/dash/activity', '/dash/health'];
+const PAGES = [
+    '/dash',
+    '/dash/users',
+    '/dash/roles',
+    '/dash/activity',
+    '/dash/health',
+];
 
 /** Nothing may make the document wider than the screen. */
-async function overflow(page: import('@playwright/test').Page) {
+async function overflow(page: Page) {
     return page.evaluate(() => ({
         document: document.documentElement.scrollWidth,
         window: window.innerWidth,

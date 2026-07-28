@@ -36,7 +36,10 @@ export function Pagination<T>({ page }: { page: Paginated<T> }) {
             className="flex flex-col items-center justify-between gap-3 sm:flex-row"
             data-test="pagination"
         >
-            <span className="text-muted-foreground" data-test="pagination-count">
+            <span
+                className="text-muted-foreground"
+                data-test="pagination-count"
+            >
                 {t('pagination.showing', {
                     page: page.current_page,
                     pages: page.last_page,

@@ -2,6 +2,7 @@ import { Form, router, usePage } from '@inertiajs/react';
 import UserController from '@/actions/App/Http/Controllers/Dash/UserController';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -11,9 +12,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { destroy } from '@/routes/dash/users';
 import {
     Select,
     SelectContent,
@@ -22,6 +21,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useTranslations } from '@/hooks/use-translations';
+import { destroy } from '@/routes/dash/users';
 
 export type UserRow = {
     id: string;

@@ -1,6 +1,6 @@
 import { Head, usePage } from '@inertiajs/react';
-import PublicLayout from '@/layouts/public-layout';
 import { useTranslations } from '@/hooks/use-translations';
+import PublicLayout from '@/layouts/public-layout';
 
 /**
  * The public home page.

@@ -101,7 +101,9 @@ describe('placeholders that share a prefix', () => {
         // A blank would look like the text was meant to end there.
         const t = makeTranslator({ line: 'Привет, :name, сейчас :time' });
 
-        expect(t('line', { name: 'Сакен' })).toBe('Привет, Сакен, сейчас :time');
+        expect(t('line', { name: 'Сакен' })).toBe(
+            'Привет, Сакен, сейчас :time',
+        );
     });
 
     it('does not touch a colon that is not a placeholder', () => {

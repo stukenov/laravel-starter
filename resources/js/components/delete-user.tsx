@@ -5,7 +5,6 @@ import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
-import { useTranslations } from '@/hooks/use-translations';
 import {
     Dialog,
     DialogClose,
@@ -16,6 +15,7 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from '@/hooks/use-translations';
 
 export default function DeleteUser() {
     const t = useTranslations();

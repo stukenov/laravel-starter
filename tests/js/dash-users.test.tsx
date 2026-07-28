@@ -149,13 +149,7 @@ describe('users list', () => {
     it('tells the difference between empty and nothing found', () => {
         // Same screen, different meaning: "there is nobody" and "your search
         // matched nobody" call for different next steps.
-        render(
-            <UsersIndex
-                {...props}
-                search="кто-то"
-                users={page([])}
-            />,
-        );
+        render(<UsersIndex {...props} search="кто-то" users={page([])} />);
 
         expect(screen.getByTestId('users-empty')).toHaveTextContent(
             'Ничего не найдено',
@@ -195,7 +189,11 @@ describe('paging a long list', () => {
         render(
             <UsersIndex
                 {...props}
-                users={page([user()], { last_page: 2, total: 37, next_page_url: '/x' })}
+                users={page([user()], {
+                    last_page: 2,
+                    total: 37,
+                    next_page_url: '/x',
+                })}
             />,
         );
 

@@ -24,7 +24,11 @@ import type { Entry } from '@/pages/dash/activity/index';
  */
 const LIVE_LIMIT = 100;
 
-export function useActivityStream(url: string, enabled = true, known: string[] = []) {
+export function useActivityStream(
+    url: string,
+    enabled = true,
+    known: string[] = [],
+) {
     const [live, setLive] = useState<Entry[]>([]);
     const [connected, setConnected] = useState(false);
 
@@ -32,6 +36,12 @@ export function useActivityStream(url: string, enabled = true, known: string[] =
     // connection at the tip, but a reconnect resumes from a cursor that can
     // predate those rows — and then it would send them again.
     const seen = useRef(new Set(known));
+
+    // What the page rendered, held in a ref rather than read from the
+    // argument. The array is a new object on every render, so depending on
+    // it would tear down the connection and open a new one each time —
+    // which is the opposite of what a long-lived stream is for.
+    const rendered = useRef(known);
 
     useEffect(() => {
         if (!enabled || typeof EventSource === 'undefined') {
@@ -62,7 +72,7 @@ export function useActivityStream(url: string, enabled = true, known: string[] =
                 // what the page rendered. Left to grow it outlives every
                 // row it describes.
                 seen.current = new Set([
-                    ...known,
+                    ...rendered.current,
                     ...next.map((item) => item.id),
                 ]);
 
