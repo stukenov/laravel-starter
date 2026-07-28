@@ -136,7 +136,20 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
    own code.
 
 10. **Three locales: `ru`, `kk`, `en`.** New copy goes into all three at
-    once — a test compares the key sets. Public pages sit under
+    once — one test compares the key sets and another refuses a file that
+    is byte-identical to the English one. The second exists because the
+    first passes perfectly on a "translation" made by copying:
+    `passwords.php` and `pagination.php` shipped in English in both other
+    locales, so password recovery spoke English on `/ru` and `/kk`.
+    Laravel's `validation.php` is still English apart from the password
+    rules, and is named in the exemption list rather than skipped
+    quietly.
+
+    **The password-reset form says the same thing either way.** Laravel's
+    default answers "we have emailed you" for an address that exists and
+    "we can't find a user" for one that does not, so the public form
+    could be walked through a list of addresses to learn who has an
+    account. The limiter slows that down; only the wording stops it. Public pages sit under
     `/{locale}/`, the cabinet does not. On the front end "go home" is `/`,
     not `home()`.
 

@@ -3,20 +3,14 @@
 return [
 
     /*
-    |--------------------------------------------------------------------------
-    | Password Reset Language Lines
-    |--------------------------------------------------------------------------
-    |
-    | The following language lines are the default lines which match reasons
-    | that are given by the password broker for a password update attempt
-    | outcome such as failure due to an invalid password / reset token.
-    |
-    */
+     * Password reset. See the Russian file for why `user` and `sent` say
+     * the same thing.
+     */
 
-    'reset' => 'Your password has been reset.',
-    'sent' => 'We have emailed your password reset link.',
-    'throttled' => 'Please wait before retrying.',
-    'token' => 'This password reset token is invalid.',
-    'user' => "We can't find a user with that email address.",
+    'reset' => 'Құпия сөз өзгертілді.',
+    'sent' => 'Егер мұндай мекенжай бізде болса, қалпына келтіру сілтемесі жіберілді.',
+    'throttled' => 'Тым жиі. Сәл күте тұрыңыз.',
+    'token' => 'Сілтеме енді жарамсыз — жаңасын сұратыңыз.',
+    'user' => 'Егер мұндай мекенжай бізде болса, қалпына келтіру сілтемесі жіберілді.',
 
 ];

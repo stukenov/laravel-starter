@@ -3,20 +3,20 @@
 return [
 
     /*
-    |--------------------------------------------------------------------------
-    | Password Reset Language Lines
-    |--------------------------------------------------------------------------
-    |
-    | The following language lines are the default lines which match reasons
-    | that are given by the password broker for a password update attempt
-    | outcome such as failure due to an invalid password / reset token.
-    |
-    */
+     * Password reset. These reach the person on the most anxious screen
+     * the application has, and they were shipped in English in every
+     * locale — the key-parity test compares key sets, not values, so a
+     * wholly untranslated file passed it.
+     *
+     * `user` deliberately does not say whether the address exists. The
+     * form answers the same way either way, so nobody can use it to learn
+     * who has an account here.
+     */
 
-    'reset' => 'Your password has been reset.',
-    'sent' => 'We have emailed your password reset link.',
-    'throttled' => 'Please wait before retrying.',
-    'token' => 'This password reset token is invalid.',
-    'user' => "We can't find a user with that email address.",
+    'reset' => 'Пароль изменён.',
+    'sent' => 'Если такой адрес у нас есть, ссылка для восстановления уже отправлена.',
+    'throttled' => 'Слишком часто. Подождите немного.',
+    'token' => 'Ссылка больше не действует — запросите новую.',
+    'user' => 'Если такой адрес у нас есть, ссылка для восстановления уже отправлена.',
 
 ];

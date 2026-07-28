@@ -168,3 +168,70 @@ it('ignores a broken cookie value', function () {
         ->get(route('login'))
         ->assertInertia(fn ($page) => $page->where('locale', fn ($l) => in_array($l, ['ru', 'kk', 'en'], true)));
 });
+
+/*
+ * The key-parity test above compares key **sets**. A file translated by
+ * copying the English one passes it perfectly — and three did:
+ * `passwords.php` and `pagination.php` were byte-identical to English in
+ * both other locales, so the whole password-recovery flow spoke English
+ * on /ru and /kk, on the most anxious screen the application has.
+ *
+ * `validation.php` is Laravel's own file and is still English apart from
+ * the password rules. It is named here rather than quietly skipped: about
+ * a hundred messages, and translating them properly is a piece of work
+ * somebody should schedule, not something to squeeze in.
+ */
+const UNTRANSLATED = [
+    // Laravel's validation messages. The `password` block is translated —
+    // it is the one a person meets on a public form.
+    'validation.php',
+];
+
+// ── Correct data ─────────────────────────────────────────────────────
+
+it('does not ship an English file as a translation', function () {
+    $english = collect(File::glob(lang_path('en/*.php')))
+        ->reject(fn (string $path) => in_array(basename($path), UNTRANSLATED, true));
+
+    $copies = [];
+
+    foreach ($english as $path) {
+        $file = basename($path);
+
+        foreach (['ru', 'kk'] as $locale) {
+            if (File::get(lang_path("{$locale}/{$file}")) === File::get($path)) {
+                $copies[] = "{$locale}/{$file}";
+            }
+        }
+    }
+
+    expect($copies)->toBe([]);
+});
+
+it('translated the password rules people actually meet', function () {
+    foreach (['ru', 'kk'] as $locale) {
+        $rules = (require lang_path("{$locale}/validation.php"))['password'];
+
+        expect($rules['mixed'])->not->toContain('must contain')
+            ->and($rules['uncompromised'])->not->toContain('data leak');
+    }
+});
+
+// ── Wrong data ───────────────────────────────────────────────────────
+
+it('says nothing about whether an address is registered', function () {
+    // The reset form answered "we have emailed you" for an address that
+    // exists and "we can't find a user" for one that does not, so anybody
+    // could walk a list of addresses and learn who has an account.
+    foreach (['ru', 'kk', 'en'] as $locale) {
+        $lines = require lang_path("{$locale}/passwords.php");
+
+        expect($lines['user'])->toBe($lines['sent']);
+    }
+});
+
+// ── Empty data ───────────────────────────────────────────────────────
+
+it('has English files to compare against', function () {
+    expect(count(File::glob(lang_path('en/*.php'))))->toBeGreaterThan(3);
+});
