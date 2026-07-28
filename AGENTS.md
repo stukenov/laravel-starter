@@ -355,9 +355,15 @@ subprocess — goes in **`App\Support`**, next to `Locale`, `Sessions`,
 four Eloquent calls in a `UserService` because a layer diagram says
 there should be one.
 
-`tests/Feature/ArchitectureTest.php` enforces this. Controllers may not
-touch the database directly — put the query on the model or in
-`app/Support`.
+`tests/Feature/ArchitectureTest.php` enforces this, and the line it draws
+is narrower than "controllers may not touch the database" suggested. A
+controller may **order and paginate** what a model handed it. Choosing
+*which* rows — every `where`, every join, every piece of raw SQL —
+belongs on the model as a scope, where something else can reuse it, test
+it and find it. `scopeSearch` is the pattern.
+
+Banning the `DB` facade was the smaller half of that: `User::where(...)`
+uses no facade and is exactly what the rule is about.
 
 **Conventions bind the typical, not the unusual.** Trees, versioning and
 translatable content are written by hand, and the deviation gets a card
