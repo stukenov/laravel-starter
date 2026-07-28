@@ -25,6 +25,19 @@ class TokenController extends Controller
     {
         return $this->page($request, 'settings/tokens', [
             'tokens' => $this->tokensOf($request),
+            // A normal prop, not a flash event. `Inertia::flash` fires a
+            // router event that a toast consumes and forgets — right for
+            // "saved", wrong for a value the person has to read off the
+            // screen and copy before it is gone forever.
+            //
+            // `hasSession()` because this action serves the API too, and
+            // a token request is stateless: reaching for the session
+            // there is a 500 on a list endpoint. The shared controller
+            // makes that a real possibility rather than a theory, and it
+            // is exactly what the API test caught.
+            'created' => $request->hasSession()
+                ? $request->session()->get('created_token')
+                : null,
         ], 'tokens');
     }
 
@@ -39,7 +52,8 @@ class TokenController extends Controller
     {
         $token = $request->user()->createToken($request->validated('name'));
 
-        Inertia::flash('token', $token->plainTextToken);
+        $request->session()->flash('created_token', $token->plainTextToken);
+
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('common.tokens.created'),

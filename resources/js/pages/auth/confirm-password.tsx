@@ -27,6 +27,7 @@ export default function ConfirmPassword() {
                                 placeholder={t('auth.password_placeholder')}
                                 autoComplete="current-password"
                                 autoFocus
+                                data-test="confirm-password-input"
                             />
 
                             <InputError message={errors.password} />
@@ -39,7 +40,7 @@ export default function ConfirmPassword() {
                                 data-test="confirm-password-button"
                             >
                                 {processing && <Spinner />}
-                                Confirm password
+                                {t('auth.confirm_submit')}
                             </Button>
                         </div>
                     </div>

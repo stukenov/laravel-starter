@@ -20,17 +20,22 @@ type Token = {
 
 type Props = {
     tokens: Token[];
+    /**
+     * The plaintext, for exactly one render.
+     *
+     * A prop rather than a flash event: `Inertia::flash` fires something
+     * a toast consumes and forgets, which is right for "saved" and wrong
+     * for a value the person has to read off the screen and copy before
+     * it is gone for good. Shown once because only the hash is stored,
+     * and the banner says so.
+     */
+    created?: string | null;
 };
 
-export default function Tokens({ tokens }: Props) {
+export default function Tokens({ tokens, created }: Props) {
     const t = useTranslations();
-    const { auth, locale, flash } = usePage().props;
+    const { auth, locale } = usePage().props;
     const timezone = (auth.user.timezone as string) ?? 'UTC';
-
-    // Shown once and never again — only the hash is stored. The banner
-    // says so, because a person who does not know that closes the page.
-    const created = (flash as Record<string, unknown>)?.token as
-        string | undefined;
 
     const [copied, setCopied] = useState(false);
     const [confirming, setConfirming] = useState<string | null>(null);
