@@ -41,7 +41,6 @@ export default function Register({ passwordRules, honeypot }: Props) {
                                     type="text"
                                     required
                                     autoFocus
-                                    tabIndex={1}
                                     autoComplete="name"
                                     name="name"
                                     placeholder={t('auth.name_placeholder')}
@@ -58,7 +57,6 @@ export default function Register({ passwordRules, honeypot }: Props) {
                                     id="email"
                                     type="email"
                                     required
-                                    tabIndex={2}
                                     autoComplete="email"
                                     name="email"
                                     placeholder={t('auth.email_placeholder')}
@@ -73,7 +71,6 @@ export default function Register({ passwordRules, honeypot }: Props) {
                                 <PasswordInput
                                     id="password"
                                     required
-                                    tabIndex={3}
                                     autoComplete="new-password"
                                     name="password"
                                     placeholder={t('auth.password_placeholder')}
@@ -89,7 +86,6 @@ export default function Register({ passwordRules, honeypot }: Props) {
                                 <PasswordInput
                                     id="password_confirmation"
                                     required
-                                    tabIndex={4}
                                     autoComplete="new-password"
                                     name="password_confirmation"
                                     placeholder={t('auth.password_confirm')}
@@ -103,7 +99,6 @@ export default function Register({ passwordRules, honeypot }: Props) {
                             <Button
                                 type="submit"
                                 className="mt-2 w-full"
-                                tabIndex={5}
                                 data-test="register-user-button"
                             >
                                 {processing && <Spinner />}
@@ -113,7 +108,7 @@ export default function Register({ passwordRules, honeypot }: Props) {
 
                         <div className="text-center text-sm text-muted-foreground">
                             {t('auth.have_account')}{' '}
-                            <TextLink href={login()} tabIndex={6}>
+                            <TextLink href={login()}>
                                 {t('auth.login')}
                             </TextLink>
                         </div>

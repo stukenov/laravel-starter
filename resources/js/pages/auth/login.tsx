@@ -17,6 +17,16 @@ type Props = {
     canResetPassword: boolean;
 };
 
+/**
+ * No `tabIndex` anywhere on purpose.
+ *
+ * The form used to number its fields by hand, and the numbering was
+ * wrong: "forgot your password" sits between the email and the password
+ * on screen and carried `tabIndex={5}`, so somebody moving by keyboard
+ * reached it *after* the sign-in button. The registration link carried
+ * the same 5. A positive tabindex fights the document order instead of
+ * following it, and the document order here is already what the eye sees.
+ */
 export default function Login({ status, canResetPassword }: Props) {
     const t = useTranslations();
     const { registrationEnabled } = usePage().props;
@@ -48,7 +58,6 @@ export default function Login({ status, canResetPassword }: Props) {
                                     name="email"
                                     required
                                     autoFocus
-                                    tabIndex={1}
                                     autoComplete="email"
                                     placeholder={t('auth.email_placeholder')}
                                 />
@@ -64,7 +73,6 @@ export default function Login({ status, canResetPassword }: Props) {
                                         <TextLink
                                             href={request()}
                                             className="ml-auto text-sm"
-                                            tabIndex={5}
                                         >
                                             {t('auth.forgot_password')}
                                         </TextLink>
@@ -75,7 +83,6 @@ export default function Login({ status, canResetPassword }: Props) {
                                     data-test="login-password"
                                     name="password"
                                     required
-                                    tabIndex={2}
                                     autoComplete="current-password"
                                     placeholder={t('auth.password_placeholder')}
                                 />
@@ -83,11 +90,7 @@ export default function Login({ status, canResetPassword }: Props) {
                             </div>
 
                             <div className="flex items-center space-x-3">
-                                <Checkbox
-                                    id="remember"
-                                    name="remember"
-                                    tabIndex={3}
-                                />
+                                <Checkbox id="remember" name="remember" />
                                 <Label htmlFor="remember">
                                     {t('auth.remember')}
                                 </Label>
@@ -96,7 +99,6 @@ export default function Login({ status, canResetPassword }: Props) {
                             <Button
                                 type="submit"
                                 className="mt-4 w-full"
-                                tabIndex={4}
                                 disabled={processing}
                                 data-test="login-button"
                             >
@@ -115,7 +117,7 @@ export default function Login({ status, canResetPassword }: Props) {
                                 data-test="login-signup"
                             >
                                 {t('auth.no_account')}{' '}
-                                <TextLink href={register()} tabIndex={5}>
+                                <TextLink href={register()}>
                                     {t('auth.sign_up')}
                                 </TextLink>
                             </div>

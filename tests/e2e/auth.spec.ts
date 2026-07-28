@@ -160,3 +160,43 @@ test.describe('the language of the login page', () => {
         await expect(page.getByTestId('login-password')).toBeVisible();
     });
 });
+
+/**
+ * Keyboard order, which only a browser can answer.
+ *
+ * The form numbered its fields by hand and got it wrong: "forgot your
+ * password" sits between the email and the password on screen and carried
+ * `tabIndex={5}`, so Tab reached it after the sign-in button. The
+ * registration link carried the same 5. The show-password button carried
+ * `tabIndex={-1}` and could not be reached at all.
+ */
+test('tab moves through the sign-in form in the order it is drawn', async ({
+    page,
+}) => {
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+
+    await page.getByTestId('login-email').focus();
+
+    const order: string[] = [];
+
+    for (let i = 0; i < 5; i++) {
+        await page.keyboard.press('Tab');
+        order.push(
+            await page.evaluate(
+                () =>
+                    document.activeElement?.getAttribute('data-test') ??
+                    document.activeElement?.getAttribute('aria-label') ??
+                    document.activeElement?.tagName ??
+                    '',
+            ),
+        );
+    }
+
+    // The link sits above the password field on screen, so it comes
+    // before it here, and the show-password button is reachable at all.
+    expect(order.join(' → ')).toContain('login-password');
+    expect(order.some((name) => /пароль|password/i.test(name))).toBe(true);
+    expect(order.indexOf('login-button')).toBeGreaterThan(
+        order.indexOf('login-password'),
+    );
+});

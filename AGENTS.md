@@ -641,6 +641,14 @@ end-to-end suite signs in once in a setup project and reuses the cookies:
 a suite that logs in per test exhausts it inside the first minute, and
 every test after that waits for a redirect that never comes.
 
+**No `tabIndex` on a form.** The sign-in and registration forms numbered
+their fields by hand, and the numbers were wrong: "forgot your password"
+sits between the email and the password on screen and carried
+`tabIndex={5}`, so Tab reached it after the sign-in button, and the
+registration link carried the same 5. A positive tabindex fights the
+document order rather than following it. The only ones left are `-1` on
+the honeypot fields, which must not be reachable at all.
+
 **The cabinet has no locale in its URL,** so the login page is rendered in
 whatever language the browser asks for. Tests select by `data-test`, never
 by copy.

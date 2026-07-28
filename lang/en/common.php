@@ -3,6 +3,9 @@
 return [
     'auth' => [
         'login' => 'Log in',
+        'verify_sent' => 'A new link has been sent to the address you registered with.',
+        'password_show' => 'Show password',
+        'password_hide' => 'Hide password',
         'register' => 'Sign up',
         'logout' => 'Log out',
         'forgot_password' => 'Forgot your password?',

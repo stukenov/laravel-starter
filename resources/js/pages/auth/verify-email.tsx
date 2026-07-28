@@ -16,8 +16,7 @@ export default function VerifyEmail({ status }: { status?: string }) {
 
             {status === 'verification-link-sent' && (
                 <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    A new verification link has been sent to the email address
-                    you provided during registration.
+                    {t('auth.verify_sent')}
                 </div>
             )}
 
@@ -26,14 +25,14 @@ export default function VerifyEmail({ status }: { status?: string }) {
                     <>
                         <Button disabled={processing} variant="secondary">
                             {processing && <Spinner />}
-                            Resend verification email
+                            {t('auth.verify_resend')}
                         </Button>
 
                         <TextLink
                             href={logout()}
                             className="mx-auto block text-sm"
                         >
-                            Log out
+                            {t('auth.logout')}
                         </TextLink>
                     </>
                 )}
