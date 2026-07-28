@@ -70,10 +70,18 @@ it('states the language rule for agents', function () {
 
 it('keeps agent-facing files free of cyrillic', function () {
     // lang/ is the one place where Russian and Kazakh belong.
+    //
+    // The list used to be four documents. Comments in code are named by
+    // the same rule and were never looked at, so two files carried a
+    // rule heading translated into Cyrillic — one of them at the top of a
+    // config, where the next person would have copied the style. Root
+    // config files are checked here; code comments by the check below.
     $files = array_merge(
         [base_path('AGENTS.md'), base_path('CLAUDE.md'), base_path('zettel/README.md')],
         glob(base_path('*/AGENTS.md')),
         glob(base_path('*/*/AGENTS.md')),
+        glob(base_path('*.config.ts')),
+        glob(base_path('*.config.js')),
     );
 
     $offenders = [];
@@ -171,6 +179,21 @@ it('has no orphaned rule comments in the code', function () {
         preg_match_all('/RULE\(([^)]+)\)/u', $file->getContents(), $matches);
         $topics = array_merge($topics, $matches[1]);
     }
+
+    // The convention is `RULE(topic)` in English. A heading translated
+    // into Cyrillic keeps the shape and loses the letters, so an ASCII
+    // pattern cannot see it — which is how two of them survived every run
+    // of this file, one of them at the top of a config where the next
+    // person would have copied the style.
+    $translated = [];
+
+    foreach ($files as $file) {
+        if (preg_match('/[А-ЯЁ]{4,}\(/u', $file->getContents())) {
+            $translated[] = str_replace(base_path().'/', '', $file->getPathname());
+        }
+    }
+
+    expect($translated)->toBeEmpty();
 
     expect(array_unique($topics))->not->toBeEmpty();
 

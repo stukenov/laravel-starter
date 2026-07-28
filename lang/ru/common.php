@@ -1,8 +1,8 @@
 <?php
 
 /*
- * ПРАВИЛО(локали): новый текст добавляется сразу в три файла (AGENTS.md) —
- * ru, kk и en. Отсутствующий ключ выводится на экран как есть.
+ * RULE(locales): new copy goes into all three files at once — ru, kk and
+ * en. A missing key is printed on screen as itself. See AGENTS.md.
  */
 
 return [

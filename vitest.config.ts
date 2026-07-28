@@ -3,11 +3,12 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 /**
- * ПРАВИЛО(тесты): три уровня, это второй — отрисовка — AGENTS.md.
+ * RULE(tests): three levels, and this is the second — rendering.
+ * See AGENTS.md.
  *
- * Отдельный конфиг, а не общий с vite.config.ts: там подключены плагины
- * Laravel, Inertia и Wayfinder, которым в тестовой среде нечего делать —
- * они ждут работающего бэкенда и манифеста сборки.
+ * A config of its own rather than sharing vite.config.ts: that one loads
+ * the Laravel, Inertia and Wayfinder plugins, which have no business in a
+ * test environment — they expect a running backend and a build manifest.
  */
 export default defineConfig({
     plugins: [react()],
