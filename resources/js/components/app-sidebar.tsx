@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import {
+    Boxes,
     Activity,
     History,
     LayoutGrid,
@@ -24,6 +25,7 @@ import { index as activityIndex } from '@/routes/dash/activity';
 import { index as healthIndex } from '@/routes/dash/health';
 import { index as rolesIndex } from '@/routes/dash/roles';
 import { index as usersIndex } from '@/routes/dash/users';
+import { index as docsIndex } from '@/routes/dash/docs';
 import type { NavItem } from '@/types';
 
 // Titles are translation keys — NavMain resolves them. A static array
@@ -60,6 +62,12 @@ const mainNavItems: (NavItem & { ability?: string })[] = [
         href: healthIndex(),
         icon: Activity,
         ability: 'health.view',
+    },
+    {
+        title: 'docs.title',
+        href: docsIndex(),
+        icon: Boxes,
+        ability: 'docs.view',
     },
 ];
 

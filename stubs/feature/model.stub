@@ -7,13 +7,13 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-{{ relationImports }}
+{{ fileTraitImport }}{{ relationImports }}
 
 #[Fillable([{{ fillable }}])]
 class {{ studly }} extends Model
 {
 {{ enumConstants }}    /** @use HasFactory<{{ studly }}Factory> */
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids{{ fileTrait }};
 
     /*
      * RULE(db): UUIDv7 keys, generated in two places on purpose. HasUuids

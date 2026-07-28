@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\ActivityController;
+use App\Http\Controllers\Api\V1\DocController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\TokenController;
 use App\Http\Controllers\Api\V1\UserController;
@@ -41,4 +42,8 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     // without a browser.
     Route::get('tokens', [TokenController::class, 'index'])->name('api.tokens.index');
     Route::delete('tokens/{token}', [TokenController::class, 'destroy'])->name('api.tokens.destroy');
+    Route::get('docs', [DocController::class, 'index'])->name('api.docs.index');
+    Route::post('docs', [DocController::class, 'store'])->name('api.docs.store');
+    Route::put('docs/{doc}', [DocController::class, 'update'])->name('api.docs.update');
+    Route::delete('docs/{doc}', [DocController::class, 'destroy'])->name('api.docs.destroy');
 });

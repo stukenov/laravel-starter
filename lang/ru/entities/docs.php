@@ -1,0 +1,33 @@
+<?php
+
+return [
+    'title' => 'Docs',
+    'description' => 'Список записей',
+    'search' => 'Поиск',
+    'add' => 'Добавить',
+    'edit' => 'Изменить',
+    'empty' => 'Записей пока нет',
+    'empty_search' => 'Ничего не найдено',
+    'save' => 'Сохранить',
+    'delete_confirm' => 'Точно удалить?',
+    'delete' => 'Удалить',
+    'cancel' => 'Отмена',
+    'created' => 'Запись создана.',
+    'updated' => 'Изменения сохранены.',
+    'deleted' => 'Запись удалена.',
+
+    /*
+     * Field labels live in their own section on purpose.
+     *
+     * Flat, a field called `title` overwrote the page heading — and
+     * `title` is the commonest field name there is, so the generator's
+     * own documented example shipped a page headed "Title". A field
+     * called `add`, `search` or `empty` would have done the same to its
+     * neighbour, silently, because PHP keeps the last key.
+     */
+
+    'fields' => [
+        'title' => 'Title',
+        'attachment' => 'Attachment',
+    ],
+];

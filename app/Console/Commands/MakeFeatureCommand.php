@@ -100,6 +100,8 @@ class MakeFeatureCommand extends Command
             ));
         }
 
+        $this->registerFileEntity();
+
         $this->tidyGeneratedFiles();
 
         $this->warnAboutMissingRelations();
@@ -219,7 +221,7 @@ class MakeFeatureCommand extends Command
         // the side that carries the column. `hasMany` is its inverse and
         // needs no schema here; `belongsToMany` needs a pivot table and a
         // multi-select, and stays hand-written — see AGENTS.md.
-        $allowed = ['string', 'text', 'richtext', 'integer', 'boolean', 'date', 'datetime', 'belongsTo', 'enum'];
+        $allowed = ['string', 'text', 'richtext', 'integer', 'boolean', 'date', 'datetime', 'file', 'image', 'belongsTo', 'enum'];
         $fields = [];
 
         // `status:enum(draft,published)` — the parentheses hold commas,
@@ -395,6 +397,10 @@ class MakeFeatureCommand extends Command
                 : "import { Head, router, usePage } from '@inertiajs/react';",
             '{{ searchSecondScenario }}' => $this->searchSecondScenario(),
             '{{ richTextScenario }}' => $this->richTextScenario(),
+            '{{ fileTrait }}' => $this->hasFiles() ? ', HasStoredFiles' : '',
+            '{{ fileTraitImport }}' => $this->hasFiles()
+                ? "use App\\Support\\Files\\HasStoredFiles;\n"
+                : '',
             '{{ migrationColumns }}' => $this->migrationColumns(),
             '{{ fillable }}' => $this->fillable(),
             '{{ rules }}' => $this->rules(),
@@ -460,6 +466,9 @@ class MakeFeatureCommand extends Command
             // Formatted text is text. The cleaning happens in the cast,
             // not in the column type.
             'richtext' => "\$table->text('%s')->nullable();",
+            // The column holds a path; the disk holds the file.
+            'file' => "\$table->string('%s')->nullable();",
+            'image' => "\$table->string('%s')->nullable();",
             // `default(0)` only where zero is the honest starting value.
             // An optional number has no default: a counter starts at
             // nothing, an unknown age is not nought.
@@ -917,6 +926,53 @@ PHP;
      * it reports from a line number in this file and not from the
      * template.
      */
+    private function hasFiles(): bool
+    {
+        return (bool) array_intersect(['file', 'image'], array_column($this->fields, 'type'));
+    }
+
+    /**
+     * Lets the download route resolve this entity, and only this way.
+     *
+     * `FileController` maps a URL segment to a class through
+     * `config/files.php` and refuses anything not listed. Turning a name
+     * from the URL into a class name directly is how a download route
+     * becomes a way to instantiate whatever the caller likes.
+     */
+    private function registerFileEntity(): void
+    {
+        if (! $this->hasFiles()) {
+            return;
+        }
+
+        $path = base_path('config/files.php');
+        $contents = File::get($path);
+
+        if (str_contains($contents, "'{$this->kebabPlural}' =>")) {
+            return;
+        }
+
+        $line = "        '{$this->kebabPlural}' => App\\Models\\{$this->studly}::class,";
+
+        $patched = preg_replace(
+            "/(    'entities' => \[\n)/",
+            '$1'.$line."\n",
+            $contents,
+            1,
+        );
+
+        if ($patched === null || $patched === $contents) {
+            $this->components->error(
+                "Add '{$this->kebabPlural}' => App\\Models\\{$this->studly}::class to config/files.php by hand, or its files cannot be downloaded."
+            );
+
+            return;
+        }
+
+        File::put($path, $patched);
+        $this->components->task('config/files.php updated', fn () => true);
+    }
+
     private function richTextScenario(): string
     {
         $field = collect($this->fields)->firstWhere('type', 'richtext');
@@ -1011,6 +1067,10 @@ PHP;
                 // import all write here and none of them pass through
                 // one. See App\Support\Html\SanitizedHtml.
                 'richtext' => 'App\\Support\\Html\\SanitizedHtml',
+                // Stores on assignment, deletes what it replaces. The
+                // other half — deleting on record removal — is the
+                // HasStoredFiles trait on the model.
+                'file', 'image' => 'App\\Support\\Files\\StoredFile',
                 default => null,
             };
 
@@ -1128,6 +1188,11 @@ PHP;
             // No length limit and no html rule: what survives is decided
             // by the allowlist in Sanitizer, not by validation.
             'richtext' => "['nullable', 'string']",
+            // Two checks, not one: `mimes` reads the extension and
+            // `image` reads what the file actually is. A .png that is a
+            // PHP script passes the first and fails the second.
+            'file' => "['nullable', 'file', 'max:'.config('files.max_kilobytes')]",
+            'image' => "['nullable', 'image', 'mimes:'.implode(',', config('files.image_mimes')), 'max:'.config('files.max_kilobytes')]",
             'integer' => "['required', 'integer']",
             // Not `required`: a false checkbox is a legitimate answer,
             // and `required` rejects it along with the empty string.
@@ -1170,6 +1235,8 @@ PHP;
             'string' => 'fake()->sentence(3)',
             'text' => 'fake()->paragraph()',
             'richtext' => "'<p>'.fake()->paragraph().'</p>'",
+            'file' => 'null',
+            'image' => 'null',
             'integer' => 'fake()->numberBetween(1, 100)',
             'boolean' => 'false',
             'date' => 'now()',
@@ -1202,6 +1269,8 @@ PHP;
             'string' => "'Тестовое значение'",
             'text' => "'Более длинный текст'",
             'richtext' => "'<p>Абзац с <strong>акцентом</strong>.</p>'",
+            'file' => "UploadedFile::fake()->create('документ.pdf', 40)",
+            'image' => "UploadedFile::fake()->image('снимок.jpg')",
             'integer' => '42',
             'boolean' => 'true',
             'date' => "'2026-07-27'",
@@ -1223,6 +1292,7 @@ PHP;
         $types = [
             'string' => 'string', 'text' => 'string | null',
             'richtext' => 'string | null',
+            'file' => 'string | null', 'image' => 'string | null',
             'integer' => 'number', 'boolean' => 'boolean', 'date' => 'string | null',
             'datetime' => 'string | null',
         ];

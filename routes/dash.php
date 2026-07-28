@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Dash\ActivityController;
 use App\Http\Controllers\Dash\ActivityStreamController;
+use App\Http\Controllers\Dash\DocController;
+use App\Http\Controllers\Dash\FileController;
 use App\Http\Controllers\Dash\HealthController;
 use App\Http\Controllers\Dash\RoleController;
 use App\Http\Controllers\Dash\UserController;
@@ -36,6 +38,11 @@ Route::middleware(['auth', 'verified'])
         Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
         Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
 
+        // RULE(files): as private as the record they belong to —
+        // AGENTS.md. One route, resolved only against the entities named
+        // in config/files.php, authorised by the record's own policy.
+        Route::get('files/{entity}/{id}/{field}', FileController::class)->name('files.show');
+
         // Read only on purpose: an audit log that can be edited is not one.
         Route::get('activity', [ActivityController::class, 'index'])->name('activity.index');
         Route::get('activity/stream', ActivityStreamController::class)->name('activity.stream');
@@ -45,4 +52,8 @@ Route::middleware(['auth', 'verified'])
         Route::get('health', [HealthController::class, 'index'])
             ->middleware('can:'.Ability::VIEW_HEALTH)
             ->name('health.index');
+        Route::get('docs', [DocController::class, 'index'])->name('docs.index');
+        Route::post('docs', [DocController::class, 'store'])->name('docs.store');
+        Route::put('docs/{doc}', [DocController::class, 'update'])->name('docs.update');
+        Route::delete('docs/{doc}', [DocController::class, 'destroy'])->name('docs.destroy');
     });

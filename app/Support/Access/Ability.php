@@ -26,6 +26,10 @@ final class Ability
 
     public const VIEW_HEALTH = 'health.view';
 
+    public const VIEW_DOCS = 'docs.view';
+
+    public const MANAGE_DOCS = 'docs.manage';
+
     /**
      * @return array<int, string>
      */
@@ -38,6 +42,8 @@ final class Ability
             self::MANAGE_ROLES,
             self::VIEW_ACTIVITY,
             self::VIEW_HEALTH,
+            self::VIEW_DOCS,
+            self::MANAGE_DOCS,
         ];
     }
 }
