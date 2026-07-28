@@ -7,6 +7,7 @@ use App\Http\Requests\{{ studly }}\StoreRequest;
 use App\Http\Requests\{{ studly }}\UpdateRequest;
 use App\Models\{{ studly }};
 {{ relationModelImports }}
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,13 +15,16 @@ use Inertia\Response;
 
 class {{ studly }}Controller extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request): Response|JsonResponse
     {
         $this->authorize('viewAny', {{ studly }}::class);
 
         $search = trim((string) $request->query('search', ''));
 
-        return Inertia::render('dash/{{ kebabPlural }}/index', [
+        // RULE(api): one action, both surfaces — AGENTS.md. The
+        // envelope lives on the base controller so the panel and
+        // /api/v1 cannot drift apart.
+        return $this->page($request, 'dash/{{ kebabPlural }}/index', [
             'records' => {{ studly }}::search($search)
                 ->orderByDesc('created_at')
 {{ eagerLoad }}
@@ -31,28 +35,30 @@ class {{ studly }}Controller extends Controller
                 // or not.
                 ->through(fn ({{ studly }} $record) => $record->toPanelItem()),
             'search' => $search,{{ relationOptions }}{{ enumOptions }}
-        ]);
+        ], 'records');
     }
 
-    public function store(StoreRequest $request): RedirectResponse
+    public function store(StoreRequest $request): RedirectResponse|JsonResponse
     {
-        {{ studly }}::create($request->validated());
+        $record = {{ studly }}::create($request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('entities/{{ snakePlural }}.created')]);
 
-        return back();
+        // 201 with the record: the id is the one thing an API caller
+        // cannot work out for itself.
+        return $this->saved($request, $record->toPanelItem(), 201);
     }
 
-    public function update(UpdateRequest $request, {{ studly }} ${{ snake }}): RedirectResponse
+    public function update(UpdateRequest $request, {{ studly }} ${{ snake }}): RedirectResponse|JsonResponse
     {
         ${{ snake }}->update($request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('entities/{{ snakePlural }}.updated')]);
 
-        return back();
+        return $this->saved($request, ${{ snake }}->fresh()->toPanelItem());
     }
 
-    public function destroy(Request $request, {{ studly }} ${{ snake }}): RedirectResponse
+    public function destroy(Request $request, {{ studly }} ${{ snake }}): RedirectResponse|JsonResponse
     {
         $this->authorize('delete', ${{ snake }});
 
@@ -60,6 +66,6 @@ class {{ studly }}Controller extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('entities/{{ snakePlural }}.deleted')]);
 
-        return back();
+        return $this->saved($request);
     }
 }

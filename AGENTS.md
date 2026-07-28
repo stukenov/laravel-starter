@@ -304,6 +304,12 @@ column it has now and every column added to it later, whether or not
 anybody meant that. The generated controller does this for you; a
 hand-written one should too.
 
+**`make:feature` writes the API too.** Four routes under `/api/v1`, an
+empty subclass under `Api\V1`, and three scenarios in the generated
+suite. An API added per entity by hand, when somebody remembers, covers
+whichever entities somebody remembered — and the gaps are invisible until
+a client hits one.
+
 **`make:feature` emits all of it.** Do not hand-write a typical entity:
 
     php artisan make:feature Post --fields=title:string,body:text

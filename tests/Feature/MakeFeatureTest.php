@@ -41,6 +41,7 @@ function cleanupGenerated(string $studly, string $plural, string $snakePlural): 
         File::delete(base_path($path));
     }
 
+    File::delete(base_path("app/Http/Controllers/Api/V1/{$studly}Controller.php"));
     File::deleteDirectory(base_path("app/Http/Requests/{$studly}"));
     File::deleteDirectory(base_path("resources/js/pages/dash/{$plural}"));
 
@@ -63,6 +64,21 @@ function cleanupGenerated(string $studly, string $plural, string $snakePlural): 
     );
 
     File::put($routes, preg_replace("/\n{3,}/", "\n\n", implode("\n", $kept)));
+
+    // routes/api.php is shared the same way, and was not being stripped:
+    // four widget routes accumulated in it on every run, which is the
+    // same defect this file already carries a card about — a test that
+    // permanently edits the source it tests.
+    $api = base_path('routes/api.php');
+
+    $keptApi = array_filter(
+        explode("\n", File::get($api)),
+        fn (string $line) => ! str_contains($line, "V1\\{$studly}Controller")
+            && ! str_contains($line, "'{$plural}")
+            && ! str_contains($line, "{$plural}/{"),
+    );
+
+    File::put($api, preg_replace("/\n{3,}/", "\n\n", implode("\n", $keptApi)));
 
     // Ability.php is shared too, and the generator writes into it. Left
     // alone, a test run leaves permanent constants behind for an entity
@@ -642,6 +658,34 @@ it('imports nothing the generated e2e spec does not use', function () {
     ));
 
     expect($unused)->toBe([]);
+});
+
+it('gives the entity an api as well as a panel', function () {
+    // An API added per entity, by hand, when somebody remembers, covers
+    // whichever entities somebody remembered — and the gaps are
+    // invisible until a client hits one.
+    expect(base_path('app/Http/Controllers/Api/V1/WidgetController.php'))->toBeFile();
+
+    expect(File::get(base_path('routes/api.php')))
+        ->toContain("Route::get('widgets'")
+        ->toContain('api.widgets.destroy');
+});
+
+it('makes the api controller an empty subclass', function () {
+    // Everything inherited: the same actions, policies and form requests
+    // as the panel. A body here would be a second implementation to keep
+    // in step.
+    $controller = File::get(base_path('app/Http/Controllers/Api/V1/WidgetController.php'));
+
+    expect($controller)->toContain('extends WidgetActions {}')
+        ->and($controller)->not->toContain('public function');
+});
+
+it('emits api scenarios alongside the panel ones', function () {
+    $test = File::get(base_path('tests/Feature/Dash/WidgetTest.php'));
+
+    expect($test)->toContain("'/api/v1/widgets'")
+        ->and($test)->toContain('assertUnauthorized');
 });
 
 it('emits a list that survives a phone', function () {

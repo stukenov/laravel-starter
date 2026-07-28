@@ -75,6 +75,7 @@ class MakeFeatureCommand extends Command
         }
 
         $this->registerRoutes();
+        $this->registerApiRoutes();
         $this->registerAbilities();
         $this->registerNavigation();
 
@@ -1347,6 +1348,94 @@ PHP;
 
         File::put($path, $patched);
         $this->components->task('app-sidebar.tsx updated', fn () => true);
+    }
+
+    /**
+     * RULE(api): every panel resource has an API — AGENTS.md.
+     *
+     * Written at the same time as the panel routes, not later. An API
+     * that is added per entity, by hand, when somebody remembers, is an
+     * API that covers whichever entities somebody remembered — and the
+     * gaps are invisible until a client hits one.
+     *
+     * The controller is an empty subclass under `Api\V1`: same actions,
+     * same policies, same form requests. It exists because Wayfinder
+     * generates a helper per action, and an action reachable at two URLs
+     * loses the `.form()` variant the auth flow uses.
+     */
+    private function registerApiRoutes(): void
+    {
+        $subclass = base_path("app/Http/Controllers/Api/V1/{$this->studly}Controller.php");
+
+        File::ensureDirectoryExists(dirname($subclass));
+
+        // Built by concatenation and interpolated as a whole: a
+        // backslash immediately before `{` is the escape for a literal
+        // brace, so `Dash\{$this->studly}Controller` writes
+        // `Dash\{Probe}Controller` and the file does not parse.
+        $parent = 'App\\Http\\Controllers\\Dash\\'.$this->studly.'Controller';
+
+        if (! File::exists($subclass)) {
+            File::put($subclass, <<<PHP
+            <?php
+
+            namespace App\Http\Controllers\Api\V1;
+
+            use {$parent} as {$this->studly}Actions;
+
+            /**
+             * RULE(api): the same controller, the same policies — AGENTS.md.
+             *
+             * Empty on purpose. Everything is inherited; this class exists
+             * so Wayfinder sees one controller per surface and keeps the
+             * `.form()` helpers unambiguous.
+             */
+            class {$this->studly}Controller extends {$this->studly}Actions {}
+
+            PHP);
+        }
+
+        $path = base_path('routes/api.php');
+        $contents = File::get($path);
+
+        if (str_contains($contents, "Api\\V1\\{$this->studly}Controller")) {
+            return;
+        }
+
+        // The heredoc's first line carries the indentation of the
+        // closing marker, so it is written flush and the rest lines up.
+        $block = "\n    ".<<<PHP
+        Route::get('{$this->kebabPlural}', [{$this->studly}Controller::class, 'index'])->name('api.{$this->snakePlural}.index');
+            Route::post('{$this->kebabPlural}', [{$this->studly}Controller::class, 'store'])->name('api.{$this->snakePlural}.store');
+            Route::put('{$this->kebabPlural}/{{$this->snake}}', [{$this->studly}Controller::class, 'update'])->name('api.{$this->snakePlural}.update');
+            Route::delete('{$this->kebabPlural}/{{$this->snake}}', [{$this->studly}Controller::class, 'destroy'])->name('api.{$this->snakePlural}.destroy');
+        PHP;
+
+        $contents = str_replace(
+            'use Illuminate\Http\Request;',
+            // Concatenated, not interpolated. In a double-quoted string
+            // `\{` is the documented escape for a literal brace, so
+            // "...V1\{$this->studly}Controller" writes `{Probe}Controller`
+            // and the routes file stops parsing.
+            'use App\Http\Controllers\Api\V1\\'.$this->studly.'Controller;'."\n".'use Illuminate\Http\Request;',
+            $contents,
+        );
+
+        // Same anchor discipline as the panel routes: the versioned group
+        // has to close the file, and a silent no-match here would be an
+        // API that answers 404 with nothing to show why.
+        $patched = preg_replace('/(\n\}\);\n)$/', $block."\n});\n", rtrim($contents)."\n");
+
+        if ($patched === null || $patched === rtrim($contents)."\n") {
+            $this->components->error(
+                'routes/api.php must end with the v1 group. Add the routes by hand.'
+            );
+
+            return;
+        }
+
+        File::put($path, $patched);
+        $this->components->task('routes/api.php updated', fn () => true);
     }
 
     private function registerRoutes(): void

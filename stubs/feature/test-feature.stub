@@ -42,6 +42,41 @@ it('finds a record by a fragment of the first field', function () {
     expect($record->fresh())->not->toBeNull();
 });
 {{ searchSecondScenario }}
+/*
+ * RULE(api): every panel resource has an API — AGENTS.md.
+ *
+ * The same actions, the same policies and the same form request, so
+ * these cannot disagree with the panel's cases about who may do what.
+ * What is left is the part sharing does not give away: that a token is
+ * required at all, and that the envelope is what a client can rely on.
+ */
+
+it('lists over the api for a token', function () {
+    {{ studly }}::factory()->count(2)->create();
+
+    $token = {{ snake }}Admin()->createToken('test')->plainTextToken;
+
+    $this->withHeaders(['Accept' => 'application/json', 'Authorization' => "Bearer {$token}"])
+        ->getJson('/api/v1/{{ kebabPlural }}')
+        ->assertOk()
+        ->assertJsonStructure(['data' => ['data', 'links']]);
+});
+
+it('creates over the api and answers 201 with the record', function () {
+    $token = {{ snake }}Admin()->createToken('test')->plainTextToken;
+
+    $this->withHeaders(['Accept' => 'application/json', 'Authorization' => "Bearer {$token}"])
+        ->postJson('/api/v1/{{ kebabPlural }}', {{ snake }}Payload())
+        ->assertCreated()
+        ->assertJsonStructure(['data' => ['id']]);
+});
+
+it('refuses the api with no token', function () {
+    // 401, not a redirect to a sign-in page: a client following
+    // redirects would otherwise get HTML and a 200.
+    $this->getJson('/api/v1/{{ kebabPlural }}')->assertUnauthorized();
+});
+
 it('creates a record', function () {
     $this->actingAs({{ snake }}Admin())
         ->post(route('dash.{{ snakePlural }}.store'), {{ snake }}Payload())
