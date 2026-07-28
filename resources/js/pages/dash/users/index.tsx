@@ -60,7 +60,10 @@ export default function UsersIndex({
             <Head title={t('users.title')} />
 
             <div className="density-panel space-y-4 p-4">
-                <div className="flex items-center justify-between gap-3">
+                {/* RULE(mobile): a row that never wraps is a desktop idea —
+                    below sm the title and the controls stack instead of
+                    overflowing the screen. */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-base font-semibold">
                             {t('users.title')}
@@ -70,7 +73,7 @@ export default function UsersIndex({
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <div className="relative">
                             <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                             <Input
@@ -79,7 +82,7 @@ export default function UsersIndex({
                                     setTerm(event.target.value)
                                 }
                                 placeholder={t('users.search')}
-                                className="w-56 pl-7"
+                                className="w-full pl-7 sm:w-56"
                                 data-test="users-search"
                             />
                         </div>

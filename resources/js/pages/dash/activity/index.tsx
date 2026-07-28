@@ -81,7 +81,11 @@ export default function ActivityIndex({
             <Head title={t('activity.title')} />
 
             <div className="density-panel space-y-4 p-4">
-                <div className="flex items-center justify-between gap-3">
+                {/* RULE(mobile): a row that never wraps is a desktop idea —
+                    below sm the filters wrap onto their own line and share
+                    the row instead of being cut off at a fixed width.
+                    See AGENTS.md. */}
+                <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <h1 className="text-base font-semibold">
                             {t('activity.title')}
@@ -100,7 +104,7 @@ export default function ActivityIndex({
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                         <Select
                             value={filters.log || ALL}
                             onValueChange={(value) =>
@@ -108,7 +112,7 @@ export default function ActivityIndex({
                             }
                         >
                             <SelectTrigger
-                                className="w-40"
+                                className="min-w-0 flex-1 sm:w-40 sm:flex-none"
                                 data-test="filter-log"
                             >
                                 <SelectValue
@@ -134,7 +138,7 @@ export default function ActivityIndex({
                             }
                         >
                             <SelectTrigger
-                                className="w-40"
+                                className="min-w-0 flex-1 sm:w-40 sm:flex-none"
                                 data-test="filter-event"
                             >
                                 <SelectValue

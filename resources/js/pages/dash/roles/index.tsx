@@ -71,7 +71,11 @@ export default function RolesIndex({ roles }: Props) {
                     </div>
                 ) : (
                     <div className="overflow-hidden rounded-md border">
-                        <div className="flex bg-muted/40 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+                        {/* RULE(mobile): a row of fixed columns is a
+                            desktop idea. Below sm the row becomes a card
+                            and the header has nothing left to label, so
+                            it steps out of the way. See users/index.tsx. */}
+                        <div className="hidden bg-muted/40 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase sm:flex">
                             <span className="flex-1">{t('roles.name')}</span>
                             <span className="w-28">
                                 {t('roles.permissions_count')}
@@ -85,10 +89,10 @@ export default function RolesIndex({ roles }: Props) {
                             <Link
                                 key={role.id}
                                 href={edit(role.id)}
-                                className="flex items-center border-t px-3 py-2 hover:bg-muted/40"
+                                className="flex min-h-11 w-full flex-col gap-1 border-t px-3 py-2 hover:bg-muted/40 sm:flex-row sm:items-center sm:gap-0"
                                 data-test="roles-row"
                             >
-                                <span className="flex flex-1 items-center gap-2">
+                                <span className="flex items-center gap-2 sm:flex-1">
                                     {role.name}
                                     {role.is_protected && (
                                         <Badge variant="outline">
@@ -96,11 +100,19 @@ export default function RolesIndex({ roles }: Props) {
                                         </Badge>
                                     )}
                                 </span>
-                                <span className="w-28 text-muted-foreground">
-                                    {role.permissions_count}
-                                </span>
-                                <span className="w-28 text-muted-foreground">
-                                    {role.users_count}
+                                <span className="order-last flex items-center gap-3 text-muted-foreground sm:order-none sm:contents">
+                                    <span className="sm:w-28">
+                                        <span className="sm:hidden">
+                                            {t('roles.permissions_count')}:{' '}
+                                        </span>
+                                        {role.permissions_count}
+                                    </span>
+                                    <span className="sm:w-28">
+                                        <span className="sm:hidden">
+                                            {t('roles.users_count')}:{' '}
+                                        </span>
+                                        {role.users_count}
+                                    </span>
                                 </span>
                             </Link>
                         ))}

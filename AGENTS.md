@@ -289,6 +289,47 @@ Four things a public page owes that a panel page does not:
   props carry `auth.user = null`; a page that reads it without checking
   breaks for exactly the visitors it was built for.
 
+**A page's layout follows from its name.** `resources/js/app.tsx`
+switches on it: `home`, `legal/*` and `errors/*` get no layout and lay
+themselves out, `auth/*` gets `AuthLayout`, `settings/*` gets
+`AppLayout` inside `SettingsLayout`, everything else gets `AppLayout`.
+A new public page that is not added to that switch does not fail — it
+comes back wearing the panel's sidebar, which is a visual bug on a page
+built for visitors.
+
+**A checkbox that is not ticked sends nothing at all.** The field is
+simply absent from the request, so "unticked" arrives as "unchanged" and
+the box can never be cleared. Every checkbox therefore has a hidden input
+of the same name carrying `0` immediately before it; the browser sends
+both and the later value wins. `make:feature` writes this; a hand-written
+form has to as well.
+
+**Money is `decimal(12, 2)` with a `decimal:2` cast, never a float.**
+The cast returns a string, which is the point — a float cannot hold
+`0.10` and the error compounds over a column of them. Postgres `numeric`
+is exact arithmetic; use it and keep it out of PHP's float type on the
+way through. Formatting is the client's job, like a date:
+`Intl.NumberFormat` in the reader's locale, never `number_format` on the
+server. The generator has no `decimal` type yet, so a money field is
+hand-written today.
+
+**`citext` where comparison should ignore case.** `users.email` and
+`password_reset_tokens.email` are `citext`, so uniqueness and lookup are
+case-insensitive with no `lower()` index and no chance of somebody
+forgetting to call it. A slug column that must behave the same way gets
+the same treatment — and a slug is a good candidate, since a link typed
+in capitals is a link.
+
+**A public URL carries the slug alone.** The `{id}-{slug}` hybrid that
+integer keys make natural does not survive a UUID: the key already
+contains dashes, so nothing can tell where the id ends and the slug
+begins. `getRouteKeyName()` returns `slug` and the uuid stays the key.
+
+**A pivot table has a composite primary key and two `foreignUuid`
+columns.** `belongsToMany` is hand-written, and the two mistakes it
+invites are a `bigint` id column nobody uses and `foreignId()`, which
+writes a bigint key that can never match a uuid.
+
 **What is deliberately absent** — this is one big monolith, not a layer
 cake: no repositories (Eloquent is one), no service layer (logic lives in
 models, form requests and policies), no action class per operation, no
