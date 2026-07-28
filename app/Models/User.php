@@ -95,6 +95,46 @@ class User extends Authenticatable implements MustVerifyEmail
      * dontSubmitEmptyLogs keeps the feed free of entries recording that
      * nothing happened.
      */
+    /**
+     * Change this person's roles and leave a trace of it.
+     *
+     * `logOnly` watches columns, and a role does not live in one — it is
+     * a row in a pivot table. So granting somebody administrator wrote
+     * nothing at all to the activity log: the count before and after was
+     * identical, verified. The log exists to answer "who gave this person
+     * access", and that was the one question it could not answer.
+     *
+     * Logged only when something actually changed, and with both sides
+     * recorded: "roles: member → admin, member" is an audit entry, "roles
+     * changed" is not.
+     *
+     * @param  array<int, string>  $roles
+     */
+    public function syncRolesAudited(array $roles, self $causer): void
+    {
+        $before = $this->roles->pluck('name')->sort()->values()->all();
+
+        $this->syncRoles($roles);
+
+        $after = $this->fresh()->roles->pluck('name')->sort()->values()->all();
+
+        if ($before === $after) {
+            return;
+        }
+
+        activity('user')
+            ->performedOn($this)
+            ->causedBy($causer)
+            ->event('roles')
+            // `withChanges`, not `withProperties`: the two write to
+            // different columns, and the panel reads `attribute_changes`.
+            // Sent to the wrong one the entry appears in the log with
+            // nothing in it, which is worse than no entry — it looks like
+            // a change that had no content.
+            ->withChanges(['old' => ['roles' => $before], 'attributes' => ['roles' => $after]])
+            ->log('roles');
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

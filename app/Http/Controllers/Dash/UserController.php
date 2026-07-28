@@ -66,7 +66,7 @@ class UserController extends Controller
         $user = User::create($data);
 
         if ($roles !== null) {
-            $user->syncRoles($roles);
+            $user->syncRolesAudited($roles, $request->user());
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('entities/users.created')]);
@@ -148,7 +148,7 @@ class UserController extends Controller
             ]);
         }
 
-        $user->syncRoles($roles);
+        $user->syncRolesAudited($roles, $request->user());
     }
 
     public function destroy(Request $request, User $user): RedirectResponse

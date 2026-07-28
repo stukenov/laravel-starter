@@ -18,5 +18,6 @@ return [
         'created' => 'created',
         'updated' => 'updated',
         'deleted' => 'deleted',
+        'roles' => 'changed roles for',
     ],
 ];

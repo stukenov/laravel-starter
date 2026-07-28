@@ -172,6 +172,13 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     gated by its policy. It only stops the interface from lying about
     what it can do.
 
+    **A role change is written to the activity log by hand.** Spatie's
+    automatic logging watches columns, and a role is not a column — it is
+    a row in a pivot table, so granting somebody administrator left no
+    trace at all. `User::syncRolesAudited()` records who, to whom, and
+    both sides of the change. Anything else kept in a pivot table needs
+    the same treatment, and `logOnly` will not tell you that.
+
     `RoleSeeder` is idempotent and runs on every deploy, so a permission
     added in code appears without anyone creating it by hand. Tests seed
     it too — roles are infrastructure, not fixtures, and without them
