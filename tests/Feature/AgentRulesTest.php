@@ -133,6 +133,50 @@ it('seeds the roles on every deploy, not only the first', function () {
     expect($repeat)->toContain('RoleSeeder');
 });
 
+/**
+ * AGENTS.md is the single source of truth and it grew by half in one
+ * night. A document that names a file which has moved is worse than one
+ * that says nothing: somebody goes looking, finds nothing, and stops
+ * trusting the rest of it.
+ */
+it('names no file that does not exist', function () {
+    $missing = [];
+
+    foreach (['AGENTS.md', 'README.md'] as $document) {
+        preg_match_all(
+            '/`([a-zA-Z0-9_.\/-]+\.(?:php|tsx|ts|md|py|css|json|stub|yml))`/',
+            File::get(base_path($document)),
+            $matches,
+        );
+
+        foreach (array_unique($matches[1]) as $path) {
+            // A bare filename means "the one in each locale directory";
+            // `ssr.tsx` is named as the file this project deliberately
+            // does not have.
+            if (! str_contains($path, '/') || $path === 'ssr.tsx') {
+                continue;
+            }
+
+            if (! file_exists(base_path($path)) && ! file_exists(resource_path("js/{$path}"))) {
+                $missing[] = "{$document}: {$path}";
+            }
+        }
+    }
+
+    expect($missing)->toBe([]);
+});
+
+it('numbers the hard rules consecutively', function () {
+    // Two rules were numbered 6 for a while after one was inserted, which
+    // makes "see rule 8" mean nothing.
+    preg_match_all('/^(\d+)\. \*\*/m', File::get(base_path('AGENTS.md')), $matches);
+
+    $numbers = array_map('intval', $matches[1]);
+
+    expect($numbers)->toBe(range(1, count($numbers)))
+        ->and(count($numbers))->toBeGreaterThan(10);
+});
+
 it('builds the front end after the env file exists', function () {
     // Vite bakes `import.meta.env.VITE_APP_NAME` into the bundle at build
     // time. The recipe built before copying `.env`, so every browser tab
