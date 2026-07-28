@@ -510,6 +510,56 @@ describe('relations', function () {
     });
 });
 
+describe('two entities in a row', function () {
+    // Both used to get `now()->format(...)`, so two generated inside one
+    // second carried the same timestamp — and Laravel then ordered them
+    // by filename. `articles` sorts before `categories`, so the foreign
+    // key ran against a table that did not exist yet and `migrate` failed
+    // on a slice whose stated acceptance criterion is that it does not.
+    //
+    // Alphabetical order is not a dependency order, and nothing tells you
+    // which one you got.
+    afterEach(function () {
+        cleanupGenerated('Gizmo', 'gizmos', 'gizmos');
+        cleanupGenerated('Doodad', 'doodads', 'doodads');
+    });
+
+    it('gives the second migration a later timestamp than the first', function () {
+        Artisan::call('make:feature', ['name' => 'Gizmo', '--fields' => 'title:string', '--force' => true]);
+        Artisan::call('make:feature', ['name' => 'Doodad', '--fields' => 'title:string', '--force' => true]);
+
+        $first = basename(glob(database_path('migrations/*_create_gizmos_table.php'))[0]);
+        $second = basename(glob(database_path('migrations/*_create_doodads_table.php'))[0]);
+
+        expect(substr($second, 0, 17))->toBeGreaterThan(substr($first, 0, 17));
+    });
+
+    it('warns when a relation points at a table nothing creates', function () {
+        // The migration is written happily and fails later with a message
+        // about a relation that does not exist, which reads like a
+        // database problem rather than an order-of-operations one.
+        Artisan::call('make:feature', [
+            'name' => 'Gizmo',
+            '--fields' => 'title:string,doodad:belongsTo',
+            '--force' => true,
+        ]);
+
+        expect(Artisan::output())->toContain('Nothing creates the `doodads` table');
+    });
+
+    it('says nothing when the related table does exist', function () {
+        // A warning that fires every time is a warning nobody reads.
+        Artisan::call('make:feature', ['name' => 'Doodad', '--fields' => 'title:string', '--force' => true]);
+        Artisan::call('make:feature', [
+            'name' => 'Gizmo',
+            '--fields' => 'title:string,doodad:belongsTo',
+            '--force' => true,
+        ]);
+
+        expect(Artisan::output())->not->toContain('Nothing creates');
+    });
+});
+
 describe('an optional field', function () {
     // Without the marker there was one shape for two different things. A
     // view counter that starts at zero and an age nobody filled in were

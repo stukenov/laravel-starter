@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -97,9 +98,46 @@ class MakeFeatureCommand extends Command
             ));
         }
 
+        $this->warnAboutMissingRelations();
+
         $this->components->info("Feature {$this->studly} generated. Run: php artisan migrate && php artisan test");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * A relation to a table nobody has made yet.
+     *
+     * The foreign key names a table by convention, and the convention is
+     * silent about whether it exists. Generate `Article` with
+     * `category:belongsTo` before generating `Category` and the migration
+     * is written happily, then fails at `migrate` with a message about a
+     * relation that does not exist — which reads like a database problem
+     * rather than an order-of-operations one.
+     *
+     * A warning rather than a refusal: the table may be somebody else's,
+     * already in the database and outside this repository's migrations.
+     * Rule 3 allows exactly that.
+     */
+    private function warnAboutMissingRelations(): void
+    {
+        foreach ($this->fields as $field) {
+            if ($field['type'] !== 'belongsTo') {
+                continue;
+            }
+
+            $table = Str::snake(Str::plural($field['name']));
+
+            if (glob(base_path("database/migrations/*_create_{$table}_table.php")) !== []) {
+                continue;
+            }
+
+            $this->components->warn(sprintf(
+                'Nothing creates the `%s` table. Generate it first — php artisan make:feature %s — or the migration fails on a relation that does not exist.',
+                $table,
+                Str::studly(Str::singular($field['name'])),
+            ));
+        }
     }
 
     /**
@@ -234,7 +272,26 @@ class MakeFeatureCommand extends Command
             return 'database/migrations/'.basename($existing[0]);
         }
 
-        return 'database/migrations/'.now()->format('Y_m_d_His')."_create_{$this->snakePlural}_table.php";
+        // Strictly after every migration already there, not simply
+        // "now". Two entities generated in the same second get the same
+        // timestamp, and Laravel then orders them by filename — so
+        // `articles` ran before `categories` and its foreign key failed
+        // on a table that did not exist yet. Alphabetical order is not a
+        // dependency order, and nothing says which one you got.
+        $latest = collect(glob(base_path('database/migrations/*.php')) ?: [])
+            ->map(fn (string $path) => substr(basename($path), 0, 17))
+            ->filter(fn (string $stamp) => preg_match('/^\d{4}(_\d{2}){2}_\d{6}$/', $stamp) === 1)
+            ->max();
+
+        $stamp = now()->format('Y_m_d_His');
+
+        if ($latest !== null && $stamp <= $latest) {
+            $stamp = Carbon::createFromFormat('Y_m_d_His', $latest)
+                ->addSecond()
+                ->format('Y_m_d_His');
+        }
+
+        return "database/migrations/{$stamp}_create_{$this->snakePlural}_table.php";
     }
 
     private function render(string $stub, string $target): void

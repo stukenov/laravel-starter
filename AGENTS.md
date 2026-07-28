@@ -261,6 +261,12 @@ interface.
 
     php artisan make:feature Post --fields=title:string,category:belongsTo
 
+**Generate the referenced entity first.** `Article` before `Category`
+writes a migration that fails at `migrate` on a relation that does not
+exist, which reads like a database problem rather than an
+order-of-operations one. The command warns when nothing creates the
+table it is about to point at.
+
 `category:belongsTo` writes the foreign key, the relation on the model,
 the eager load on the list, a select on the form and an `exists` rule.
 The key is nullable and `nullOnDelete`: deleting a category orphans its
