@@ -1,13 +1,20 @@
+/**
+ * Exactly what `User::toSharedProps()` sends, and nothing else.
+ *
+ * It used to carry `created_at`, `updated_at`, an `avatar` nothing
+ * produces, and an index signature saying "plus whatever else" — which
+ * was true, because the middleware handed the page the whole model. A
+ * type that admits to unknown extra keys cannot warn anybody that the
+ * extra keys arrived.
+ */
 export type User = {
     // RULE(db): identifiers are uuid, not numbers. See AGENTS.md
     id: string;
     name: string;
     email: string;
-    avatar?: string;
+    locale: string;
+    timezone: string;
     email_verified_at: string | null;
-    created_at: string;
-    updated_at: string;
-    [key: string]: unknown;
 };
 
 export type Auth = {

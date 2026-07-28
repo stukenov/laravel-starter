@@ -96,6 +96,35 @@ class User extends Authenticatable implements MustVerifyEmail
      * nothing happened.
      */
     /**
+     * What the signed-in person's own pages are allowed to see.
+     *
+     * Named, like `toPanelItem()` and `toFeedItem()` — the shared props
+     * used to hand the page `$request->user()`, the model itself, on
+     * every Inertia response there is. Nothing leaks today, because
+     * `#[Hidden]` covers the password and the remember token. But that is
+     * a list of what to withhold, and the only one in this codebase: add
+     * a column to `users` — an internal note, a flag, an integration
+     * token — and it appears in the JSON of every panel page, for as long
+     * as nobody remembers to extend the list.
+     *
+     * A list of what to send has the opposite failure: forget it and a
+     * field is missing, which somebody notices immediately.
+     *
+     * @return array<string, mixed>
+     */
+    public function toSharedProps(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+            'locale' => $this->locale,
+            'timezone' => $this->timezone,
+            'email_verified_at' => $this->email_verified_at?->toIso8601String(),
+        ];
+    }
+
+    /**
      * Change this person's roles and leave a trace of it.
      *
      * `logOnly` watches columns, and a role does not live in one — it is

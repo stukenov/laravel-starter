@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
 import type { User } from '@/types';
 
@@ -13,8 +13,12 @@ export function UserInfo({
 
     return (
         <>
+            {/* Initials, not a picture. Nothing in this project produces
+                an avatar — there is no upload, no storage and no field —
+                so `<AvatarImage src={undefined}>` fell through to the
+                fallback on every render and existed only to suggest a
+                feature that is not here. */}
             <Avatar className="h-8 w-8 overflow-hidden rounded-full">
-                <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className="rounded-lg bg-neutral-200 text-black">
                     {getInitials(user.name)}
                 </AvatarFallback>

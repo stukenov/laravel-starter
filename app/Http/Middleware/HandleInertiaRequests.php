@@ -42,7 +42,10 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                // RULE(conventions): a model says what may leave it —
+                // AGENTS.md. This is the hottest path in the application:
+                // every Inertia response for every signed-in person.
+                'user' => $request->user()?->toSharedProps(),
                 /*
                  * RULE(access): the screen shows what the person may
                  * do — AGENTS.md.
