@@ -18,6 +18,8 @@ declare module '@inertiajs/core' {
             locales: string[];
             /** Flat translation dictionary, keyed 'nav.dashboard' */
             translations: Record<string, string>;
+            /** False closes the sign-up route; the page must stop offering it */
+            registrationEnabled: boolean;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

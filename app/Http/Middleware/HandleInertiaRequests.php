@@ -6,6 +6,7 @@ use App\Support\Locale\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Inertia\Middleware;
+use Laravel\Fortify\Features;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -58,6 +59,14 @@ class HandleInertiaRequests extends Middleware
                  */
                 'abilities' => $request->user()?->getAllPermissions()->pluck('name')->all() ?? [],
             ],
+            /*
+             * `REGISTRATION_ENABLED=false` unregisters the route, and the
+             * sign-in page went on offering the link anyway — so the one
+             * public entrance to a closed application ended in a 404, on
+             * exactly the deployment that had been configured most
+             * carefully.
+             */
+            'registrationEnabled' => Features::enabled(Features::registration()),
             'locale' => app()->getLocale(),
             'locales' => Locales::SUPPORTED,
             // Flat dictionary: key 'nav.dashboard' instead of nested

@@ -32,3 +32,12 @@ Object.defineProperty(window, 'matchMedia', {
         dispatchEvent: () => false,
     }),
 });
+
+// jsdom has no ResizeObserver either, and Radix uses it to place a
+// popover. The sign-in page pulls one in through the password field, so
+// a test that never opens a menu still dies without this.
+globalThis.ResizeObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+} as unknown as typeof ResizeObserver;

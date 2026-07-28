@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -19,6 +19,7 @@ type Props = {
 
 export default function Login({ status, canResetPassword }: Props) {
     const t = useTranslations();
+    const { registrationEnabled } = usePage().props;
 
     return (
         <>
@@ -104,12 +105,21 @@ export default function Login({ status, canResetPassword }: Props) {
                             </Button>
                         </div>
 
-                        <div className="text-center text-sm text-muted-foreground">
-                            {t('auth.no_account')}{' '}
-                            <TextLink href={register()} tabIndex={5}>
-                                {t('auth.sign_up')}
-                            </TextLink>
-                        </div>
+                        {/* REGISTRATION_ENABLED=false unregisters the
+                            route, and this offered the link anyway — the
+                            one public entrance to a closed application
+                            ending in a 404. */}
+                        {registrationEnabled && (
+                            <div
+                                className="text-center text-sm text-muted-foreground"
+                                data-test="login-signup"
+                            >
+                                {t('auth.no_account')}{' '}
+                                <TextLink href={register()} tabIndex={5}>
+                                    {t('auth.sign_up')}
+                                </TextLink>
+                            </div>
+                        )}
                     </>
                 )}
             </Form>
