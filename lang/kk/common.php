@@ -107,6 +107,13 @@ return [
 
     'errors' => [
         'home' => 'Басты бетке',
+        // Every status that has no wording of its own — see
+        // bootstrap/app.php. A page rather than whatever the framework
+        // would have shown.
+        'generic' => [
+            'title' => 'Бұлай болмайды',
+            'description' => 'Сұрау бұл бетке келмеді. Басты бетке оралып көріңіз.',
+        ],
         403 => [
             'title' => 'Қолжетімсіз',
             'description' => 'Бұл бетке кіру құқығыңыз жоқ.',

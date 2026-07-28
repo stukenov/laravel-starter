@@ -71,14 +71,26 @@ return Application::configure(basePath: dirname(__DIR__))
                     ->with('status', trans('common.auth.session_expired'));
             }
 
-            if (! in_array($status, [403, 404, 429, 500, 503], true)) {
+            // Every error status, not a list of five. The list was the
+            // bug: a status outside it — 405 from a GET on a POST-only
+            // route, 400, 413 — fell through untouched. With APP_DEBUG on,
+            // which `.env.example` ships, that handed the visitor a stack
+            // trace and the vendor paths. With it off it was plain HTML,
+            // which is exactly what makes Inertia draw the grey modal
+            // rule 11 calls a bug. Both verified.
+            if ($status < 400) {
                 return $response;
             }
 
+            // Statuses with wording of their own keep it; the rest get a
+            // generic page. A missing key would otherwise print
+            // `common.errors.405.title` at the reader.
+            $key = trans()->has("common.errors.{$status}.title") ? (string) $status : 'generic';
+
             return inertia('errors/error-page', [
                 'status' => $status,
-                'title' => trans("common.errors.{$status}.title"),
-                'description' => trans("common.errors.{$status}.description"),
+                'title' => trans("common.errors.{$key}.title"),
+                'description' => trans("common.errors.{$key}.description"),
                 'home' => trans('common.errors.home'),
             ])->toResponse($request)->setStatusCode($status);
         });

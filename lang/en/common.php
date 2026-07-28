@@ -107,6 +107,13 @@ return [
 
     'errors' => [
         'home' => 'Go home',
+        // Every status that has no wording of its own — see
+        // bootstrap/app.php. A page rather than whatever the framework
+        // would have shown.
+        'generic' => [
+            'title' => 'That did not work',
+            'description' => 'The request did not suit this page. Try going back to the home page.',
+        ],
         403 => [
             'title' => 'Access denied',
             'description' => 'You do not have permission to view this page.',

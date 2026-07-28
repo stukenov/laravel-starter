@@ -88,3 +88,63 @@ it('renders the blade fallback without any external request', function () {
             ->and($blade)->not->toContain('@vite(');
     }
 });
+
+/*
+ * RULE(errors): a page, not a modal — AGENTS.md.
+ *
+ * The handler used to normalise a list of five statuses and return
+ * everything else untouched. A GET on a POST-only route is a 405, which
+ * was not on the list, and both outcomes were bad: with `APP_DEBUG` on —
+ * which is what `.env.example` ships — the visitor got a stack trace and
+ * the vendor paths; with it off, plain HTML, which is exactly what makes
+ * Inertia draw the grey modal this rule calls a bug.
+ *
+ * Both were reproduced before the fix. The list is gone: every status at
+ * or above 400 is a page now, and the ones without wording of their own
+ * get a generic line rather than a missing translation key on screen.
+ */
+
+// ── Correct data ─────────────────────────────────────────────────────
+
+it('draws a page for a status nobody wrote copy for', function () {
+    $response = $this->get('/email/verification-notification');
+
+    expect($response->status())->toBe(405)
+        ->and($response->getContent())->toContain('errors\/error-page');
+});
+
+it('shows wording rather than a translation key', function () {
+    $response = $this->get('/email/verification-notification');
+
+    expect($response->getContent())->not->toContain('common.errors');
+});
+
+it('keeps the wording each documented status already had', function () {
+    // The generic line is a fallback, not a replacement.
+    $this->get('/definitely-not-a-route')
+        ->assertNotFound()
+        ->assertInertia(fn ($page) => $page
+            ->where('title', trans('common.errors.404.title')),
+        );
+});
+
+// ── Wrong data ───────────────────────────────────────────────────────
+
+it('leaks no stack trace even with debug on', function () {
+    // `.env.example` ships APP_DEBUG=true, so this is the default state
+    // of a fresh clone, not an unusual one.
+    config(['app.debug' => true]);
+
+    $body = $this->get('/email/verification-notification')->getContent();
+
+    expect($body)->not->toContain('/vendor/laravel/framework')
+        ->and(preg_match('/#0 \/Users/', $body))->toBe(0);
+});
+
+// ── Empty data ───────────────────────────────────────────────────────
+
+it('leaves a successful response alone', function () {
+    // The handler must not wrap anything below 400 — a redirect is not an
+    // error, and neither is a 200.
+    $this->get('/ru')->assertOk();
+});

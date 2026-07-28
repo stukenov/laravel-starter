@@ -112,6 +112,13 @@ return [
 
     'errors' => [
         'home' => 'На главную',
+        // Every status that has no wording of its own — see
+        // bootstrap/app.php. A page rather than whatever the framework
+        // would have shown.
+        'generic' => [
+            'title' => 'Так не получится',
+            'description' => 'Запрос не подошёл этой странице. Попробуйте вернуться на главную.',
+        ],
         403 => [
             'title' => 'Доступ закрыт',
             'description' => 'У вас нет прав на эту страницу.',

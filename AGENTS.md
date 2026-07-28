@@ -142,9 +142,16 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
 
 11. **Errors are pages, not modals.** Inertia draws a modal when the
     server answers with plain HTML; the handler in `bootstrap/app.php`
-    removes the cause. If a modal appears, a status slipped past the list
-    — fix the list. The blade versions in `resources/views/errors/` work
-    when nothing else does: no `@vite`, no external links, system font.
+    removes the cause. **Every status at or above 400**, not a list — the
+    list was the bug. A 405 from a GET on a POST-only route fell straight
+    through it, and with `APP_DEBUG` on, which `.env.example` ships, that
+    handed the visitor a stack trace and the vendor paths.
+
+    A status with wording of its own keeps it; the rest get
+    `common.errors.generic`, because a missing key prints
+    `common.errors.405.title` at the reader. The blade versions in
+    `resources/views/errors/` work when nothing else does: no `@vite`, no
+    external links, system font.
 
 12. **A list is a list, a form is a form.** `/entity` lists,
     `/entity/new` creates, `/entity/:id` edits. A short form may be a
