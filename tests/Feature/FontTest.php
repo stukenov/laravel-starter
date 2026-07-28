@@ -142,3 +142,23 @@ it('still declares every subset for the browser to choose from', function () {
     fn () => ! file_exists(public_path('build/fonts-manifest.json')),
     'fonts manifest not built: npm run build',
 );
+
+it('ships no weight nothing uses', function () {
+    // 700 was built and inlined on every page for a weight no element
+    // asks for: `font-bold` appears nowhere in this project and neither
+    // does a `<strong>`. Dropping it took the CSS inlined into every
+    // response from 19,680 bytes to 14,857 and four files off the disk.
+    // Read out of the generated CSS, which is what actually reaches the
+    // page — the manifest has no per-face list to ask.
+    $manifest = json_decode(File::get(public_path('build/fonts-manifest.json')), true);
+    $css = $manifest['style']['familyStyles']['inter'] ?? '';
+
+    preg_match_all('/font-weight:\s*(\d+)/', $css, $matches);
+
+    $weights = collect($matches[1])->map(fn (string $w) => (int) $w)->unique()->sort()->values();
+
+    expect($weights->all())->toBe([400, 500, 600]);
+})->skip(
+    fn () => ! file_exists(public_path('build/fonts-manifest.json')),
+    'fonts manifest not built: npm run build',
+);

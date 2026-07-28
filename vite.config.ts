@@ -31,7 +31,12 @@ export default defineConfig({
             // the text actually uses.
             fonts: [
                 bunny('Inter', {
-                    weights: [400, 500, 600, 700],
+                    // 400, 500 and 600 — nothing in this project asks
+                    // for bold. Tailwind's `font-bold` appears nowhere,
+                    // and neither does a `<strong>`; 700 was eight more
+                    // @font-face blocks in the CSS inlined on every page,
+                    // for a weight no element uses.
+                    weights: [400, 500, 600],
                     subsets: ['latin', 'latin-ext', 'cyrillic', 'cyrillic-ext'],
                     preload: false,
                 }),
