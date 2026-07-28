@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Tenancy\BelongsToTenant;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -33,7 +34,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, HasUuids, LogsActivity, Notifiable;
+    use BelongsToTenant, HasFactory, HasRoles, HasUuids, LogsActivity, Notifiable;
 
     /*
      * RULE(db): UUIDv7 keys, generated in two places on purpose.

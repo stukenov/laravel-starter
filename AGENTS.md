@@ -218,7 +218,27 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     it too — roles are infrastructure, not fixtures, and without them
     every policy denies everything for the wrong reason.
 
-14. **No demo content.** Everything that ships is working functionality.
+14. **Tenancy is an option, and off means nothing changes.**
+    `TENANCY_ENABLED=false` by default: every table the application owns
+    carries a nullable `tenant_id` that stays empty and the global scope
+    never applies. One database, one set of migrations, one backup.
+
+    Turn it on and a model using `BelongsToTenant` reads and writes only
+    its own tenant — a scope on read so a forgotten filter cannot cross
+    tenants, and a fill on create so a record cannot be born unowned.
+    An account with no tenant is an operator and sees all of them, which
+    is deliberate and is why a stray account without one is dangerous.
+
+    **The scope never asks `auth()` for the tenant.** It would query the
+    users table to answer a question asked by a query on the users table,
+    and signing in would recurse until it died. `SetTenant` sets it once,
+    after authentication, and the scope only reads memory. Work outside a
+    request — a job, a command — uses `Tenancy::as()`.
+
+    **A raw query bypasses all of this**, which is one more reason
+    controllers may not reach the database directly.
+
+15. **No demo content.** Everything that ships is working functionality.
 
 ## Conventions over configuration
 
