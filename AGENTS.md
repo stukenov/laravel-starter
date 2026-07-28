@@ -190,8 +190,12 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
     both sides of the change. Anything else kept in a pivot table needs
     the same treatment, and `logOnly` will not tell you that.
 
-    `RoleSeeder` is idempotent and runs on every deploy, so a permission
-    added in code appears without anyone creating it by hand. Tests seed
+    `RoleSeeder` is idempotent and belongs in every deploy — README runs
+    `db:seed --class=RoleSeeder` after each migration, so a permission
+    added in code appears without anyone creating it by hand. It used to
+    say "runs on every deploy" while the recipe only seeded on the first
+    one, which meant a new permission never reached the database and its
+    section answered 403 to everybody. Tests seed
     it too — roles are infrastructure, not fixtures, and without them
     every policy denies everything for the wrong reason.
 
@@ -501,6 +505,12 @@ on deploy alike.
 The bundle is `bootstrap/ssr/app.js`, not the `ssr.mjs` from Inertia 2
 docs. Getting that path wrong fails **silently**: production serves an
 empty container with nothing in the logs.
+
+**Close the SSR port to the internet.** The renderer binds `0.0.0.0` and
+Inertia's own server exposes an unauthenticated `/shutdown` that calls
+`process.exit()`. Anyone who can reach the port can stop the renderer,
+and until systemd restarts it the site serves an empty container. Nothing
+outside the machine ever needs to speak to it.
 
 **The port is 13714 for every Inertia project and cannot be changed** —
 the plugin bakes it into the bundle. Two of them on one development

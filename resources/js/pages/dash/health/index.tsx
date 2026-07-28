@@ -16,6 +16,7 @@ type Props = {
     checks: Check[];
     finished_at: string | null;
     healthy: boolean;
+    degraded: boolean;
 };
 
 /**
@@ -24,7 +25,12 @@ type Props = {
  * Spatie's own dashboard opens with a stylesheet from rsms.me, which the
  * browser blocks here. Same data, our own page, one design language.
  */
-export default function HealthIndex({ checks, finished_at, healthy }: Props) {
+export default function HealthIndex({
+    checks,
+    finished_at,
+    healthy,
+    degraded,
+}: Props) {
     const t = useTranslations();
     const { auth, locale } = usePage().props;
     const timezone = (auth.user.timezone as string) ?? 'UTC';
@@ -52,10 +58,24 @@ export default function HealthIndex({ checks, finished_at, healthy }: Props) {
                     </div>
 
                     <Badge
-                        variant={healthy ? 'secondary' : 'destructive'}
+                        variant={
+                            !healthy
+                                ? 'destructive'
+                                : degraded
+                                  ? 'outline'
+                                  : 'secondary'
+                        }
                         data-test="health-status"
                     >
-                        {healthy ? t('health.healthy') : t('health.unhealthy')}
+                        {/* A warning is not a failure, so the banner must
+                            not say everything is fine either — one amber
+                            row under a green banner was how a leaking
+                            connection pool looked. */}
+                        {!healthy
+                            ? t('health.unhealthy')
+                            : degraded
+                              ? t('health.degraded')
+                              : t('health.healthy')}
                     </Badge>
                 </div>
 

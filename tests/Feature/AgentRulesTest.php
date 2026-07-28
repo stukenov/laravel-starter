@@ -100,7 +100,37 @@ it('keeps agent-facing files free of cyrillic', function () {
 it('tells a new clone how to get its first administrator', function () {
     // Verified by running it: roles are seeded and permissions declared in
     // code, but nothing hands a role to a person.
-    expect(File::get(base_path('README.md')))->toContain('php artisan user:admin');
+    //
+    // Scoped to both sections, not to the file. The first version asked
+    // whether the string appeared anywhere in README, and it did — in the
+    // development instructions — while the production recipe went without
+    // it. The neighbouring test carries a comment about exactly this trap
+    // and this one walked into it anyway.
+    $readme = File::get(base_path('README.md'));
+
+    $running = Str::between($readme, '## Running it', '## Tests');
+    $deploying = Str::between($readme, '### First time', '### Three processes');
+
+    expect($running)->toContain('php artisan user:admin')
+        ->and($deploying)->toContain('php artisan user:admin');
+});
+
+it('seeds the roles on every deploy, not only the first', function () {
+    // AGENTS.md promises a permission added in code appears without
+    // anybody creating it by hand. The recipe seeded once, so it did not:
+    // the new permission never reached the database and its section
+    // answered 403 to everybody.
+    $repeat = Str::between(File::get(base_path('README.md')), '### Every deploy after that', '### nginx');
+
+    expect($repeat)->toContain('RoleSeeder');
+});
+
+it('says to close the renderer port', function () {
+    // It binds 0.0.0.0 and Inertia's own server exposes an
+    // unauthenticated /shutdown that calls process.exit().
+    expect(File::get(base_path('README.md')))->toContain('13714')
+        ->and(Str::between(File::get(base_path('README.md')), '**SSR.**', '### nginx'))
+        ->toContain('deny 13714');
 });
 
 it('tells a new clone to build before the backend tests', function () {

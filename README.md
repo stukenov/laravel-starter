@@ -104,6 +104,12 @@ Then:
     php artisan migrate --force --seed
     php artisan schedule-monitor:sync
     php artisan optimize
+    php artisan user:admin ops@example.com
+
+The last line is not optional here either. Nothing hands a role to a
+person, so without it `/dash` answers 403 to everybody on a brand new
+production server — which reads as a broken permission system rather than
+a missing step.
 
 ### Three processes, not one
 
@@ -119,6 +125,14 @@ forget it — nothing errors, work simply stops happening.
 
     ExecStart=/usr/bin/php /var/www/app/artisan inertia:start-ssr
     Restart=always
+
+**Close port 13714 to the internet.** The renderer binds `0.0.0.0` and
+Inertia's own server exposes an unauthenticated `/shutdown` that calls
+`process.exit()` — anybody who can reach the port can stop the renderer,
+and until systemd restarts it the site serves an empty container. It is
+only ever spoken to from localhost:
+
+    ufw deny 13714
 
 The SSR process holds the bundle in memory. Rebuilding changes the file on
 disk and the running process never notices — it keeps serving the old UI
@@ -136,6 +150,7 @@ successful and is not.
     composer install --no-dev --optimize-autoloader
     npm ci && npm run build:ssr
     php artisan migrate --force
+    php artisan db:seed --force --class=RoleSeeder
     php artisan schedule-monitor:sync
     php artisan optimize
     systemctl restart app-ssr app-queue

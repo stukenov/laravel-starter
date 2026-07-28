@@ -174,6 +174,7 @@ return [
         'title' => 'Health',
         'description' => 'What is checked and what broke',
         'healthy' => 'All good',
+        'degraded' => 'Running with warnings',
         'unhealthy' => 'Something is wrong',
         'never_ran' => 'The checks have never run. Start the scheduler.',
         'checked_at' => 'Last checked:',

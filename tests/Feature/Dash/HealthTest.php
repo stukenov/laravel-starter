@@ -130,3 +130,77 @@ it('does not call an empty result set healthy', function () {
 it('grants the permission to the admin role', function () {
     expect(User::factory()->admin()->create()->can(Ability::VIEW_HEALTH))->toBeTrue();
 });
+
+/*
+ * Spatie has five statuses and this used to look at one of them.
+ *
+ * An unhandled exception inside a check becomes `crashed`, not `failed`,
+ * and `crashed` was treated as healthy — so a database check that threw
+ * reported green and `/health.json` answered 200 to the monitor at
+ * exactly the moment everything was wrong. Verified status by status
+ * before the fix: ok true, warning true, failed false, **crashed true**,
+ * skipped true.
+ *
+ * A warning is deliberately not a failure: the connection-count check
+ * warns long before anything breaks, and paging somebody at three in the
+ * morning for it teaches them to silence the pager. It is no longer
+ * invisible either — one amber row under a green banner was how a leaking
+ * pool looked.
+ */
+
+// ── Correct data ─────────────────────────────────────────────────────
+
+it('calls a crashed check unhealthy', function () {
+    storeResult('Database', Status::crashed(), 'Threw');
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('dash.health.index'))
+        ->assertInertia(fn ($page) => $page->where('healthy', false));
+});
+
+it('answers 503 to a monitor when a check crashed', function () {
+    config(['health.json_secret' => 'a-long-random-string']);
+    Route::get('health.json', HealthJsonController::class)->name('health.json');
+
+    storeResult('Database', Status::crashed(), 'Threw');
+
+    $this->withHeader('X-Health-Secret', 'a-long-random-string')
+        ->get('/health.json')
+        ->assertStatus(503);
+});
+
+// ── Wrong data ───────────────────────────────────────────────────────
+
+it('does not call a warning a failure', function () {
+    // Otherwise the monitor pages for something that has not broken.
+    storeResult('Database', Status::warning(), 'Fifty connections');
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('dash.health.index'))
+        ->assertInertia(fn ($page) => $page
+            ->where('healthy', true)
+            ->where('degraded', true),
+        );
+});
+
+it('does not call a healthy run degraded', function () {
+    storeResult('Database', Status::ok(), 'Ok');
+
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('dash.health.index'))
+        ->assertInertia(fn ($page) => $page
+            ->where('healthy', true)
+            ->where('degraded', false),
+        );
+});
+
+// ── Empty data ───────────────────────────────────────────────────────
+
+it('calls nothing at all neither healthy nor degraded', function () {
+    $this->actingAs(User::factory()->admin()->create())
+        ->get(route('dash.health.index'))
+        ->assertInertia(fn ($page) => $page
+            ->where('healthy', false)
+            ->where('degraded', false),
+        );
+});

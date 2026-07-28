@@ -3,6 +3,7 @@
 namespace App\Support\Health;
 
 use Carbon\Carbon;
+use Spatie\Health\Enums\Status;
 use Spatie\Health\ResultStores\ResultStore;
 
 /**
@@ -44,8 +45,28 @@ final class HealthSummary
                 : null,
             // An empty result set is not healthy — it means the schedule
             // has never run, which is the thing worth knowing.
+            //
+            // `crashed` counts as broken, and it used not to. Spatie has
+            // five statuses, and an unhandled exception inside a check
+            // becomes `crashed`, not `failed` — so a database check that
+            // threw was reported healthy, and /health.json answered 200
+            // to the monitor at the moment everything was wrong. Verified
+            // status by status before this was fixed.
             'healthy' => $checks !== []
-                && collect($checks)->every(fn (array $check) => $check['status'] !== 'failed'),
+                && collect($checks)->every(
+                    fn (array $check) => ! in_array($check['status'], [
+                        Status::failed()->value,
+                        Status::crashed()->value,
+                    ], true),
+                ),
+            // A warning is not a failure and must not page anybody at
+            // three in the morning — the connection-count check warns
+            // long before anything breaks. But it must not be invisible
+            // either, which it was: the page showed one amber row under a
+            // green banner and the monitor saw nothing at all.
+            'degraded' => collect($checks)->contains(
+                fn (array $check) => $check['status'] === Status::warning()->value,
+            ),
         ];
     }
 }
