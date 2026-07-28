@@ -56,9 +56,27 @@ test('deleting takes two clicks, not one', async ({ page }) => {
     await page.getByTestId('{{ snakePlural }}-add').click();
     await page.getByTestId('{{ snake }}-{{ firstField }}').fill(title);
     await page.getByTestId('{{ snake }}-save').click();
-    await expect(page.getByText(title)).toBeVisible();
+    // By row, not by text. With more than one record on the page a bare
+    // text match opens whichever the browser reached first, and the
+    // failure reads as a missing delete button two steps later.
+    const row = page.locator('[data-test="{{ snakePlural }}-row"]', {
+        hasText: title,
+    });
 
-    await page.getByText(title).click();
+    await expect(row).toBeVisible();
+
+    // Reloaded before reopening. The toast confirming the save sits over
+    // the top of the list, and a click on the row under it is swallowed —
+    // which reads as a dialog that will not open, two steps from the
+    // cause. This alternated with the upload scenario for three runs
+    // before that was obvious.
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await row.click();
+
+    // The dialog itself, not the button inside it: a dialog that never
+    // opened otherwise reports as a missing delete button.
+    await expect(page.getByTestId('{{ snake }}-save')).toBeVisible();
+
     await page.getByTestId('{{ snake }}-delete').click();
 
     // Still there after the first click.
@@ -69,7 +87,7 @@ test('deleting takes two clicks, not one', async ({ page }) => {
     await expect(page.getByText(title)).toBeHidden();
 });
 
-{{ richTextScenario }}
+{{ richTextScenario }}{{ fileScenario }}
 // ── Wrong data ───────────────────────────────────────────────────────
 
 test('refuses an empty form', async ({ page }) => {

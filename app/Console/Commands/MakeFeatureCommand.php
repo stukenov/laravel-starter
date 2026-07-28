@@ -397,6 +397,7 @@ class MakeFeatureCommand extends Command
                 : "import { Head, router, usePage } from '@inertiajs/react';",
             '{{ searchSecondScenario }}' => $this->searchSecondScenario(),
             '{{ richTextScenario }}' => $this->richTextScenario(),
+            '{{ fileScenario }}' => $this->fileScenario(),
             '{{ fileTrait }}' => $this->hasFiles() ? ', HasStoredFiles' : '',
             '{{ fileFieldImport }}' => $this->hasFiles()
                 ? "import FileField from '@/components/file-field';\n"
@@ -937,6 +938,106 @@ PHP;
         return $type === 'image'
             ? implode(',', array_map(fn (string $ext) => ".{$ext}", config('files.image_mimes')))
             : '';
+    }
+
+    /**
+     * A browser scenario for an upload, when the entity has one.
+     *
+     * The other levels see a request that already carries a file. Only a
+     * browser can say whether a person can attach one, whether the link
+     * to it works afterwards, and whether removing it actually removes
+     * it — the last needs a hidden empty value, because an untouched
+     * file input submits nothing and "nothing" means "leave it alone".
+     */
+    private function fileScenario(): string
+    {
+        $field = collect($this->fields)->first(
+            fn (array $f) => in_array($f['type'], ['file', 'image'], true),
+        );
+
+        if ($field === null) {
+            return '';
+        }
+
+        $name = $field['name'];
+        $first = $this->fields[0]['name'];
+        $file = $field['type'] === 'image' ? 'снимок.png' : 'документ.pdf';
+
+        return <<<TSX
+
+
+        test('attaches a file, links to it, and can remove it', async ({ page }) => {
+            const title = `Файл \${Date.now()}`;
+
+            await page.getByTestId('{$this->snakePlural}-add').click();
+            await page.getByTestId('{$this->snake}-{$first}').fill(title);
+            await page.getByTestId('{$this->snake}-{$name}').setInputFiles({
+                name: '{$file}',
+                mimeType: '{$this->mimeFor($field['type'])}',
+                buffer: Buffer.from('{$this->bytesFor($field['type'])}', 'base64'),
+            });
+            await page.getByTestId('{$this->snake}-save').click();
+
+            const row = page.locator('[data-test="{$this->snakePlural}-row"]', {
+                hasText: title,
+            });
+
+            await expect(row).toBeVisible();
+
+            // Reloaded before reopening. The toast that confirms the save
+            // sits over the top of the list, and a click on the row under
+            // it is swallowed — which reads as a dialog that will not
+            // open, two steps away from the cause.
+            await page.reload({ waitUntil: 'domcontentloaded' });
+
+            // The link is a route, not a disk path: the file is as
+            // private as the record — AGENTS.md.
+            await row.click();
+
+            // The dialog first. Waiting on the link instead reports a
+            // missing link when what actually happened is that the click
+            // landed while the list was still re-rendering after the save.
+            await expect(page.getByTestId('{$this->snake}-save')).toBeVisible();
+
+            const link = page.getByTestId('{$this->snake}-{$name}-current');
+
+            await expect(link).toBeVisible();
+            await expect(link).toHaveAttribute('href', /\/dash\/files\//);
+
+            await page.getByTestId('{$this->snake}-{$name}-remove').click();
+            await page.getByTestId('{$this->snake}-save').click();
+
+            await expect(row).toBeVisible();
+            await page.reload({ waitUntil: 'domcontentloaded' });
+            await row.click();
+
+            await expect(page.getByTestId('{$this->snake}-save')).toBeVisible();
+
+            await expect(
+                page.getByTestId('{$this->snake}-{$name}-current'),
+            ).toBeHidden();
+        });
+        TSX;
+    }
+
+    private function mimeFor(string $type): string
+    {
+        return $type === 'image' ? 'image/png' : 'application/pdf';
+    }
+
+    /**
+     * A real, minimal file of the right type.
+     *
+     * A png has to be a png: validation reads what the bytes are, not
+     * what the name says, which is the whole point of checking both.
+     */
+    private function bytesFor(string $type): string
+    {
+        return $type === 'image'
+            // 1×1 transparent png
+            ? 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+            // Smallest thing `finfo` calls application/pdf
+            : 'JVBERi0xLjQKJcOkw7zDtsOfCjEgMCBvYmoKPDwvVHlwZS9DYXRhbG9nL1BhZ2VzIDIgMCBSPj4KZW5kb2JqCnRyYWlsZXIKPDwvUm9vdCAxIDAgUj4+Cg==';
     }
 
     private function hasFiles(): bool
