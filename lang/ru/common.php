@@ -196,4 +196,15 @@ return [
         'previous' => 'Назад',
         'next' => 'Дальше',
     ],
+    /*
+     * Description for search results. Replace all three when cloning —
+     * this is deliberately about the starter, not about your product,
+     * so that leaving it reads as obviously wrong.
+     */
+    'seo' => [
+        'home' => 'Стартовый набор на Laravel и React: вход, роли, журнал действий, три языка.',
+        'privacy' => 'Как мы обращаемся с персональными данными и что храним.',
+        'terms' => 'Условия использования сервиса.',
+    ],
+
 ];

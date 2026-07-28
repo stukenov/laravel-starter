@@ -191,4 +191,15 @@ return [
         'previous' => 'Артқа',
         'next' => 'Әрі қарай',
     ],
+    /*
+     * Description for search results. Replace all three when cloning —
+     * this is deliberately about the starter, not about your product,
+     * so that leaving it reads as obviously wrong.
+     */
+    'seo' => [
+        'home' => 'Laravel мен React негізіндегі бастапқы жинақ: кіру, рөлдер, әрекеттер журналы, үш тіл.',
+        'privacy' => 'Дербес деректерді қалай өңдейміз және нені сақтаймыз.',
+        'terms' => 'Қызметті пайдалану шарттары.',
+    ],
+
 ];

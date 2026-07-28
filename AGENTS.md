@@ -30,6 +30,9 @@ away.
 - The legal pages: `legal.privacy.body.*` and `legal.terms.body.*` in
   `lang/{ru,kk,en}/common.php`. Headings ship, wording does not — every
   unfilled section says so in red on the page.
+- `seo.*` in the same files — the descriptions search engines show. They
+  ship describing the starter rather than your product, so leaving them
+  reads as obviously wrong.
 - `BACKUP_NOTIFICATION_EMAIL`, `FAILED_JOB_EMAILS`, `HEALTH_JSON_SECRET`
 - This section
 

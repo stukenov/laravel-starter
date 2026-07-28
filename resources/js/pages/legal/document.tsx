@@ -25,7 +25,10 @@ export default function LegalDocument({
 
     return (
         <PublicLayout>
-            <Head title={title} />
+            {/* RULE(seo): a title and description per locale — AGENTS.md. */}
+            <Head title={title}>
+                <meta name="description" content={t(`seo.${document}`)} />
+            </Head>
 
             <article className="mx-auto max-w-2xl">
                 <h1
