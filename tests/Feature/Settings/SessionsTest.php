@@ -124,8 +124,8 @@ it('survives an unknown user agent', function () {
 
     $list = SessionList::forUser($user, 'session-weird');
 
-    // Пустое значение отдаём как null: подпись подставит интерфейс
-    // на своём языке, а не английское слово из библиотеки.
+    // We return null for the unknown value: the UI supplies its own
+    // localized label instead of an English word from the library.
     expect($list)->toHaveCount(1)
         ->and($list[0]['browser'])->toBeNull()
         ->and($list[0]['last_active_at'])->not->toBeNull();

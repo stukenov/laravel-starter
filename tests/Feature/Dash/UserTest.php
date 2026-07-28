@@ -43,9 +43,10 @@ it('finds a user by a full word', function () {
 });
 
 it('finds a user by a short fragment', function () {
-    // Полнотекстовый поиск ищет слова целиком: «Тук» не найдёт «Тукенов».
-    // Короткие запросы уходят в pg_trgm — без этого поиск по мере набора
-    // не работает вообще, а заметить это можно только руками.
+    // Full-text search matches whole words: "Тук" won't find
+    // "Тукенов". Short queries fall back to pg_trgm — without it
+    // search-as-you-type doesn't work at all, and only manual testing
+    // would catch it.
     $user = admin();
     User::factory()->create(['name' => 'Тукенов']);
 
@@ -132,7 +133,8 @@ it('rejects an unsupported locale and timezone', function () {
 });
 
 it('refuses to let a user delete themselves', function () {
-    // Иначе администратор одним кликом лишает систему последнего входа.
+    // Otherwise an administrator could lock the system out of its
+    // last way in with a single click.
     $user = admin();
 
     $this->actingAs($user)

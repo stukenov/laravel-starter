@@ -4,9 +4,10 @@ use App\Exceptions\UnsupportedDatabaseDriver;
 use App\Providers\AppServiceProvider;
 
 // Correct data
-// Проверяем на Throwable, а не на конкретный класс: иначе тест зеленеет
-// и без реализации — отсутствующий метод бросает Error, который в
-// not->toThrow(UnsupportedDatabaseDriver) проходит как «не то исключение».
+// Asserts against Throwable, not a specific class: otherwise this test
+// passes even with no implementation — a missing method throws an
+// Error, which not->toThrow(UnsupportedDatabaseDriver) reports as
+// "wrong exception" rather than failing.
 it('accepts pgsql', function () {
     expect(fn () => AppServiceProvider::assertSupportedDriver('pgsql'))
         ->not->toThrow(Throwable::class);

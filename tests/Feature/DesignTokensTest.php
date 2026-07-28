@@ -1,10 +1,11 @@
 <?php
 
 /*
- * RULE(design): токены — единственный источник вида — AGENTS.md.
+ * RULE(design): tokens are the single source of appearance — AGENTS.md.
  *
- * Эти проверки ловят регрессы, которые видно только глазами: текст того же
- * цвета, что и фон, или нейтральный элемент, окрасившийся акцентом.
+ * These checks catch regressions visible only to the eye: text the
+ * same colour as its background, or a neutral element painted with
+ * the accent colour.
  */
 
 function tokens(): string
@@ -22,8 +23,8 @@ it('keeps the panel radius in the macOS range', function () {
 
     $pixels = (float) ($matches[1] ?? 0) * 16;
 
-    // Системные настройки macOS — 5–7px. Больше 10px это уже язык iOS,
-    // который мы отвергли на макетах.
+    // macOS System Settings uses 5-7px. Anything over 10px is the iOS
+    // language, which we rejected in the mockups.
     expect($pixels)->toBeGreaterThanOrEqual(5)->toBeLessThanOrEqual(8);
 });
 
@@ -34,19 +35,20 @@ it('defines both density scales', function () {
 
 // Wrong data
 it('never paints destructive text the colour of the background', function () {
-    // Сообщение об ошибке красится через --destructive-foreground и лежит
-    // на светлом фоне. Белый здесь делает его невидимым — разметка на месте,
-    // а прочитать нельзя.
+    // The error message is coloured via --destructive-foreground and
+    // sits on a light background. White here makes it invisible — the
+    // markup is there, but nobody can read it.
     preg_match('/--destructive-foreground:\s*([^;]+);/', tokens(), $matches);
 
     expect(trim($matches[1] ?? ''))->not->toBe('oklch(1 0 0)');
 });
 
 it('keeps neutral components independent of the accent', function () {
-    // Скелетон загрузки — нейтральный элемент, и с ним два разных промаха.
-    // На bg-primary он красится акцентом и читается как активное состояние.
-    // На bg-muted он почти сливается с белой карточкой и пропадает совсем —
-    // оба раза это видно только глазами, разметка на месте.
+    // The loading skeleton is a neutral element, and there are two
+    // different ways to get it wrong. On bg-primary it's painted with
+    // the accent colour and reads as an active state. On bg-muted it
+    // nearly vanishes into the white card — both times only visible
+    // to the eye, the markup is there either way.
     $skeleton = file_get_contents(resource_path('js/components/ui/skeleton.tsx'));
 
     expect($skeleton)->not->toContain('bg-primary')
@@ -59,7 +61,7 @@ it('has no dark theme block left', function () {
 
 // Empty data
 it('leaves the accent as a single swappable line', function () {
-    // Смысл в том, чтобы смена цвета под проект была правкой одной строки.
+    // The point: swapping the colour for a new project is a one-line edit.
     $occurrences = substr_count(tokens(), '#0071e3');
 
     expect($occurrences)->toBe(1);

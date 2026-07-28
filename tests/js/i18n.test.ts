@@ -35,8 +35,9 @@ describe('makeTranslator', () => {
 
     // Wrong data
     it('returns the key itself when the translation is missing', () => {
-        // Пропущенный перевод должно быть видно на экране, а не превращаться
-        // в пустое место — иначе он доедет до прода незамеченным.
+        // A missing translation should be visible on screen, not
+        // collapse into blank space — otherwise it reaches production
+        // unnoticed.
         const t = makeTranslator({ 'auth.login': 'Войти' });
 
         expect(t('nope.missing')).toBe('nope.missing');

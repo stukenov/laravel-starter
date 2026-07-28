@@ -26,7 +26,7 @@ it('runs the application in UTC', function () {
 });
 
 it('serves the home page under a locale', function () {
-    // Корень теперь перенаправляет на язык, страница живёт под префиксом.
+    // Root now redirects to a locale; the page lives under the prefix.
     $this->get('/')->assertRedirect();
     $this->get('/ru')->assertOk();
 });

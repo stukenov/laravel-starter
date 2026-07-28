@@ -6,7 +6,7 @@ const NOON_UTC = '2026-07-27T12:00:00Z';
 describe('formatDateTime', () => {
     // Correct data
     it('shifts UTC into the user timezone', () => {
-        // Алматы это UTC+5, значит полдень по UTC — это 17:00 на месте.
+        // Almaty is UTC+5, so noon UTC is 17:00 local time.
         expect(formatDateTime(NOON_UTC, 'Asia/Almaty', 'ru')).toContain('17:00');
     });
 
@@ -18,7 +18,7 @@ describe('formatDateTime', () => {
     });
 
     it('crosses the date boundary correctly', () => {
-        // 22:00 UTC это уже следующий день в Алматы (03:00).
+        // 22:00 UTC is already the next day in Almaty (03:00).
         const result = formatDateTime('2026-07-27T22:00:00Z', 'Asia/Almaty', 'ru');
 
         expect(result).toContain('28');

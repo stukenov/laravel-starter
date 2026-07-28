@@ -17,10 +17,10 @@ it('shares translations with the front end', function () {
     $this->get('/ru')->assertInertia(fn ($page) => $page
         ->where('locale', 'ru')
         ->has('locales', 3)
-        // Словарь плоский: ключ буквально 'auth.login'. Через where() его
-        // не проверить — там точка означает вложенность, — поэтому
-        // достаём весь словарь и смотрим ключ напрямую.
-        // Inertia отдаёт сюда Collection, а не массив.
+        // The dictionary is flat: the key is literally 'auth.login'.
+        // where() can't check that — there a dot means nesting — so
+        // we pull the whole dictionary and look the key up directly.
+        // Inertia hands this over as a Collection, not an array.
         ->where('translations', fn (Collection $t) => $t->get('auth.login') === 'Войти'),
     );
 });
@@ -48,8 +48,9 @@ it('returns 404 for a malformed locale', function () {
 });
 
 it('ignores an unsupported locale stored on the user', function () {
-    // Битое значение в профиле не выбирается, но и не роняет запрос:
-    // источник просто пропускается, и язык берётся из следующего.
+    // A broken value in the profile isn't picked, but it doesn't fail
+    // the request either: that source is just skipped, and the locale
+    // comes from the next one.
     $user = User::factory()->create(['locale' => 'de']);
 
     $this->actingAs($user)->get(route('dash.home'));
@@ -60,9 +61,9 @@ it('ignores an unsupported locale stored on the user', function () {
 
 // Empty data
 it('redirects the bare root to a supported locale', function () {
-    // Тестовый клиент Laravel по умолчанию шлёт Accept-Language en-us,
-    // поэтому конкретный язык здесь зависит от клиента. Важно другое:
-    // корень никогда не остаётся без локали.
+    // Laravel's test client sends Accept-Language en-us by default,
+    // so the exact locale here depends on the client. What matters
+    // is that the root never ends up with no locale at all.
     $response = $this->get('/');
 
     $response->assertRedirect();
@@ -140,8 +141,9 @@ it('has more than one file to compare', function () {
     expect($files->count())->toBeGreaterThan(5);
 });
 
-// Кука локали: страницы вне префикса — вход и регистрация — иначе всегда
-// открываются на запасном языке, каким бы ни был выбор пользователя.
+// The locale cookie: pages outside the prefix — login and registration
+// — otherwise always open in the fallback language, whatever the user
+// actually chose.
 it('remembers the locale chosen through the url', function () {
     $this->get('/kk')->assertCookie(Locales::COOKIE, 'kk', encrypted: false);
 });

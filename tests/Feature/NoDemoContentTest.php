@@ -64,9 +64,10 @@ it('has no leftover demo or theme files', function () {
 });
 
 it('has no dark variants left in our own components', function () {
-    // components/ui/ намеренно исключены: это апстрим shadcn. Без класса
-    // dark на <html> их варианты не срабатывают, а правки в них ломают
-    // будущие обновления через `shadcn add`. См. AGENTS.md.
+    // components/ui/ is deliberately excluded: it's upstream shadcn.
+    // Without a dark class on <html> its variants never fire, and
+    // editing them breaks future updates via `shadcn add`. See
+    // AGENTS.md.
     $ours = array_merge(
         glob(resource_path('js/components/*.tsx')),
         glob(resource_path('js/layouts/*.tsx')),

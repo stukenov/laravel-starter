@@ -583,6 +583,18 @@ every test after that waits for a redirect that never comes.
 whatever language the browser asks for. Tests select by `data-test`, never
 by copy.
 
+**Changing or resetting a password ends every other session.** A session
+is authenticated by its own row, not by the password, so without this the
+intruder stays signed in through the one action taken to remove them —
+and the sessions page goes on listing their device as though that were
+expected. `SessionList::revokeOthers` deletes the rows rather than
+Laravel's `logoutOtherDevices()`, which rotates a hash and leaves the
+rows in place, so the page keeps showing devices that are already gone.
+
+Two routes do this and their names are nearly the same:
+`user-password.update` is ours, `password.update` is Fortify's reset. A
+test written against the wrong one exercises nothing and still passes.
+
 **An already signed-in person opening `/login` goes to `/dash`.** Laravel's
 default sends them to `/`, which here redirects to the public home page —
 following an old bookmark then looks like being signed out.

@@ -3,12 +3,13 @@ import { cleanup, configure } from '@testing-library/react';
 import { afterEach } from 'vitest';
 
 /*
- * ПРАВИЛО(тесты): маркер элементов — data-test, а не data-testid.
+ * RULE(tests): the element marker is data-test, not data-testid.
  *
- * Так размечен стартер целиком, и тем же атрибутом пользуется Playwright.
- * Держать два соглашения в одном проекте — верный способ потом полдня
- * искать, почему элемент «не находится».
- * См. AGENTS.md
+ * The whole starter is marked up this way, and Playwright uses the
+ * same attribute. Keeping two conventions in one project is a sure
+ * way to later spend half a day figuring out why an element "can't
+ * be found".
+ * See AGENTS.md
  */
 configure({ testIdAttribute: 'data-test' });
 

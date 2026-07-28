@@ -12,9 +12,9 @@ it('uses Inter, not the starter default', function () {
 });
 
 it('requests both cyrillic subsets', function () {
-    // Казахские буквы разбросаны по двум подмножествам:
-    // і (U+0456) и ұ (U+04B1) — в cyrillic,
-    // ә ғ қ ң ө ү һ — в cyrillic-ext. Нужны оба.
+    // Kazakh letters are split across two subsets:
+    // і (U+0456) and ұ (U+04B1) are in cyrillic,
+    // ә ғ қ ң ө ү һ are in cyrillic-ext. Both are needed.
     $config = file_get_contents(base_path('vite.config.ts'));
 
     expect($config)->toContain("'cyrillic'")
@@ -29,7 +29,8 @@ it('serves the font from our own domain', function () {
 
     $contents = file_get_contents($manifest);
 
-    // Ни одного абсолютного адреса: шрифт скачан на сборке и лежит у нас.
+    // No absolute URLs: the font is downloaded at build time and
+    // served from here.
     expect($contents)->not->toContain('https://')
         ->and($contents)->not->toContain('http://')
         ->and($contents)->toContain('/build/assets/');
@@ -39,11 +40,11 @@ it('serves the font from our own domain', function () {
 );
 
 it('covers every kazakh letter across the declared ranges', function () {
-    // Настоящая проверка требования «шрифт с казахскими буквами».
-    // Разобрано по файлам шрифта через fontTools: семь букв живут
-    // в cyrillic-ext, а ұ и і — в cyrillic. Уберёшь одно подмножество —
-    // часть букв молча подменится системным шрифтом, и это заметит
-    // только казахскоязычный пользователь.
+    // The real check for the "font with Kazakh letters" requirement.
+    // Inspected via fontTools: seven letters live in cyrillic-ext,
+    // ұ and і in cyrillic. Drop either subset and those letters
+    // silently fall back to a system font — only a Kazakh-speaking
+    // user would notice.
     $letters = [
         'ә' => 0x04D9, 'ғ' => 0x0493, 'қ' => 0x049B,
         'ң' => 0x04A3, 'ө' => 0x04E9, 'ұ' => 0x04B1,

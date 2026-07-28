@@ -127,7 +127,11 @@ export default function UserForm({
                                 <InputError message={errors.password} />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
+                            {/* RULE(mobile): two columns at 390px is two
+                                columns of 175px, and a language name does
+                                not fit in one. Side by side from sm up,
+                                stacked below it. See AGENTS.md. */}
+                            <div className="grid gap-3 sm:grid-cols-2">
                                 <div className="grid gap-1.5">
                                     <Label htmlFor="locale">
                                         {t('users.locale')}

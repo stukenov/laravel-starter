@@ -25,8 +25,8 @@ it('sends the hardening headers', function () {
 
 // Wrong data
 it('allows no external host at all', function () {
-    // Смысл всей затеи: запрет исполняет браузер, а не договорённость.
-    // Появился здесь чужой домен — значит правило обошли.
+    // The whole point: the browser enforces this, not a gentleman's
+    // agreement. A foreign domain showing up here means it was bypassed.
     $csp = $this->get('/ru')->headers->get('Content-Security-Policy');
 
     expect($csp)->not->toContain('http://')
@@ -35,8 +35,8 @@ it('allows no external host at all', function () {
 });
 
 it('does not allow inline scripts', function () {
-    // Для стилей unsafe-inline допустим — Laravel отдаёт шрифт встроенным
-    // блоком. Для скриптов это дыра, там только nonce.
+    // unsafe-inline is fine for styles — Laravel serves the font as
+    // an inline block. For scripts it's a hole; only nonce is allowed.
     $csp = $this->get('/ru')->headers->get('Content-Security-Policy');
 
     preg_match('/script-src ([^;]+)/', $csp, $matches);
@@ -47,10 +47,10 @@ it('does not allow inline scripts', function () {
 });
 
 it('lets our own bundles load alongside the nonce', function () {
-    // Найдено проверкой в браузере, а не тестом: с одним лишь nonce
-    // блокируется весь JavaScript приложения — у тегов <script src>,
-    // которые ставит Vite, nonce нет. Страница при этом отдаётся со
-    // статусом 200 и с разметкой, поэтому обычный тест ничего не заметит.
+    // Found by checking a real browser, not by a test: nonce alone
+    // blocks all of the app's JavaScript — the <script src> tags Vite
+    // emits carry no nonce. The page still comes back 200 with markup
+    // in place, so an ordinary test notices nothing.
     $csp = $this->get('/ru')->headers->get('Content-Security-Policy');
 
     preg_match('/script-src ([^;]+)/', $csp, $matches);
@@ -59,11 +59,11 @@ it('lets our own bundles load alongside the nonce', function () {
 });
 
 it('generates a nonce of usable length', function () {
-    // Уникальность nonce между запросами здесь не проверить: генератор
-    // кэширует значение в пределах процесса, а весь набор тестов идёт
-    // в одном. На настоящих HTTP-запросах значения разные — проверено
-    // двумя curl подряд. Здесь проверяем то, что проверить можно:
-    // nonce есть и достаточно длинный, чтобы его нельзя было угадать.
+    // Nonce uniqueness across requests can't be checked here: the
+    // generator caches its value for the process, and the whole suite
+    // runs in one. Real HTTP requests do get different values — checked
+    // with two curl calls in a row. Here we check what can be checked:
+    // the nonce exists and is long enough not to be guessable.
     $csp = $this->get('/ru')->headers->get('Content-Security-Policy');
 
     preg_match("/nonce-([A-Za-z0-9+\/=]+)/", $csp, $matches);
@@ -79,8 +79,8 @@ it('still sends the policy on an error page', function () {
 });
 
 it('sends no hsts header over plain http', function () {
-    // На http он бессмыслен, а в разработке заставил бы браузер намертво
-    // запомнить редирект на https.
+    // Pointless over http, and in development it would make the
+    // browser permanently remember a redirect to https.
     expect($this->get('/ru')->headers->get('Strict-Transport-Security'))->toBeNull();
 });
 

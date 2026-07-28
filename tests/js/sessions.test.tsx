@@ -66,7 +66,7 @@ describe('страница сессий', () => {
     it('renders the time in the user timezone', () => {
         render(<Sessions sessions={[session()]} />);
 
-        // Алматы это UTC+5, полдень по UTC там 17:00.
+        // Almaty is UTC+5, so noon UTC is 17:00 there.
         expect(screen.getByText(/17:00/)).toBeInTheDocument();
     });
 

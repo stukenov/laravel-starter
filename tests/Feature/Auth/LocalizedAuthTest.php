@@ -29,8 +29,9 @@ it('shows the auth screens in the locale from the profile', function () {
 
 // Wrong data
 it('has no hardcoded english left on auth screens', function () {
-    // Пропущенная строка не ломает сборку и не роняет тест — она просто
-    // остаётся английской посреди русского интерфейса. Ловим перечнем.
+    // A missing translation doesn't break the build or fail a test —
+    // it just stays English in the middle of a Russian interface.
+    // Caught here with an explicit list.
     $phrases = [
         'Log in to your account',
         'Enter your email',
@@ -59,8 +60,8 @@ it('has no hardcoded english left on auth screens', function () {
 });
 
 it('declares layout titles by key, not by text', function () {
-    // Статическое свойство layout не может вызвать хук, поэтому туда
-    // кладётся ключ. Оставшийся там текст никогда не переведётся.
+    // The static layout property can't call a hook, so it holds a
+    // key instead. Text left there directly would never get translated.
     foreach (glob(resource_path('js/pages/auth/*.tsx')) as $file) {
         $contents = file_get_contents($file);
 
@@ -97,8 +98,8 @@ it('keeps the auth section in sync across locales', function () {
 });
 
 it('leaves no empty translation values', function () {
-    // Пустая строка выглядит как «перевода нет», но ключ существует —
-    // сверка ключей такое не поймает.
+    // An empty string looks like "translation missing" but the key
+    // exists — a key-set comparison wouldn't catch this.
     foreach (['ru', 'kk', 'en'] as $locale) {
         foreach (Arr::dot(require lang_path("{$locale}/common.php")) as $key => $value) {
             expect(trim((string) $value))->not->toBe('', "{$locale}: {$key}");

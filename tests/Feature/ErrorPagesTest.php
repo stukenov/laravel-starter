@@ -44,16 +44,17 @@ it('translates the error page into the active locale', function () {
 });
 
 it('keeps the http status code, not just the look of an error', function () {
-    // Страница ошибки, отданная со статусом 200, обманывает поисковики
-    // и мониторинг: снаружи всё выглядит здоровым.
+    // An error page served with status 200 fools search engines and
+    // monitoring: from the outside everything looks healthy.
     $this->get('/ru/no-such-page')
         ->assertStatus(404);
 });
 
 // Wrong data
 it('redirects 419 to login instead of showing an error page', function () {
-    // Язык задаётся явно: без куки и профиля он берётся из заголовка
-    // браузера, а тестовый клиент по умолчанию просит английский.
+    // Locale is set explicitly: with no cookie or profile it comes
+    // from the browser header, and the test client asks for English
+    // by default.
     $this->withUnencryptedCookie(Locales::COOKIE, 'ru')
         ->post('/test-419')
         ->assertRedirect(route('login'))
@@ -61,8 +62,8 @@ it('redirects 419 to login instead of showing an error page', function () {
 });
 
 it('leaves api requests alone', function () {
-    // Запросу, который ждёт JSON, страница ошибки не нужна — ему нужен
-    // JSON. Иначе клиент API получит HTML и не сможет его разобрать.
+    // A request expecting JSON doesn't need an error page — it needs
+    // JSON. Otherwise an API client gets HTML back and can't parse it.
     $this->getJson('/ru/no-such-page')
         ->assertNotFound()
         ->assertHeader('content-type', 'application/json');
@@ -76,8 +77,9 @@ it('has a blade fallback for every handled status', function () {
 });
 
 it('renders the blade fallback without any external request', function () {
-    // Эти файлы работают, когда не работает ничего: упал SSR, нет сборки.
-    // Любая внешняя ссылка или @vite ломает их ровно тогда, когда они нужны.
+    // These files work when nothing else does: SSR is down, no build
+    // exists. Any external link or @vite breaks them exactly when
+    // they're needed.
     foreach ([403, 404, 419, 429, 500, 503] as $status) {
         $blade = file_get_contents(resource_path("views/errors/{$status}.blade.php"));
 

@@ -9,10 +9,10 @@ it('runs the application in UTC', function () {
 });
 
 it('runs the database connection in UTC too', function () {
-    // Без этого PHP пишет наивную строку времени, а Postgres трактует её
-    // в зоне своей сессии — и момент уезжает на величину смещения.
-    // Проявляется только там, где время сравнивается: у нас на этом
-    // рождались просроченные токены сброса пароля.
+    // Without this PHP writes a naive time string and Postgres reads
+    // it in its session timezone — the instant shifts by the offset.
+    // It only shows up where time is compared: this is what produced
+    // expired password reset tokens for us.
     expect(DB::selectOne('show timezone')->TimeZone)->toBe('UTC');
 });
 
@@ -33,8 +33,9 @@ it('round trips an instant through the database without shifting it', function (
 });
 
 it('defaults a new user to Asia/Almaty', function () {
-    // refresh() обязателен: значение по умолчанию ставит база, а модель
-    // в памяти о нём не знает, пока не перечитает запись.
+    // refresh() is required: the default is set by the database, and
+    // the in-memory model doesn't know about it until it re-reads
+    // the row.
     expect(User::factory()->create()->refresh()->timezone)->toBe('Asia/Almaty')
         ->and(User::factory()->create()->refresh()->locale)->toBe('ru');
 });

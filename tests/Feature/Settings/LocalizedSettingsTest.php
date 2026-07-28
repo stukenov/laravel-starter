@@ -49,8 +49,9 @@ it('rejects an email already taken by somebody else', function () {
 });
 
 it('rejects an email that differs only in case', function () {
-    // citext делает почту регистронезависимой — проверка должна это учитывать,
-    // иначе на уникальном индексе вылетит исключение вместо понятной ошибки.
+    // citext makes email case-insensitive — validation must account
+    // for that, or the unique index throws an exception instead of a
+    // proper error message.
     User::factory()->create(['email' => 'zanyato@example.kz']);
 
     $this->actingAs(signedIn())
@@ -72,8 +73,9 @@ it('rejects an empty password form', function () {
 });
 
 it('has no untranslated keys left in the settings menu', function () {
-    // Пункт меню отдаётся ключом, а переводит лэйаут. Пропущенный ключ
-    // выведет на экран строку вида «nav.profile» — тест ловит это заранее.
+    // The menu item is passed as a key, and the layout translates it.
+    // A missing key shows up on screen as literal text like
+    // "nav.profile" — this test catches that ahead of time.
     $translations = require lang_path('ru/common.php');
 
     foreach (['profile', 'security', 'locale', 'sessions', 'dashboard'] as $key) {

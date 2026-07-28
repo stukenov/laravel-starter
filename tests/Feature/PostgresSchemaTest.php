@@ -17,8 +17,8 @@ it('gives users a uuid primary key defaulted by the database', function () {
 });
 
 it('assigns a sortable id even on a raw insert bypassing Eloquent', function () {
-    // Смысл значения по умолчанию на уровне базы: запись, вставленная
-    // миграцией или скриптом, тоже получает корректный идентификатор.
+    // The point of the database-level default: a row inserted by a
+    // migration or a script also gets a proper identifier.
     DB::insert('insert into users (name, email, password) values (?, ?, ?)', [
         'Тест', 'raw@example.test', 'x',
     ]);
@@ -29,7 +29,8 @@ it('assigns a sortable id even on a raw insert bypassing Eloquent', function () 
 });
 
 it('produces ids that sort by creation order', function () {
-    // Главное свойство UUIDv7: вставка идёт в конец индекса, а не в середину.
+    // The key property of UUIDv7: inserts land at the end of the
+    // index, not in the middle.
     $first = User::factory()->create()->id;
     $second = User::factory()->create()->id;
 
@@ -71,8 +72,8 @@ it('matches a partial name through pg_trgm', function () {
 });
 
 it('keeps the session user_id type in step with users.id', function () {
-    // Расхождение типов ловится только при попытке связать таблицы,
-    // то есть обычно уже в проде.
+    // A type mismatch is only caught when the tables are actually
+    // joined — usually already in production.
     $sessions = DB::selectOne("
         select data_type from information_schema.columns
         where table_name = 'sessions' and column_name = 'user_id'

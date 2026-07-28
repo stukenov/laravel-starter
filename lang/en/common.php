@@ -91,6 +91,7 @@ return [
         'logged_out_others' => 'You have been logged out of all other devices.',
         'only_current' => 'You are signed in on this device only.',
         'cancel' => 'Cancel',
+        'password_updated_others_ended' => 'Password updated. Other devices (:count) were signed out.',
     ],
 
     'nav' => [
