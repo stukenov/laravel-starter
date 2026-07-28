@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { STATE, artisan } from './helpers';
+import { STATE } from './helpers';
 
 /**
  * RULE(tests): three levels, and this is the third — AGENTS.md.

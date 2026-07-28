@@ -625,6 +625,25 @@ describe('an optional field', function () {
     });
 });
 
+it('imports nothing the generated e2e spec does not use', function () {
+    // `noUnusedLocals` is off in this project, so an unused import is
+    // silent — and it shipped in every e2e file the generator has ever
+    // written, teaching the next person that the helper is needed.
+    $spec = File::get(base_path('tests/e2e/widgets.spec.ts'));
+
+    preg_match('/import \{([^}]*)\} from \x27\.\/helpers\x27/', $spec, $matches);
+
+    $imported = array_map('trim', explode(',', $matches[1] ?? ''));
+    $body = Str::after($spec, "from './helpers';");
+
+    $unused = array_values(array_filter(
+        $imported,
+        fn (string $name) => $name !== '' && ! str_contains($body, $name),
+    ));
+
+    expect($unused)->toBe([]);
+});
+
 it('emits a list that survives a phone', function () {
     // The reference list was made mobile-first and the template that
     // stamps out every future one was not, so the fix reached exactly one
