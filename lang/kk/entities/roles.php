@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'title' => 'Рөлдер',
     'description' => 'Жүйеде кім не істей алады',

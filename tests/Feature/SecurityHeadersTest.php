@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Correct data
 it('sends a content security policy', function () {
     $this->get('/ru')->assertHeader('Content-Security-Policy');

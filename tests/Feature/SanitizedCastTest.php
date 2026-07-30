@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Support\Html\SanitizedHtml;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;

@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\{{ studly }};
 
 use App\Models\{{ studly }};
-use Illuminate\Foundation\Http\FormRequest;
+{{ fileRulesImport }}use Illuminate\Foundation\Http\FormRequest;
 {{ requestImports }}
 use RuntimeException;
 
@@ -11,7 +13,7 @@ class UpdateRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->target());
+        return $this->user()?->can('update', $this->target()) ?? false;
     }
 
     /**

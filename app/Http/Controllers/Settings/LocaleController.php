@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
@@ -26,7 +28,7 @@ class LocaleController extends Controller
      */
     public function update(LocaleUpdateRequest $request): RedirectResponse
     {
-        $request->user()->update($request->validated());
+        $this->currentUser($request)->update($request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Settings updated.')]);
 

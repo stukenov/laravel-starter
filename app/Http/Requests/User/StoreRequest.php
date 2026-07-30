@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\User;
 
 use App\Models\User;
@@ -13,7 +15,7 @@ class StoreRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('create', User::class);
+        return $this->user()?->can('create', User::class) ?? false;
     }
 
     /**

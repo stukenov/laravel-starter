@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'title' => 'Журнал действий',
     'description' => 'Кто, что и когда менял',

@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Health\Checks\Checks\BackupsCheck;
 use Spatie\Health\Checks\Checks\CacheCheck;
@@ -55,7 +58,7 @@ class HealthServiceProvider extends ServiceProvider
             // Backups that stopped a month ago look exactly like backups
             // that are working, right until they are needed.
             BackupsCheck::new()
-                ->locatedAt(storage_path('app/private/'.config('app.name').'/*.zip'))
+                ->locatedAt(storage_path('app/private/'.Config::string('app.name').'/*.zip'))
                 ->numberOfBackups(min: 1),
 
             UsedDiskSpaceCheck::new()

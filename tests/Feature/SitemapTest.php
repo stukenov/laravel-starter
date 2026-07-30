@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Support\Locale\Locales;
 use App\Support\Seo\HasSitemapEntries;
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
@@ -113,7 +115,7 @@ class FortifyServiceProvider extends ServiceProvider
     private function throttleKey(Request $request): string
     {
         return Str::transliterate(
-            Str::lower((string) $request->input(Fortify::username())).'|'.$request->ip(),
+            $request->string(Fortify::username())->lower()->value().'|'.$request->ip(),
         );
     }
 

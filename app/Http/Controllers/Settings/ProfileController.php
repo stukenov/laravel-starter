@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
@@ -31,15 +33,17 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $this->currentUser($request);
 
-        $emailChanged = $request->user()->isDirty('email');
+        $user->fill($request->validated());
+
+        $emailChanged = $user->isDirty('email');
 
         if ($emailChanged) {
-            $request->user()->email_verified_at = null;
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
 
         // Clearing the flag without sending anything left the person
         // unverified and uninformed: the new address got no mail, and the
@@ -47,7 +51,7 @@ class ProfileController extends Controller
         // whenever they next opened it. Somebody who changed their
         // address and closed the tab got nothing at all.
         if ($emailChanged) {
-            $request->user()->sendEmailVerificationNotification();
+            $user->sendEmailVerificationNotification();
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Profile updated.')]);
@@ -60,7 +64,7 @@ class ProfileController extends Controller
      */
     public function destroy(ProfileDeleteRequest $request): RedirectResponse
     {
-        $user = $request->user();
+        $user = $this->currentUser($request);
 
         // Every other device first. Changing a password ends them and
         // deleting the whole account did not, which is backwards: the

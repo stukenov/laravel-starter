@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Support\Html;
 
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
@@ -28,7 +30,7 @@ class SanitizedHtml implements CastsAttributes
      */
     public function get(Model $model, string $key, mixed $value, array $attributes): ?string
     {
-        return $value === null ? null : (string) $value;
+        return is_string($value) ? $value : null;
     }
 
     public function set(Model $model, string $key, mixed $value, array $attributes): ?string

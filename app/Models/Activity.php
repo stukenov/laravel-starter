@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -48,7 +50,9 @@ class Activity extends SpatieActivity
      */
     public static function tip(): int
     {
-        return (int) (static::max('seq') ?? 0);
+        $max = static::max('seq');
+
+        return is_numeric($max) ? (int) $max : 0;
     }
 
     /**
@@ -87,16 +91,7 @@ class Activity extends SpatieActivity
      */
     public static function distinctLogNames(): array
     {
-        return Cache::remember(
-            'activity.log_names',
-            now()->addMinutes(5),
-            fn () => static::query()
-                ->whereNotNull('log_name')
-                ->distinct()
-                ->orderBy('log_name')
-                ->pluck('log_name')
-                ->all(),
-        );
+        return self::distinctStrings('activity.log_names', 'log_name');
     }
 
     /**
@@ -104,16 +99,33 @@ class Activity extends SpatieActivity
      */
     public static function distinctEvents(): array
     {
-        return Cache::remember(
-            'activity.events',
+        return self::distinctStrings('activity.events', 'event');
+    }
+
+    /**
+     * The distinct values of one text column, cached.
+     *
+     * Both dropdowns want the same query against a different column, and
+     * both have to say the same thing about the result: `pluck` answers
+     * `mixed` and the cache answers `mixed` again, so the shape the
+     * callers are promised is established here rather than assumed twice.
+     *
+     * @return array<int, string>
+     */
+    private static function distinctStrings(string $key, string $column): array
+    {
+        $values = Cache::remember(
+            $key,
             now()->addMinutes(5),
-            fn () => static::query()
-                ->whereNotNull('event')
+            fn (): array => static::query()
+                ->whereNotNull($column)
                 ->distinct()
-                ->orderBy('event')
-                ->pluck('event')
+                ->orderBy($column)
+                ->pluck($column)
                 ->all(),
         );
+
+        return array_values(array_filter($values, is_string(...)));
     }
 
     /** Both lists at once, for a test or a command that needs them fresh. */

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Spatie\FailedJobMonitor\Notifiable;
 use Spatie\FailedJobMonitor\Notification;
 

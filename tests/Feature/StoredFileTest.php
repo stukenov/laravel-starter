@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Support\Files\HasStoredFiles;
 use App\Support\Files\StoredFile;
 use Illuminate\Database\Eloquent\Model;

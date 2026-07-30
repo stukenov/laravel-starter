@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +22,32 @@ abstract class Controller
      * looking in the wrong place.
      */
     use AuthorizesRequests;
+
+    /**
+     * The signed-in person, as a `User` rather than a maybe-one.
+     *
+     * Every action that reaches for this sits behind `auth`, so null is
+     * not a state the application can be in — but the type says it is,
+     * at every call site, and static analysis is right to insist.
+     * Narrowed once here, in the same shape as `target()` on the form
+     * requests: the impossible case raises instead of being carried
+     * around and dereferenced on faith.
+     *
+     * An authentication failure rather than a 500, because if it ever
+     * did happen the honest answer is "sign in", not "the server broke".
+     *
+     * @throws AuthenticationException
+     */
+    protected function currentUser(Request $request): User
+    {
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            throw new AuthenticationException;
+        }
+
+        return $user;
+    }
 
     /**
      * RULE(api): one controller answers both surfaces — AGENTS.md.

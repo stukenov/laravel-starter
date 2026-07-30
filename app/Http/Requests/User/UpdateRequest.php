@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\User;
 
 use App\Models\User;
@@ -14,7 +16,7 @@ class UpdateRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('update', $this->target());
+        return $this->user()?->can('update', $this->target()) ?? false;
     }
 
     /**

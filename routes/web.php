@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Http\Controllers\HealthJsonController;
 use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SitemapController;
+use App\Support\Http\Page;
 use App\Support\Locale\Locales;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -22,9 +25,9 @@ Route::get('/', fn (Request $request) => redirect('/'.Locales::fromBrowser($requ
 Route::prefix('{locale}')
     ->whereIn('locale', Locales::SUPPORTED)
     ->group(function () {
-        Route::inertia('/', 'home')->name('home');
-        Route::inertia('privacy', 'legal/privacy')->name('legal.privacy');
-        Route::inertia('terms', 'legal/terms')->name('legal.terms');
+        Page::at('/', 'home')->name('home');
+        Page::at('privacy', 'legal/privacy')->name('legal.privacy');
+        Page::at('terms', 'legal/terms')->name('legal.terms');
     });
 
 /*
@@ -49,7 +52,7 @@ if (config('health.json_secret')) {
  * showing every component at once under the current tokens. Never ships.
  */
 if (app()->environment('local')) {
-    Route::inertia('dev/styleguide', 'dev/styleguide')->name('dev.styleguide');
+    Page::at('dev/styleguide', 'dev/styleguide')->name('dev.styleguide');
 }
 
 require __DIR__.'/dash.php';

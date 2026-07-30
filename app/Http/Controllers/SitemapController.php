@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Support\Locale\Locales;
 use App\Support\Seo\HasSitemapEntries;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Config;
 
 /**
  * RULE(i18n): every public page exists once per locale — AGENTS.md.
@@ -73,12 +76,15 @@ class SitemapController extends Controller
          * controller that knows only about static pages leaves out the
          * majority of the site — silently, which is the worst way for a
          * sitemap to be wrong.
-         *
-         * @var array<int, class-string<HasSitemapEntries>> $models
          */
-        $models = config('seo.sitemap_models', []);
+        foreach (Config::array('seo.sitemap_models') as $model) {
+            // Config is a list of class names by the time it is read
+            // back, and nothing about that list is typed. A name that
+            // does not implement the contract has no entries to give.
+            if (! is_string($model) || ! is_subclass_of($model, HasSitemapEntries::class)) {
+                continue;
+            }
 
-        foreach ($models as $model) {
             foreach ($model::sitemapEntries() as $entry) {
                 $pages[] = [
                     'name' => $entry['route'],

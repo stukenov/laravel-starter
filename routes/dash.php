@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Http\Controllers\Dash\ActivityController;
 use App\Http\Controllers\Dash\ActivityStreamController;
 use App\Http\Controllers\Dash\FileController;
@@ -7,6 +9,7 @@ use App\Http\Controllers\Dash\HealthController;
 use App\Http\Controllers\Dash\RoleController;
 use App\Http\Controllers\Dash\UserController;
 use App\Support\Access\Ability;
+use App\Support\Http\Page;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,7 +25,7 @@ Route::middleware(['auth', 'verified'])
         // The panel home lives at the panel's own root. It kept the URL
         // /dashboard from the upstream starter for a while, which left the
         // one page nobody could reach by trimming the address bar.
-        Route::inertia('/', 'dashboard')->name('home');
+        Page::at('/', 'dashboard')->name('home');
 
         Route::get('users', [UserController::class, 'index'])->name('users.index');
         Route::post('users', [UserController::class, 'store'])->name('users.store');

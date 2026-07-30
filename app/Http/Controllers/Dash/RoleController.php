@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Dash;
 
 use App\Http\Controllers\Controller;
@@ -65,7 +67,7 @@ class RoleController extends Controller
             'guard_name' => 'web',
         ]);
 
-        $role->syncPermissions($request->validated('permissions', []));
+        $role->syncPermissions($this->permissionsFrom($request));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('entities/roles.created')]);
 
@@ -75,11 +77,30 @@ class RoleController extends Controller
     public function update(UpdateRequest $request, Role $role): RedirectResponse
     {
         $role->update(['name' => $request->validated('name')]);
-        $role->syncPermissions($request->validated('permissions', []));
+        $role->syncPermissions($this->permissionsFrom($request));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('entities/roles.updated')]);
 
         return back();
+    }
+
+    /**
+     * The permission names the form submitted.
+     *
+     * `validated()` answers `mixed`. The rules guarantee an array of
+     * names from a closed list, but a rule is not a type — so the shape
+     * is established once here rather than at both writes.
+     *
+     * @return array<int, string>
+     */
+    private function permissionsFrom(StoreRequest|UpdateRequest $request): array
+    {
+        $permissions = $request->validated('permissions', []);
+
+        return array_values(array_filter(
+            is_array($permissions) ? $permissions : [],
+            is_string(...),
+        ));
     }
 
     public function destroy(Request $request, Role $role): RedirectResponse

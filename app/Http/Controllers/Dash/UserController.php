@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Dash;
 
 use App\Http\Controllers\Controller;
@@ -49,7 +51,7 @@ class UserController extends Controller
             // Handing out a role is a different decision from editing a
             // name, so the form only offers it to somebody who may make
             // that decision.
-            'canManageRoles' => $request->user()->can(Ability::MANAGE_ROLES),
+            'canManageRoles' => $this->currentUser($request)->can(Ability::MANAGE_ROLES),
         ], 'users');
     }
 
@@ -61,7 +63,7 @@ class UserController extends Controller
         $user = User::create($data);
 
         if ($roles !== null) {
-            $user->syncRolesAudited($roles, $request->user());
+            $user->syncRolesAudited($roles, $this->currentUser($request));
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('entities/users.created')]);
@@ -90,7 +92,10 @@ class UserController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('entities/users.updated')]);
 
-        return $this->saved($request, $user->fresh()->load('roles')->toPanelItem());
+        // `refresh()` rather than `fresh()`: the same reload of the row,
+        // on this instance and typed as one, instead of a new model the
+        // signature says might be null.
+        return $this->saved($request, $user->refresh()->load('roles')->toPanelItem());
     }
 
     /**
@@ -117,7 +122,16 @@ class UserController extends Controller
             return null;
         }
 
-        return $request->user()->can(Ability::MANAGE_ROLES) ? $roles : null;
+        if (! $this->currentUser($request)->can(Ability::MANAGE_ROLES)) {
+            return null;
+        }
+
+        // `roles.*` is validated as a string, but a rule is not a type:
+        // what comes out of `validated()` is still an untyped array.
+        return array_values(array_filter(
+            is_array($roles) ? $roles : [],
+            is_string(...),
+        ));
     }
 
     /**
@@ -132,7 +146,9 @@ class UserController extends Controller
      */
     private function assign(Request $request, User $user, array $roles): void
     {
-        $isSelf = $request->user()->id === $user->id;
+        $actor = $this->currentUser($request);
+
+        $isSelf = $actor->id === $user->id;
         $losingAdmin = ! in_array(RoleSeeder::ADMIN, $roles, true)
             && $user->hasRole(RoleSeeder::ADMIN);
 
@@ -145,7 +161,7 @@ class UserController extends Controller
             ]);
         }
 
-        $user->syncRolesAudited($roles, $request->user());
+        $user->syncRolesAudited($roles, $actor);
     }
 
     public function destroy(Request $request, User $user): RedirectResponse|JsonResponse

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'title' => 'Activity log',
     'description' => 'Who changed what, and when',

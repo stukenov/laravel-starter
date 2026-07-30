@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands;
 
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -63,7 +66,7 @@ class PrepareE2eCommand extends Command
     private function ensureDatabaseExists(string $database): void
     {
         config(['database.connections.pgsql_root' => array_merge(
-            config('database.connections.pgsql'),
+            Config::array('database.connections.pgsql'),
             ['database' => 'postgres'],
         )]);
 

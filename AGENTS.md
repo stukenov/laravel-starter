@@ -309,6 +309,43 @@ shadcn/ui, PostgreSQL 18. PHP 8.5, Node 25.
 
 17. **No demo content.** Everything that ships is working functionality.
 
+18. **Every PHP file declares `strict_types=1`, and the analyser runs at
+    level 10.** Both are mechanical: Pint's `declare_strict_types` puts
+    the line in, `pint --test` refuses a file without it, and
+    `composer types:check` is level 10 rather than a level somebody
+    picked as comfortable.
+
+    Without the declaration PHP coerces at every boundary — `"12abc"`
+    arrives at an `int` parameter as `12` and the string is gone, `null`
+    becomes `0`, and the place that finds out is downstream of the place
+    that was wrong. With it, the call fails where it was made.
+
+    Level 10 is the one that makes `mixed` say so. `config()`,
+    `validated()`, `pluck()`, `getRawOriginal()` and the query builder
+    all answer `mixed`, and level 9 lets that flow anywhere. Level 10
+    stops it at the boundary, which is why the codebase reads values out
+    of config through **`Config::string()`, `Config::integer()` and
+    `Config::array()`** rather than `config()` with a cast.
+
+    **Not in a config file, though.** Config files load before the
+    facades have a root, so `Config::string()` there fails at boot rather
+    than making one call site safe — `config/fortify.php` narrows by hand
+    and says why.
+
+    **`$request->user()` is `?User` and the null is real to the
+    analyser.** A controller narrows it once with `currentUser()` on the
+    base controller; a form request's `authorize()` says
+    `$this->user()?->can(…) ?? false`, which is the honest answer for a
+    guest. Both beat asserting, and neither is a cast.
+
+    **`fresh()` answers `?static`, `refresh()` answers `$this`.** Same
+    reload, and only one of them needs a null check afterwards.
+
+    What is banned is silencing rather than fixing: no `@phpstan-ignore`,
+    no baseline, no inline `@var`, and no cast added to quiet the tool.
+    Narrowing with `is_string()`, `instanceof` or a real guard is not
+    silencing — it is saying out loud what was being assumed.
+
 ## Conventions over configuration
 
 A file's location follows from the entity name. This is not taste — the
@@ -562,7 +599,7 @@ Format: `zettel/README.md`.
     vendor/bin/pint              PHP formatting
     npm run lint                 JS lint and format, fixing what it can
     npm run test:e2e             real clicks in a real browser
-    composer types:check         static analysis
+    composer types:check         static analysis, larastan level 10
     npm run build:ssr            build including the SSR bundle
     php artisan wayfinder:generate --with-form   regenerate TS routes
     /dev/styleguide              every component at once (APP_ENV=local only)
@@ -582,6 +619,8 @@ Mail in development is Mailpit on `127.0.0.1:1025`, web UI on `:8025`.
     app/Support/Access/Ability.php           permission names, declared in code
     app/Support/Csp/AppPreset.php            CSP policy
     app/Support/Sessions/SessionList.php     active sessions and devices
+    app/Support/Files/FileRules.php          what a form accepts as an upload
+    app/Support/Http/Page.php                a route that only renders a component
     app/Support/Spam/SilentRedirectResponder.php  what happens on honeypot spam
     config/security.php                      which public forms carry the honeypot
     app/Providers/HealthServiceProvider.php  which health checks run

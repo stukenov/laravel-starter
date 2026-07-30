@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Http\Controllers\Api\V1\ActivityController;
 use App\Http\Controllers\Api\V1\RoleController;
 use App\Http\Controllers\Api\V1\TokenController;
@@ -22,9 +24,18 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     // Who the token belongs to. The first call any client makes, and the
     // cheapest way to tell a live token from a revoked one.
-    Route::get('me', fn (Request $request) => response()->json([
-        'data' => $request->user()->toSharedProps(),
-    ]))->name('api.me');
+    Route::get('me', function (Request $request) {
+        $user = $request->user();
+
+        // `auth:sanctum` has already answered this, but it answered it
+        // to the middleware and not to the type — and a closure route
+        // has no controller to narrow it in.
+        if ($user === null) {
+            abort(401);
+        }
+
+        return response()->json(['data' => $user->toSharedProps()]);
+    })->name('api.me');
 
     Route::get('users', [UserController::class, 'index'])->name('api.users.index');
     Route::post('users', [UserController::class, 'store'])->name('api.users.store');

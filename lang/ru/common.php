@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * RULE(locales): new copy goes into all three files at once — ru, kk and
  * en. A missing key is printed on screen as itself. See AGENTS.md.

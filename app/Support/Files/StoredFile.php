@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Support\Files;
 
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -25,7 +28,11 @@ class StoredFile implements CastsAttributes
 {
     public function get(Model $model, string $key, mixed $value, array $attributes): ?string
     {
-        return $value === null ? null : (string) $value;
+        // The column holds a path and nothing else. An UploadedFile can
+        // be sitting in the attribute between assignment and the saving
+        // hook, and its string form is a temporary path — worth nothing
+        // to a reader, so a reader gets nothing.
+        return is_string($value) ? $value : null;
     }
 
     public function set(Model $model, string $key, mixed $value, array $attributes): mixed
@@ -41,6 +48,6 @@ class StoredFile implements CastsAttributes
             return;
         }
 
-        Storage::disk(config('files.disk'))->delete($path);
+        Storage::disk(Config::string('files.disk'))->delete($path);
     }
 }

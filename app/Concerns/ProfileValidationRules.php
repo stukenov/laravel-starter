@@ -1,17 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Concerns;
 
 use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
 
 trait ProfileValidationRules
 {
     /**
      * Get the validation rules used to validate user profiles.
      *
-     * @return array<string, array<int, ValidationRule|array<mixed>|string>>
+     * @return array<string, array<int, ValidationRule|Unique|array<mixed>|string>>
      */
     protected function profileRules(?string $userId = null): array
     {
@@ -34,7 +37,11 @@ trait ProfileValidationRules
     /**
      * Get the validation rules used to validate user emails.
      *
-     * @return array<int, ValidationRule|array<mixed>|string>
+     * `Unique` is named rather than folded into `ValidationRule`: it is a
+     * builder Laravel stringifies at the last moment, and it implements
+     * neither that interface nor anything else the union covers.
+     *
+     * @return array<int, ValidationRule|Unique|array<mixed>|string>
      */
     protected function emailRules(?string $userId = null): array
     {

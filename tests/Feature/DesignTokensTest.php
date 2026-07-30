@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /*
  * RULE(design): tokens are the single source of appearance — AGENTS.md.
  *

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Middleware;
 
 use App\Support\Tenancy\Tenancy;
@@ -22,9 +24,12 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class SetTenant
 {
+    /**
+     * @param  Closure(Request): Response  $next
+     */
     public function handle(Request $request, Closure $next): Response
     {
-        Tenancy::set($request->user()?->getAttribute('tenant_id'));
+        Tenancy::set($request->user()?->tenant_id);
 
         return $next($request);
     }

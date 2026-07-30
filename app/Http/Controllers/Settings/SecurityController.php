@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
@@ -37,11 +39,13 @@ class SecurityController extends Controller
      */
     public function update(PasswordUpdateRequest $request): RedirectResponse
     {
-        $request->user()->update([
+        $user = $this->currentUser($request);
+
+        $user->update([
             'password' => $request->password,
         ]);
 
-        $ended = SessionList::revokeOthers($request->user(), $request->session()->getId());
+        $ended = SessionList::revokeOthers($user, $request->session()->getId());
 
         // Saying how many is the confirmation that the security action
         // did something. "Password updated." alone leaves the person who

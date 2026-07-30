@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // Correct data
 it('uses Inter, not the starter default', function () {
     $config = file_get_contents(base_path('vite.config.ts'));

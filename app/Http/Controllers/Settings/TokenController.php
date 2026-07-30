@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
@@ -50,7 +52,12 @@ class TokenController extends Controller
      */
     public function store(TokenStoreRequest $request): RedirectResponse
     {
-        $token = $request->user()->createToken($request->validated('name'));
+        // `safe()` rather than `validated()`: the same validated data,
+        // read through an accessor that says it is a string. The rule
+        // says so too, but a rule is not a type.
+        $token = $this->currentUser($request)->createToken(
+            $request->safe()->string('name')->value(),
+        );
 
         $request->session()->flash('created_token', $token->plainTextToken);
 
@@ -66,7 +73,7 @@ class TokenController extends Controller
     {
         // Scoped to the person's own tokens rather than found globally:
         // otherwise anybody with an id could revoke anybody's access.
-        $deleted = $request->user()->tokens()->whereKey($token)->delete();
+        $deleted = $this->currentUser($request)->tokens()->whereKey($token)->delete();
 
         abort_if($deleted === 0, 404);
 
@@ -83,7 +90,7 @@ class TokenController extends Controller
      */
     private function tokensOf(Request $request): array
     {
-        return $request->user()->tokens()
+        return $this->currentUser($request)->tokens()
             ->latest('id')
             ->get()
             ->map(fn ($token) => [

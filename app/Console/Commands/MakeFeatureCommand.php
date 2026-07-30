@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands;
 
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -346,9 +349,16 @@ class MakeFeatureCommand extends Command
         $stamp = now()->format('Y_m_d_His');
 
         if ($latest !== null && $stamp <= $latest) {
-            $stamp = Carbon::createFromFormat('Y_m_d_His', $latest)
-                ->addSecond()
-                ->format('Y_m_d_His');
+            // The filter above kept only the stamps this format parses,
+            // so the null branch cannot be reached — which the return
+            // type of createFromFormat says nothing about.
+            $parsed = Carbon::createFromFormat('Y_m_d_His', $latest);
+
+            if ($parsed === null) {
+                throw new RuntimeException("Could not read the migration timestamp {$latest}.");
+            }
+
+            $stamp = $parsed->addSecond()->format('Y_m_d_His');
         }
 
         return "database/migrations/{$stamp}_create_{$this->snakePlural}_table.php";
@@ -459,6 +469,12 @@ class MakeFeatureCommand extends Command
             // model itself is already imported by the stub.
             '{{ requestImports }}' => $this->hasRelations() || $this->enumFields() !== []
                 ? "use Illuminate\\Validation\\Rule;\n"
+                : '',
+            // Separate from the one above because imports are ordered:
+            // `App\Support` sorts before `Illuminate`, and the two
+            // placeholders sit on either side of the FormRequest import.
+            '{{ fileRulesImport }}' => $this->hasFiles()
+                ? "use App\\Support\\Files\\FileRules;\n"
                 : '',
         ];
 
@@ -935,9 +951,13 @@ PHP;
      */
     private function acceptFor(string $type): string
     {
-        return $type === 'image'
-            ? implode(',', array_map(fn (string $ext) => ".{$ext}", config('files.image_mimes')))
-            : '';
+        if ($type !== 'image') {
+            return '';
+        }
+
+        $extensions = array_filter(Config::array('files.image_mimes'), is_string(...));
+
+        return implode(',', array_map(fn (string $ext): string => ".{$ext}", $extensions));
     }
 
     /**
@@ -1302,11 +1322,12 @@ PHP;
             // No length limit and no html rule: what survives is decided
             // by the allowlist in Sanitizer, not by validation.
             'richtext' => "['nullable', 'string']",
-            // Two checks, not one: `mimes` reads the extension and
-            // `image` reads what the file actually is. A .png that is a
-            // PHP script passes the first and fails the second.
-            'file' => "['nullable', 'file', 'max:'.config('files.max_kilobytes')]",
-            'image' => "['nullable', 'image', 'mimes:'.implode(',', config('files.image_mimes')), 'max:'.config('files.max_kilobytes')]",
+            // Named rather than written out: the rules are built from
+            // three config values that answer `mixed`, and every form
+            // that spelled them itself had to narrow them itself. See
+            // App\Support\Files\FileRules.
+            'file' => 'FileRules::any()',
+            'image' => 'FileRules::image()',
             'integer' => "['required', 'integer']",
             // Not `required`: a false checkbox is a legitimate answer,
             // and `required` rejects it along with the empty string.
@@ -1799,6 +1820,8 @@ PHP;
         if (! File::exists($subclass)) {
             File::put($subclass, <<<PHP
             <?php
+
+            declare(strict_types=1);
 
             namespace App\Http\Controllers\Api\V1;
 

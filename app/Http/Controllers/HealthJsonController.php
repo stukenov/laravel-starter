@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Support\Health\HealthSummary;
@@ -18,7 +20,10 @@ class HealthJsonController extends Controller
 {
     public function __invoke(Request $request, ResultStore $store): JsonResponse
     {
-        $secret = (string) config('health.json_secret');
+        // Not `Config::string()`: an unset secret is null, which is the
+        // normal state of a project that never wanted this endpoint, and
+        // the answer to it is a 404 rather than an exception.
+        $secret = config('health.json_secret');
 
         // A header, never a query parameter. `?secret=…` puts the secret
         // in the URL, and a URL is written to the access log of every
@@ -30,7 +35,7 @@ class HealthJsonController extends Controller
         $given = (string) $request->header('X-Health-Secret');
 
         // hash_equals, so a wrong guess takes as long as a right one.
-        abort_unless($secret !== '' && hash_equals($secret, $given), 404);
+        abort_unless(is_string($secret) && $secret !== '' && hash_equals($secret, $given), 404);
 
         $results = HealthSummary::make($store);
 

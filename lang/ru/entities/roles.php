@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'title' => 'Роли',
     'description' => 'Кто что может делать в системе',

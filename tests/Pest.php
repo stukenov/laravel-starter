@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;

@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Dash;
 
 use App\Http\Controllers\Controller;
 use App\Support\Files\StoredFile;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -26,11 +29,16 @@ class FileController extends Controller
 {
     public function __invoke(string $entity, string $id, string $field): StreamedResponse
     {
-        $class = config("files.entities.{$entity}");
+        $class = Config::array('files.entities')[$entity] ?? null;
 
-        abort_if($class === null, 404);
+        // Both halves matter. Unlisted is a 404, and so is a listed value
+        // that is not a model: what arrives here is a URL segment, and a
+        // URL segment turned into a class name instantiates whatever the
+        // caller likes.
+        if (! is_string($class) || ! is_subclass_of($class, Model::class)) {
+            abort(404);
+        }
 
-        /** @var Model $record */
         $record = $class::query()->findOrFail($id);
 
         $this->authorize('view', $record);
@@ -45,9 +53,11 @@ class FileController extends Controller
 
         $path = $record->getRawOriginal($field);
 
-        abort_if($path === null || $path === '', 404);
+        if (! is_string($path) || $path === '') {
+            abort(404);
+        }
 
-        $disk = Storage::disk(config('files.disk'));
+        $disk = Storage::disk(Config::string('files.disk'));
 
         abort_unless($disk->exists($path), 404);
 

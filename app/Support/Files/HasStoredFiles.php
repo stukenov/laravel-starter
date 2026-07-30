@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Support\Files;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 
 /**
@@ -49,7 +52,7 @@ trait HasStoredFiles
 
         static::deleted(function (Model $model): void {
             foreach (self::fileAttributes($model) as $attribute) {
-                StoredFile::forget($model->getRawOriginal($attribute));
+                self::forgetOriginal($model, $attribute);
             }
         });
     }
@@ -61,7 +64,7 @@ trait HasStoredFiles
     {
         return array_keys(array_filter(
             $model->getCasts(),
-            fn (string $cast) => $cast === StoredFile::class,
+            fn (mixed $cast): bool => $cast === StoredFile::class,
         ));
     }
 
@@ -92,7 +95,7 @@ trait HasStoredFiles
         $stored = $file->storeAs(
             'files/'.$model->getTable(),
             $name,
-            ['disk' => config('files.disk')],
+            ['disk' => Config::string('files.disk')],
         );
 
         return $stored === false ? null : $stored;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Support\Spam\SilentRedirectResponder;
 use Spatie\Honeypot\SpamProtection;
 

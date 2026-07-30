@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Support\Access\Ability;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;

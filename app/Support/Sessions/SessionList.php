@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Support\Sessions;
 
 use App\Models\User;
@@ -40,7 +42,7 @@ class SessionList
                     id: self::text($data['id'] ?? null) ?? '',
                     agent: self::text($data['user_agent'] ?? null),
                     ip: self::text($data['ip_address'] ?? null),
-                    lastActivity: (int) ($data['last_activity'] ?? 0),
+                    lastActivity: self::number($data['last_activity'] ?? null),
                     currentSessionId: $currentSessionId,
                 );
             })
@@ -81,6 +83,16 @@ class SessionList
     private static function text(mixed $value): ?string
     {
         return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /**
+     * The same at the other end: a timestamp out of the query builder is
+     * an untyped value, and a session with no readable one is treated as
+     * having been active at the epoch rather than crashing the page.
+     */
+    private static function number(mixed $value): int
+    {
+        return is_numeric($value) ? (int) $value : 0;
     }
 
     /**

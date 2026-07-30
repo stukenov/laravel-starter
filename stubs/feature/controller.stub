@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Dash;
 
 use App\Http\Controllers\Controller;
@@ -55,7 +57,10 @@ class {{ studly }}Controller extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('entities/{{ snakePlural }}.updated')]);
 
-        return $this->saved($request, ${{ snake }}->fresh()->toPanelItem());
+        // `refresh()` rather than `fresh()`: the same reload of the row,
+        // on this instance and typed as one, instead of a new model the
+        // signature says might be null.
+        return $this->saved($request, ${{ snake }}->refresh()->toPanelItem());
     }
 
     public function destroy(Request $request, {{ studly }} ${{ snake }}): RedirectResponse|JsonResponse

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
@@ -17,7 +19,7 @@ class SessionController extends Controller
     public function index(Request $request): Response
     {
         return Inertia::render('settings/sessions', [
-            'sessions' => SessionList::forUser($request->user(), $request->session()->getId()),
+            'sessions' => SessionList::forUser($this->currentUser($request), $request->session()->getId()),
         ]);
     }
 
@@ -26,7 +28,7 @@ class SessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        SessionList::revokeOthers($request->user(), $request->session()->getId());
+        SessionList::revokeOthers($this->currentUser($request), $request->session()->getId());
 
         Inertia::flash('toast', [
             'type' => 'success',

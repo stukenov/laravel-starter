@@ -1,16 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\{{ studly }};
 
 use App\Models\{{ studly }};
-use Illuminate\Foundation\Http\FormRequest;
+{{ fileRulesImport }}use Illuminate\Foundation\Http\FormRequest;
 {{ requestImports }}
 
 class StoreRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('create', {{ studly }}::class);
+        return $this->user()?->can('create', {{ studly }}::class) ?? false;
     }
 
     /**

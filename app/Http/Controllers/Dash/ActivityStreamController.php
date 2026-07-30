@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Dash;
 
 use App\Http\Controllers\Controller;
@@ -7,6 +9,7 @@ use App\Models\Activity;
 use App\Support\Sse\PostgresListener;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -45,12 +48,12 @@ class ActivityStreamController extends Controller
      */
     private function lifetime(): int
     {
-        return (int) config('sse.lifetime_seconds', 25);
+        return Config::integer('sse.lifetime_seconds', 25);
     }
 
     private function retry(): int
     {
-        return (int) config('sse.retry_seconds', 3);
+        return Config::integer('sse.retry_seconds', 3);
     }
 
     public function __invoke(Request $request): StreamedResponse

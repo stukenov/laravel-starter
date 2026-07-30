@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Support\Sse;
 
 use PgSql\Connection;
@@ -24,12 +26,10 @@ class PostgresListener
 
     public function __construct(private readonly string $channel)
     {
-        $config = config('database.connections.pgsql');
-
         $dsn = sprintf(
             'host=%s port=%s dbname=%s user=%s password=%s',
-            $config['host'], $config['port'], $config['database'],
-            $config['username'], $config['password'],
+            self::setting('host'), self::setting('port'), self::setting('database'),
+            self::setting('username'), self::setting('password'),
         );
 
         // FORCE_NEW is not optional. pg_connect() hands back an existing
@@ -45,6 +45,21 @@ class PostgresListener
         $this->connection = $connection;
 
         pg_query($this->connection, 'listen "'.$channel.'"');
+    }
+
+    /**
+     * One value from the pgsql connection, as a string.
+     *
+     * `config()` answers `mixed`, and a DSN assembled out of mixed is a
+     * DSN assembled out of hope. The port is the reason this coerces
+     * rather than demanding a string: it arrives from `env()` as one and
+     * from a hand-edited config as an integer, and both are correct.
+     */
+    private static function setting(string $key): string
+    {
+        $value = config("database.connections.pgsql.{$key}");
+
+        return is_scalar($value) ? (string) $value : '';
     }
 
     /**

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'title' => 'Әрекеттер журналы',
     'description' => 'Кім, нені және қашан өзгертті',

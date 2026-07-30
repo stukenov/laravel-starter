@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Support\Files\HasStoredFiles;
@@ -28,6 +30,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $password
  * @property string $locale
  * @property string $timezone
+ * @property string|null $tenant_id
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -188,7 +191,10 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $this->syncRoles($roles);
 
-        $after = $this->fresh()->roles->pluck('name')->sort()->values()->all();
+        // `load()` re-runs the eager load on this instance, so the
+        // comparison is against the rows as they now are — and against a
+        // model, rather than the `?static` that `fresh()` answers with.
+        $after = $this->load('roles')->roles->pluck('name')->sort()->values()->all();
 
         if ($before === $after) {
             return;

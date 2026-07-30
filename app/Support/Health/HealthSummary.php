@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Support\Health;
 
 use Carbon\Carbon;
@@ -25,16 +27,21 @@ final class HealthSummary
     {
         $stored = $store->latestResults();
 
-        $checks = collect($stored?->storedCheckResults)
-            ->map(fn ($result) => [
+        // Iterated rather than piped through `collect()`: the property is
+        // already a typed collection, and wrapping it flattens that back
+        // to `mixed` — every field below would then be read off nothing
+        // in particular.
+        $checks = [];
+
+        foreach ($stored === null ? [] : $stored->storedCheckResults as $result) {
+            $checks[] = [
                 'name' => $result->name,
                 'label' => $result->label,
                 'status' => $result->status,
                 'summary' => $result->shortSummary,
                 'message' => $result->notificationMessage,
-            ])
-            ->values()
-            ->all();
+            ];
+        }
 
         return [
             'checks' => $checks,
