@@ -5,9 +5,12 @@
          colors="true"
 >
     <testsuites>
-        <testsuite name="Unit">
-            <directory>tests/Unit</directory>
-        </testsuite>
+        <!-- RULE(tests): three levels, and `tests/Unit` is not one of them.
+             The upstream starter's ExampleTest went with the demo content,
+             which left this suite pointing at a directory git does not
+             carry — an empty one is not a file, so it survived only on the
+             machine that deleted it. A fresh clone answers "Test directory
+             tests/Unit not found" and runs nothing at all. -->
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>
