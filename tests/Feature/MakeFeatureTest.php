@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Console\Commands\MakeFeatureCommand;
 use App\Support\Access\Ability;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
@@ -981,7 +982,7 @@ it('says nothing for a form the dialog suits', function () {
 // она даёт ненулевой код возврата, а не исключение, и тест зеленеет даже без
 // перехвата (проверено мутацией).
 test('шаг форматирования не бросает наружу, а возвращает отказ', function (): void {
-    $cmd = new App\Console\Commands\MakeFeatureCommand;
+    $cmd = new MakeFeatureCommand;
 
     $t = new ReflectionProperty($cmd, 'lintTimeout');
     $t->setAccessible(true);

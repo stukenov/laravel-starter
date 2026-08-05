@@ -10,7 +10,6 @@ declare(strict_types=1);
 return [
     'auth' => [
         'login' => 'Войти',
-        'verify_sent' => 'Новая ссылка отправлена на адрес, указанный при регистрации.',
         'password_show' => 'Показать пароль',
         'password_hide' => 'Скрыть пароль',
         'register' => 'Зарегистрироваться',

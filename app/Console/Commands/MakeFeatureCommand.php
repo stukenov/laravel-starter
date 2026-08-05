@@ -1665,9 +1665,6 @@ PHP;
     }
 
     /**
-     * @param  callable(array{name: string, type: string, optional: bool, values: array<int, string>}): string  $format
-     */
-    /**
      * Formats one line per field, indenting all but the first.
      *
      * The callback shape is spelled out so static analysis keeps it:

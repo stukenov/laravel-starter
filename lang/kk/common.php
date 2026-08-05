@@ -5,7 +5,6 @@ declare(strict_types=1);
 return [
     'auth' => [
         'login' => 'Кіру',
-        'verify_sent' => 'Тіркелу кезінде көрсетілген мекенжайға жаңа сілтеме жіберілді.',
         'password_show' => 'Құпия сөзді көрсету',
         'password_hide' => 'Құпия сөзді жасыру',
         'register' => 'Тіркелу',
