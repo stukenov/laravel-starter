@@ -969,3 +969,26 @@ it('says nothing for a form the dialog suits', function () {
 
     cleanupGenerated('Narrow', 'narrows', 'narrows');
 });
+
+// ── 🔴 Форматирование не должно ронять генерацию ─────────────────────────────
+//
+// `runQuietly` обещает возвращать bool, но `Symfony\Process` при истечении срока
+// БРОСАЕТ. В проекте, склонированном отсюда, из-за этого падали восемь тестов
+// генератора, а стоящая рядом ветвь «не удалось отформатировать — запустите
+// npm run lint» была недостижима.
+//
+// Ветвь испытывается ИМЕННО таймаутом: несуществующая команда сюда не годится —
+// она даёт ненулевой код возврата, а не исключение, и тест зеленеет даже без
+// перехвата (проверено мутацией).
+test('шаг форматирования не бросает наружу, а возвращает отказ', function (): void {
+    $cmd = new App\Console\Commands\MakeFeatureCommand;
+
+    $t = new ReflectionProperty($cmd, 'lintTimeout');
+    $t->setAccessible(true);
+    $t->setValue($cmd, 1);
+
+    $m = new ReflectionMethod($cmd, 'runQuietly');
+    $m->setAccessible(true);
+
+    expect($m->invoke($cmd, ['sleep', '5']))->toBeFalse();
+});

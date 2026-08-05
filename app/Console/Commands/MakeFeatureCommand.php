@@ -157,15 +157,39 @@ class MakeFeatureCommand extends Command
     }
 
     /**
+     * Сколько секунд ждать вспомогательный шаг форматирования.
+     *
+     * Свойство, а не литерал в вызове, ровно затем, чтобы ветвь «срок истёк»
+     * можно было ИСПЫТАТЬ за секунду, а не за пять минут. Без этого тест на неё
+     * написать нечем, и она остаётся непроверенной.
+     */
+    protected int $lintTimeout = 300;
+
+    /**
      * @param  array<int, string>  $command
      */
     private function runQuietly(array $command): bool
     {
-        $process = new Process($command, base_path(), timeout: 120);
+        // 🔴 «Quietly» обязано быть тихим и на ОТКАЗЕ ПО ВРЕМЕНИ. Прежняя версия
+        // им не была: `Process` при истечении срока БРОСАЕТ
+        // `ProcessTimedOutException`, исключение уходило наружу мимо
+        // возвращаемого `bool`, и стоящая рядом ветвь «не удалось
+        // отформатировать — запустите `npm run lint`» была НЕДОСТИЖИМА.
+        //
+        // Поймано 05.08 в проекте, склонированном отсюда: восемь тестов
+        // генератора падали ошибкой процесса, а не проваленным ожиданием, и
+        // полный набор был красным. Сам линтер отрабатывает за 2 секунды —
+        // упирались не в скорость, а в жёсткий предел при конкуренции
+        // нескольких прогонов разом.
+        try {
+            $process = new Process($command, base_path(), timeout: $this->lintTimeout);
 
-        $process->run();
+            $process->run();
 
-        return $process->isSuccessful();
+            return $process->isSuccessful();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**
