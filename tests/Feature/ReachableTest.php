@@ -38,6 +38,94 @@ function panelWriteRoutes(): array
         ->all();
 }
 
+/**
+ * Which controller and method each writing route actually lands on.
+ *
+ * The route name alone is not enough. Splitting `dash.entity.action` into
+ * three assumes three segments, and a nested route like
+ * `dash.projects.touches.store` has four — so it looked unreachable no
+ * matter how the page called it. The route object knows without guessing.
+ *
+ * @return array<string, array{short: string, method: string}>
+ */
+function panelWriteRouteActions(): array
+{
+    $map = [];
+
+    foreach (Route::getRoutes()->getRoutes() as $route) {
+        $name = (string) $route->getName();
+
+        if (! str_starts_with($name, 'dash.')) {
+            continue;
+        }
+
+        if (array_intersect($route->methods(), ['POST', 'PUT', 'PATCH', 'DELETE']) === []) {
+            continue;
+        }
+
+        $action = $route->getAction('controller');
+
+        if (! is_string($action) || $action === '') {
+            continue;
+        }
+
+        // `Route::post($uri, SomeController::class)` records the class with
+        // no `@method` at all — an invokable controller. Read as "not a
+        // controller", such a route was skipped here and then reported as
+        // unreachable whatever called it.
+        [$class, $method] = str_contains($action, '@')
+            ? explode('@', $action, 2)
+            : [$action, '__invoke'];
+
+        $map[$name] = ['short' => class_basename($class), 'method' => $method];
+    }
+
+    return $map;
+}
+
+/**
+ * Which methods a page imports from a controller's generated action module.
+ *
+ * `import { store as writeNote } from '@/actions/.../ProjectNoteController'`
+ * is a real caller and the older checks could not see it: the helper is
+ * renamed at the import, so the bare word never appears again.
+ *
+ * @return array<int, string>
+ */
+function importedFromAction(string $source, string $controllerShort): array
+{
+    preg_match_all(
+        '/import\s*\{([^}]*)\}\s*from\s*\x27@\/actions\/[^\x27]*'.preg_quote($controllerShort, '/').'\x27/',
+        $source,
+        $matches,
+    );
+
+    $names = [];
+
+    foreach ($matches[1] as $group) {
+        foreach (explode(',', $group) as $piece) {
+            $names[] = trim(explode(' as ', trim($piece))[0]);
+        }
+    }
+
+    return array_filter($names);
+}
+
+/**
+ * Whether a page imports an invokable controller's action module at all.
+ *
+ * A single-action controller has one default export, usually renamed at the
+ * import, and one route — so importing the module is the whole of the
+ * proof. There is no verb to look for.
+ */
+function defaultImportsAction(string $source, string $controllerShort): bool
+{
+    return preg_match(
+        '/import\s+\w+\s+from\s*\x27@\/actions\/[^\x27]*'.preg_quote($controllerShort, '/').'\x27/',
+        $source,
+    ) === 1;
+}
+
 /** Everything the panel's pages and components mention, as one haystack. */
 function panelSource(): string
 {
@@ -86,18 +174,28 @@ it('has a caller for every writing route in the panel', function () {
     $source = panelSource();
     $unreachable = [];
 
+    $actions = panelWriteRouteActions();
+
     foreach (panelWriteRoutes() as $name) {
         [, $entity, $action] = array_pad(explode('.', $name), 3, '');
 
-        // Three ways a page legitimately reaches a route: the route name
-        // as a string, the helper imported for that entity by name, or
-        // the generated action object, which carries every verb at once.
+        $target = $actions[$name] ?? null;
+
+        // Five ways a page legitimately reaches a route: the route name as
+        // a string, the helper imported for that entity by name, the
+        // generated action object with the verb named, a named import out
+        // of that controller's action module — renamed or not — or, for a
+        // single-action controller, the module itself.
         $mentioned = str_contains($source, $name)
             || in_array($action, importedFrom($source, $entity), true)
             // The action object carries every verb, so its bare name
             // proves nothing: `UserController` appears in an import even
             // when only `store` is ever called. The verb has to be named.
-            || str_contains($source, Str::studly(Str::singular($entity)).'Controller.'.$action);
+            || str_contains($source, Str::studly(Str::singular($entity)).'Controller.'.$action)
+            || ($target !== null && str_contains($source, $target['short'].'.'.$target['method']))
+            || ($target !== null && in_array($target['method'], importedFromAction($source, $target['short']), true))
+            || ($target !== null && $target['method'] === '__invoke'
+                && defaultImportsAction($source, $target['short']));
 
         if (! $mentioned) {
             $unreachable[] = $name;
@@ -126,4 +224,54 @@ it('would notice a route with no caller', function () {
 
 it('reads actual page source rather than an empty string', function () {
     expect(strlen(panelSource()))->toBeGreaterThan(10_000);
+});
+
+/*
+ * The three shapes the older check could not see. There is no writing
+ * invokable route under `dash.` in the starter itself, so these exercise
+ * the predicates directly rather than waiting for the first project that
+ * adds one — which is how the gap was found.
+ */
+
+// ── Correct data ─────────────────────────────────────────────────────
+
+it('sees a renamed named import out of an action module', function () {
+    $source = "import { store as writeNote } from '@/actions/App/Http/Controllers/Dash/ProjectNoteController';";
+
+    expect(importedFromAction($source, 'ProjectNoteController'))->toBe(['store']);
+});
+
+it('sees a default import of a single-action controller', function () {
+    $source = "import startRun from '@/actions/App/Http/Controllers/Dash/StartRunController';";
+
+    expect(defaultImportsAction($source, 'StartRunController'))->toBeTrue();
+});
+
+it('reads the method off an invokable route rather than skipping it', function () {
+    // `Route::get('activity/stream', ActivityStreamController::class)` is a
+    // read, so it is not in the writing map — but the same shape with a
+    // POST used to be dropped on the floor here.
+    $invokable = collect(Route::getRoutes()->getRoutes())
+        ->first(fn ($route) => $route->getName() === 'dash.activity.stream');
+
+    $action = $invokable?->getAction('controller');
+
+    expect($action)->toBeString()
+        ->and(str_contains((string) $action, '@'))->toBeFalse();
+});
+
+// ── Wrong data ───────────────────────────────────────────────────────
+
+it('does not mistake a different controller for this one', function () {
+    $source = "import { store } from '@/actions/App/Http/Controllers/Dash/UserController';";
+
+    expect(importedFromAction($source, 'RoleController'))->toBe([])
+        ->and(defaultImportsAction($source, 'RoleController'))->toBeFalse();
+});
+
+// ── Empty data ───────────────────────────────────────────────────────
+
+it('finds nothing in a page that imports nothing', function () {
+    expect(importedFromAction('', 'UserController'))->toBe([])
+        ->and(defaultImportsAction('', 'UserController'))->toBeFalse();
 });
