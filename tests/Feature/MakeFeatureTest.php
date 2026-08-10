@@ -60,9 +60,19 @@ function cleanupGenerated(string $studly, string $plural, string $snakePlural): 
     // block survives. That bug left routes behind on the first run.
     $routes = base_path('routes/dash.php');
 
+    // Word boundaries, not substrings.
+    //
+    // `str_contains($line, 'NoteController')` also matches
+    // `ProjectNoteController`, so cleaning up after a generated `Note`
+    // deleted a hand-written route for an entirely different controller —
+    // and its import with it. Silently, from a file under version control,
+    // in the middle of an unrelated test run. It cost an afternoon before
+    // anybody suspected the test suite of editing the source.
+    //
+    // See zettel/cleaning-up-by-substring-deletes-somebody-elses-code.md
     $kept = array_filter(
         explode("\n", File::get($routes)),
-        fn (string $line) => ! str_contains($line, "{$studly}Controller")
+        fn (string $line) => ! preg_match("/\\b{$studly}Controller\\b/", $line)
             && ! str_contains($line, "'{$plural}"),
     );
 
@@ -76,7 +86,7 @@ function cleanupGenerated(string $studly, string $plural, string $snakePlural): 
 
     $keptApi = array_filter(
         explode("\n", File::get($api)),
-        fn (string $line) => ! str_contains($line, "V1\\{$studly}Controller")
+        fn (string $line) => ! preg_match("/V1\\\\{$studly}Controller\\b/", $line)
             && ! str_contains($line, "'{$plural}")
             && ! str_contains($line, "{$plural}/{"),
     );
@@ -992,4 +1002,63 @@ test('шаг форматирования не бросает наружу, а �
     $m->setAccessible(true);
 
     expect($m->invoke($cmd, ['sleep', '5']))->toBeFalse();
+});
+
+/*
+ * The cleanup edits files under version control, and once deleted somebody
+ * else's route.
+ *
+ * `Note` is one of the entities generated below, so the cleanup looks for
+ * `NoteController` — and a hand-written `ProjectNoteController` contains
+ * that as a substring. The route and its import both disappeared, silently,
+ * in the middle of a run about something else.
+ */
+
+it('leaves a neighbouring controller alone when it cleans up', function () {
+    $routes = base_path('routes/dash.php');
+    $before = File::get($routes);
+
+    $planted = "        Route::post('projects/{project}/touches', [ProjectNoteController::class, 'store'])->name('projects.touches.store');";
+
+    File::put($routes, str_replace(
+        "Route::middleware(['auth', 'verified'])",
+        "// planted by a test\nRoute::middleware(['auth', 'verified'])",
+        $before,
+    ));
+
+    // Put the line inside the group, where a real one would live.
+    $withPlant = str_replace(
+        "        Route::get('users', [UserController::class, 'index'])->name('users.index');",
+        $planted."\n        Route::get('users', [UserController::class, 'index'])->name('users.index');",
+        File::get($routes),
+    );
+    File::put($routes, $withPlant);
+
+    try {
+        cleanupGenerated('Note', 'notes', 'notes');
+
+        expect(File::get($routes))->toContain('ProjectNoteController');
+    } finally {
+        File::put($routes, $before);
+    }
+});
+
+it('still removes the routes it generated', function () {
+    // The other half: a cleanup that keeps everything is not a cleanup.
+    $routes = base_path('routes/dash.php');
+    $before = File::get($routes);
+
+    File::put($routes, str_replace(
+        "        Route::get('users', [UserController::class, 'index'])->name('users.index');",
+        "        Route::get('notes', [NoteController::class, 'index'])->name('notes.index');\n        Route::get('users', [UserController::class, 'index'])->name('users.index');",
+        $before,
+    ));
+
+    try {
+        cleanupGenerated('Note', 'notes', 'notes');
+
+        expect(File::get($routes))->not->toContain('NoteController');
+    } finally {
+        File::put($routes, $before);
+    }
 });
