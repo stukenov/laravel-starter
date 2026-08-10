@@ -3,6 +3,7 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          colors="true"
+         defaultTestSuite="Feature"
 >
     <testsuites>
         <!-- RULE(tests): three levels, and `tests/Unit` is not one of them.
@@ -11,8 +12,39 @@
              carry — an empty one is not a file, so it survived only on the
              machine that deleted it. A fresh clone answers "Test directory
              tests/Unit not found" and runs nothing at all. -->
+        <!-- RULE(tests): MakeFeatureTest is excluded from the default run,
+             and that is a trade rather than neglect.
+
+             It exercises the generator for real: it writes models,
+             controllers and pages, and appends to the shared
+             `routes/dash.php`, `routes/api.php`, `Ability.php` and the
+             sidebar, cleaning up only at the end. Two consequences, both
+             met the first time somebody built on this starter:
+
+             - it takes eleven of the twelve minutes a full run costs, so
+               the ordinary edit-test loop stops being usable;
+             - a run killed halfway leaves the repository holding whole
+               generated entities — twenty-six files of code nobody wrote,
+               which only a failing build made visible.
+
+             So the everyday suite is fast and touches nothing, and the
+             generator is run on purpose:
+
+                 php artisan test        the fast suite
+                 composer test:generator the generator, by testsuite name
+                 composer test           both, plus lint and static analysis
+
+             Run the generator suite before shipping anything that touches
+             `make:feature`, its stubs, or the conventions it relies on.
+             `defaultTestSuite` above is what makes the split real: without
+             it PHPUnit runs every suite and the exclusion does nothing. -->
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
+            <exclude>tests/Feature/MakeFeatureTest.php</exclude>
+        </testsuite>
+
+        <testsuite name="Generator">
+            <file>tests/Feature/MakeFeatureTest.php</file>
         </testsuite>
     </testsuites>
     <source>
