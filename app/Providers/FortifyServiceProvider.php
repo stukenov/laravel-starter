@@ -66,6 +66,12 @@ class FortifyServiceProvider extends ServiceProvider
 
         Fortify::requestPasswordResetLinkView(fn (Request $request) => Inertia::render('auth/forgot-password', [
             'status' => $request->session()->get('status'),
+            // The password-reset request is a public form that writes, and
+            // it had no bot protection at all: the honeypot was attached to
+            // registration alone. Close registration — the state most
+            // projects built on this want — and the only public write form
+            // left was unguarded. See AGENTS.md.
+            'honeypot' => app(Honeypot::class)->toArray(),
         ]));
 
         Fortify::verifyEmailView(fn (Request $request) => Inertia::render('auth/verify-email', [

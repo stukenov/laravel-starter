@@ -3,14 +3,32 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Support\Facades\Notification;
+use Laravel\Fortify\Features;
 use Spatie\Honeypot\EncryptedTime;
 
 /**
  * RULE(external): no third-party domain at render time — AGENTS.md.
  *
  * A captcha would need one, and the browser would block it, so this is
- * the whole of the protection on the only form a stranger can reach.
+ * the whole of the protection on the forms a stranger can reach.
+ *
+ * Written against the password-reset request rather than registration:
+ * registration is a documented switch and most projects close it, and a
+ * suite that only tested the form that disappears left the honeypot
+ * untested on exactly those deployments. The registration case is still
+ * here, guarded by the feature.
  */
+function resetRequest(array $overrides = []): array
+{
+    return array_merge(['email' => 'zabyl@example.kz'], $overrides);
+}
+
+function personWhoForgot(): User
+{
+    return User::factory()->create(['email' => 'zabyl@example.kz']);
+}
 function registration(array $overrides = []): array
 {
     return array_merge([
@@ -24,17 +42,30 @@ function registration(array $overrides = []): array
 // ── Correct data ─────────────────────────────────────────────────────
 
 it('lets a person through', function () {
+    Notification::fake();
+    $user = personWhoForgot();
+
+    $this->post(route('password.email'), honeypot() + resetRequest())
+        ->assertSessionHasNoErrors();
+
+    Notification::assertSentTo($user, ResetPassword::class);
+});
+
+it('lets a person register through it too', function () {
     $this->post(route('register.store'), honeypot() + registration())
         ->assertRedirect(route('dash.home', absolute: false));
 
     expect(User::where('email', 'novyi@example.kz')->exists())->toBeTrue();
-});
+})->skip(
+    fn () => ! Features::enabled(Features::registration()),
+    'registration is closed: REGISTRATION_ENABLED=false unregisters the route',
+);
 
 it('offers the fields on the form', function () {
     // Rendered by the page, not a blade component: the form is React.
     // Without these props the page has nothing to submit and every real
     // registration would be rejected.
-    $this->get(route('register'))
+    $this->get(route('password.request'))
         ->assertInertia(fn ($page) => $page
             ->has('honeypot.nameFieldName')
             ->has('honeypot.encryptedValidFrom')
@@ -50,8 +81,12 @@ it('accepts a randomized field name', function () {
         config('honeypot.valid_from_field_name') => EncryptedTime::create(now()->subMinute()),
     ];
 
-    $this->post(route('register.store'), $fields + registration())
-        ->assertRedirect(route('dash.home', absolute: false));
+    Notification::fake();
+    $user = personWhoForgot();
+
+    $this->post(route('password.email'), $fields + resetRequest());
+
+    Notification::assertSentTo($user, ResetPassword::class);
 });
 
 // ── Wrong data ───────────────────────────────────────────────────────
@@ -61,19 +96,24 @@ it('rejects a filled honeypot', function () {
     $filled = honeypot();
     $filled[config('honeypot.name_field_name')] = 'бот написал сюда';
 
-    $this->post(route('register.store'), $filled + registration());
+    Notification::fake();
+    personWhoForgot();
 
-    expect(User::where('email', 'novyi@example.kz')->exists())->toBeFalse();
-    $this->assertGuest();
+    $this->post(route('password.email'), $filled + resetRequest());
+
+    Notification::assertNothingSent();
 });
 
 it('rejects a form submitted faster than a person could type', function () {
     $tooFast = honeypot();
     $tooFast[config('honeypot.valid_from_field_name')] = EncryptedTime::create(now()->addMinute());
 
-    $this->post(route('register.store'), $tooFast + registration());
+    Notification::fake();
+    personWhoForgot();
 
-    expect(User::where('email', 'novyi@example.kz')->exists())->toBeFalse();
+    $this->post(route('password.email'), $tooFast + resetRequest());
+
+    Notification::assertNothingSent();
 });
 
 it('rejects a forged timestamp', function () {
@@ -82,9 +122,12 @@ it('rejects a forged timestamp', function () {
     $forged = honeypot();
     $forged[config('honeypot.valid_from_field_name')] = 'ничего не значащая строка';
 
-    $this->post(route('register.store'), $forged + registration());
+    Notification::fake();
+    personWhoForgot();
 
-    expect(User::where('email', 'novyi@example.kz')->exists())->toBeFalse();
+    $this->post(route('password.email'), $forged + resetRequest());
+
+    Notification::assertNothingSent();
 });
 
 it('answers without an Inertia modal', function () {
@@ -93,9 +136,11 @@ it('answers without an Inertia modal', function () {
     $filled = honeypot();
     $filled[config('honeypot.name_field_name')] = 'бот';
 
-    $this->from(route('register'))
-        ->post(route('register.store'), $filled + registration())
-        ->assertRedirect(route('register'));
+    personWhoForgot();
+
+    $this->from(route('password.request'))
+        ->post(route('password.email'), $filled + resetRequest())
+        ->assertRedirect(route('password.request'));
 });
 
 // ── Empty data ───────────────────────────────────────────────────────
@@ -103,23 +148,29 @@ it('answers without an Inertia modal', function () {
 it('rejects a submission with no honeypot fields at all', function () {
     // The common case: a bot posting the fields it can see and nothing
     // else. Left lenient, this is the one that gets through.
-    $this->post(route('register.store'), registration());
+    Notification::fake();
+    personWhoForgot();
 
-    expect(User::where('email', 'novyi@example.kz')->exists())->toBeFalse();
+    $this->post(route('password.email'), resetRequest());
+
+    Notification::assertNothingSent();
 });
 
 it('rejects an empty timestamp', function () {
     $empty = honeypot();
     $empty[config('honeypot.valid_from_field_name')] = '';
 
-    $this->post(route('register.store'), $empty + registration());
+    Notification::fake();
+    personWhoForgot();
 
-    expect(User::where('email', 'novyi@example.kz')->exists())->toBeFalse();
+    $this->post(route('password.email'), $empty + resetRequest());
+
+    Notification::assertNothingSent();
 });
 
-it('guards nothing but registration', function () {
-    // The middleware is on one route. Applied to the whole web group it
-    // would demand the fields from every form in the panel.
+it('guards nothing but the public write forms', function () {
+    // The middleware is on named routes only. Applied to the whole web
+    // group it would demand the fields from every form in the panel.
     $this->actingAs(User::factory()->admin()->create())
         ->get(route('dash.users.index'))
         ->assertOk();

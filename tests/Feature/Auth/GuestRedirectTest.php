@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use Laravel\Fortify\Features;
 
 // ── Correct data ─────────────────────────────────────────────────────
 
@@ -18,7 +19,10 @@ it('does the same on the registration page', function () {
     $this->actingAs(User::factory()->create())
         ->get(route('register'))
         ->assertRedirect(config('fortify.home'));
-});
+})->skip(
+    fn () => ! Features::enabled(Features::registration()),
+    'registration is closed: REGISTRATION_ENABLED=false unregisters the route',
+);
 
 it('points at the panel and not at the public root', function () {
     expect(config('fortify.home'))->toBe('/dash');

@@ -40,8 +40,21 @@ return [
      * that route is the rate limiter, five attempts a minute per email
      * and address.
      */
-    'spam_protected_routes' => [
-        'register.store',
-    ],
+    /*
+     * Conditional, the same way `fortify.features` is: naming a route that
+     * does not exist is exactly the typo this list is checked for, and
+     * `register.store` legitimately disappears when registration is closed.
+     *
+     * `env()` rather than Fortify's Features here — a config file loads
+     * before the facades have a root, which is why config/fortify.php
+     * narrows by hand too.
+     */
+    'spam_protected_routes' => array_values(array_filter([
+        env('REGISTRATION_ENABLED', true) ? 'register.store' : null,
+        // Registration can be switched off; this form cannot. Left out, a
+        // starter with REGISTRATION_ENABLED=false had no honeypot anywhere
+        // and the canary in SpamProtectionTest had nothing to check.
+        'password.email',
+    ])),
 
 ];

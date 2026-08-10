@@ -78,5 +78,8 @@ it('protects nothing that is not on the list', function () {
 it('reads middleware off a route at all', function () {
     // Every assertion above passes if `gatherMiddleware()` always returns
     // an empty array.
-    expect(routeMiddleware('register.store'))->not->toBeEmpty();
+    // `password.email` rather than `register.store`: registration can be
+    // switched off and this form cannot, so the canary keeps working in
+    // both configurations.
+    expect(routeMiddleware('password.email'))->not->toBeEmpty();
 });

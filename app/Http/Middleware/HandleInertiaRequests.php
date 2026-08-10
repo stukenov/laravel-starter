@@ -72,6 +72,26 @@ class HandleInertiaRequests extends Middleware
              * carefully.
              */
             'registrationEnabled' => Features::enabled(Features::registration()),
+            /*
+             * The two registration urls, shared rather than imported.
+             *
+             * `REGISTRATION_ENABLED=false` also stops Wayfinder generating
+             * `resources/js/routes/register`, and a page that imports it
+             * then fails the *build* — not a test, not a request. Every
+             * backend test stayed green and `npm run build` died on
+             * MISSING_EXPORT, which is the one place nothing was looking.
+             *
+             * A runtime guard does not help: the import is static and is
+             * resolved whether or not the branch that uses it ever runs.
+             * So the pages take the urls from here instead, and there is
+             * nothing to resolve when the routes do not exist.
+             */
+            'registerUrl' => Features::enabled(Features::registration())
+                ? route('register')
+                : null,
+            'registerAction' => Features::enabled(Features::registration())
+                ? route('register.store')
+                : null,
             'locale' => app()->getLocale(),
             'locales' => Locales::SUPPORTED,
             // Flat dictionary: key 'nav.dashboard' instead of nested

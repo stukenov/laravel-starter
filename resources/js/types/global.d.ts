@@ -20,6 +20,9 @@ declare module '@inertiajs/core' {
             translations: Record<string, string>;
             /** False closes the sign-up route; the page must stop offering it */
             registrationEnabled: boolean;
+            /** Null when registration is closed — see HandleInertiaRequests. */
+            registerUrl: string | null;
+            registerAction: string | null;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

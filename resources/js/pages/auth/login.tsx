@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslations } from '@/hooks/use-translations';
-import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
@@ -29,7 +28,7 @@ type Props = {
  */
 export default function Login({ status, canResetPassword }: Props) {
     const t = useTranslations();
-    const { registrationEnabled } = usePage().props;
+    const { registrationEnabled, registerUrl } = usePage().props;
 
     return (
         <>
@@ -110,14 +109,19 @@ export default function Login({ status, canResetPassword }: Props) {
                         {/* REGISTRATION_ENABLED=false unregisters the
                             route, and this offered the link anyway — the
                             one public entrance to a closed application
-                            ending in a 404. */}
-                        {registrationEnabled && (
+                            ending in a 404.
+
+                            The url comes from shared props rather than from
+                            `@/routes`: with the route gone Wayfinder stops
+                            exporting it, and a static import fails the
+                            build even though this branch never runs. */}
+                        {registrationEnabled && registerUrl !== null && (
                             <div
                                 className="text-center text-sm text-muted-foreground"
                                 data-test="login-signup"
                             >
                                 {t('auth.no_account')}{' '}
-                                <TextLink href={register()}>
+                                <TextLink href={registerUrl}>
                                     {t('auth.sign_up')}
                                 </TextLink>
                             </div>

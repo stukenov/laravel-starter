@@ -33,6 +33,7 @@ return [
         'forgot_title' => 'Reset your password',
         'forgot_description' => "We'll email you a link to choose a new password",
         'send_link' => 'Email password reset link',
+        'send_reset_link' => 'Email password reset link',
         'or_return_to' => 'Or, return to',
 
         'reset_title' => 'New password',

@@ -1,6 +1,8 @@
 // Components
 import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
+import { HoneypotFields } from '@/components/honeypot-fields';
+import type { Honeypot } from '@/components/honeypot-fields';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -10,7 +12,12 @@ import { useTranslations } from '@/hooks/use-translations';
 import { login } from '@/routes';
 import { email } from '@/routes/password';
 
-export default function ForgotPassword({ status }: { status?: string }) {
+type Props = {
+    status?: string;
+    honeypot: Honeypot;
+};
+
+export default function ForgotPassword({ status, honeypot }: Props) {
     const t = useTranslations();
 
     return (
@@ -27,6 +34,8 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 <Form {...email.form()}>
                     {({ processing, errors }) => (
                         <>
+                            <HoneypotFields honeypot={honeypot} />
+
                             <div className="grid gap-2">
                                 <Label htmlFor="email">{t('auth.email')}</Label>
                                 <Input
@@ -50,7 +59,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                     {processing && (
                                         <LoaderCircle className="h-4 w-4 animate-spin" />
                                     )}
-                                    Email password reset link
+                                    {t('auth.send_reset_link')}
                                 </Button>
                             </div>
                         </>

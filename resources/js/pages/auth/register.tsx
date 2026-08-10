@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, usePage } from '@inertiajs/react';
 import { HoneypotFields } from '@/components/honeypot-fields';
 import type { Honeypot } from '@/components/honeypot-fields';
 import InputError from '@/components/input-error';
@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslations } from '@/hooks/use-translations';
 import { login } from '@/routes';
-import { store } from '@/routes/register';
 
 type Props = {
     passwordRules: string;
@@ -19,12 +18,17 @@ type Props = {
 
 export default function Register({ passwordRules, honeypot }: Props) {
     const t = useTranslations();
+    // From shared props, not from `@/routes/register`: that module only
+    // exists while the route does, and a static import of it fails the
+    // build on every deployment that closed registration.
+    const { registerAction } = usePage().props;
 
     return (
         <>
             <Head title={t('auth.register')} />
             <Form
-                {...store.form()}
+                action={registerAction ?? ''}
+                method="post"
                 resetOnSuccess={['password', 'password_confirmation']}
                 disableWhileProcessing
                 className="flex flex-col gap-6"

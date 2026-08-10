@@ -4,15 +4,25 @@ declare(strict_types=1);
 
 use App\Models\User;
 use Illuminate\Support\Arr;
+use Laravel\Fortify\Features;
 
 // Correct data
 it('serves every auth screen', function (string $route) {
     $this->get($route)->assertOk();
 })->with([
     fn () => route('login'),
-    fn () => route('register'),
     fn () => route('password.request'),
 ]);
+
+it('serves the registration screen while it is open', function () {
+    // Its own case rather than a row in the dataset above: `route()` is
+    // evaluated when the dataset is built, before any skip can run, so an
+    // absent route throws before the test starts.
+    $this->get(route('register'))->assertOk();
+})->skip(
+    fn () => ! Features::enabled(Features::registration()),
+    'registration is closed: REGISTRATION_ENABLED=false unregisters the route',
+);
 
 it('passes the dictionary to auth screens', function () {
     $this->get(route('login'))->assertInertia(fn ($page) => $page

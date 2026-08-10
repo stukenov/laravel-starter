@@ -29,13 +29,22 @@ class PasswordResetTest extends TestCase
         $response->assertOk();
     }
 
+    /*
+     * `honeypot()` on every post here.
+     *
+     * The password-reset request is a public form that writes, so it now
+     * carries the honeypot registration used to carry alone. With
+     * `honeypot_fields_required_for_all_forms` on, a post without the
+     * fields is treated as spam and silently redirected — which is what a
+     * bot gets, and what these three tests got until the fields arrived.
+     */
     public function test_reset_password_link_can_be_requested()
     {
         Notification::fake();
 
         $user = User::factory()->create();
 
-        $this->post(route('password.email'), ['email' => $user->email]);
+        $this->post(route('password.email'), honeypot() + ['email' => $user->email]);
 
         Notification::assertSentTo($user, ResetPassword::class);
     }
@@ -46,7 +55,7 @@ class PasswordResetTest extends TestCase
 
         $user = User::factory()->create();
 
-        $this->post(route('password.email'), ['email' => $user->email]);
+        $this->post(route('password.email'), honeypot() + ['email' => $user->email]);
 
         Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
             $response = $this->get(route('password.reset', $notification->token));
@@ -63,7 +72,7 @@ class PasswordResetTest extends TestCase
 
         $user = User::factory()->create();
 
-        $this->post(route('password.email'), ['email' => $user->email]);
+        $this->post(route('password.email'), honeypot() + ['email' => $user->email]);
 
         Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
             $response = $this->post(route('password.update'), [

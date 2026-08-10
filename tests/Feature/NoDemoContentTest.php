@@ -9,10 +9,13 @@ use Laravel\Fortify\Features;
 it('keeps only the auth features we asked for', function () {
     $enabled = config('fortify.features');
 
-    expect(Features::enabled(Features::registration()))->toBeTrue()
-        ->and(Features::enabled(Features::resetPasswords()))->toBeTrue()
+    // Registration is a documented switch, so its presence is not the
+    // claim — the claim is that nothing else crept in.
+    $registration = Features::enabled(Features::registration());
+
+    expect(Features::enabled(Features::resetPasswords()))->toBeTrue()
         ->and(Features::enabled(Features::emailVerification()))->toBeTrue()
-        ->and($enabled)->toHaveCount(3);
+        ->and($enabled)->toHaveCount($registration ? 3 : 2);
 });
 
 it('serves the home page from our own component', function () {
