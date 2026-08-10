@@ -33,17 +33,7 @@ it('shows the {{ snake }} list', function () {
             ->has('records.data', 2),
         );
 });
-
-it('finds a record by a fragment of the first field', function () {
-    $record = {{ studly }}::factory()->create(['{{ firstField }}' => 'Уникальное значение']);
-
-    $this->actingAs({{ snake }}Admin())
-        ->get(route('dash.{{ snakePlural }}.index', ['search' => 'Уникаль']))
-        ->assertInertia(fn ($page) => $page->has('records.data', 1));
-
-    expect($record->fresh())->not->toBeNull();
-});
-{{ searchSecondScenario }}
+{{ searchFirstScenario }}{{ searchSecondScenario }}
 /*
  * RULE(api): every panel resource has an API — AGENTS.md.
  *

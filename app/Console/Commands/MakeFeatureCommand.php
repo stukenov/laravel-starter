@@ -423,6 +423,8 @@ class MakeFeatureCommand extends Command
             '{{ kebabPlural }}' => $this->kebabPlural,
             '{{ firstField }}' => $first,
             '{{ searchColumns }}' => $this->searchColumns(),
+            '{{ trigramIndex }}' => $this->trigramIndex(),
+            '{{ searchFirstScenario }}' => $this->searchFirstScenario(),
             '{{ formImports }}' => $this->formImports(),
             '{{ indexImports }}' => $this->indexImports(),
             '{{ timeContext }}' => $this->timeContext(),
@@ -442,7 +444,15 @@ class MakeFeatureCommand extends Command
             '{{ fileTraitImport }}' => $this->hasFiles()
                 ? "use App\\Support\\Files\\HasStoredFiles;\n"
                 : '',
+            // The @property block names these types, so the model has to
+            // import them or static analysis reads them as classes in
+            // App\Models that do not exist.
+            '{{ carbonImport }}' => "use Illuminate\\Support\\Carbon;\n",
+            '{{ storedFileImport }}' => $this->hasFiles()
+                ? "use App\\Support\\Files\\StoredFile;\n"
+                : '',
             '{{ migrationColumns }}' => $this->migrationColumns(),
+            '{{ propertyDoc }}' => $this->propertyDoc(),
             '{{ fillable }}' => $this->fillable(),
             '{{ rules }}' => $this->rules(),
             '{{ factoryFields }}' => $this->factoryFields(),
@@ -909,6 +919,12 @@ PHP;
             $imports[] = "import { excerpt } from '@/lib/html';";
         }
 
+        // An enum cell goes through enumLabel so an absent value cannot put
+        // a translation key on the screen.
+        if (in_array('enum', $types, true)) {
+            $imports[] = "import { enumLabel } from '@/lib/i18n';";
+        }
+
         return implode("\n", $imports).($imports === [] ? '' : "\n");
     }
 
@@ -931,6 +947,70 @@ PHP;
                 const { auth, locale } = usePage().props;
                 const timezone = (auth.user.timezone as string) ?? 'UTC';
         TSX;
+    }
+
+    /**
+     * The first column search can actually look through, or null.
+     *
+     * Not `{{ firstField }}`. The first field is whatever was typed first,
+     * and for an entity like `Run --fields=status:enum(...),log:text` that
+     * is an enum — which `scopeSearch` deliberately leaves out, and which a
+     * check constraint stops a test from writing a phrase into. The
+     * generated search test could not insert its own fixture.
+     */
+    private function searchField(): ?string
+    {
+        foreach ($this->fields as $field) {
+            if (in_array($field['type'], ['string', 'text', 'richtext'], true)) {
+                return $field['name'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The substring index, when there is something to index.
+     *
+     * `gin (count gin_trgm_ops)` on an integer column does not fail at
+     * generation time — it fails on `php artisan migrate`, which is the
+     * next command the generator tells you to run, with an error about
+     * operator classes that says nothing about the entity you just made.
+     */
+    private function trigramIndex(): string
+    {
+        $field = $this->searchField();
+
+        if ($field === null) {
+            return '';
+        }
+
+        return "\n\n        // Substring search over the first searchable column."
+            ."\n        DB::statement('create index {$this->snakePlural}_{$field}_trgm_idx on {$this->snakePlural} using gin ({$field} gin_trgm_ops)');";
+    }
+
+    /** The search scenario, when the entity has a column to search. */
+    private function searchFirstScenario(): string
+    {
+        $field = $this->searchField();
+
+        if ($field === null) {
+            return '';
+        }
+
+        return <<<PHP
+
+
+it('finds a record by a fragment of a searchable field', function () {
+    \$record = {$this->studly}::factory()->create(['{$field}' => 'Уникальное значение']);
+
+    \$this->actingAs({$this->snake}Admin())
+        ->get(route('dash.{$this->snakePlural}.index', ['search' => 'Уникаль']))
+        ->assertInertia(fn (\$page) => \$page->has('records.data', 1));
+
+    expect(\$record->fresh())->not->toBeNull();
+});
+PHP;
     }
 
     private function searchColumns(): string
@@ -1330,6 +1410,51 @@ PHP;
         }, $relations));
     }
 
+    /**
+     * The `@property` block larastan needs to read the model at all.
+     *
+     * Without it every generated entity fails static analysis the moment
+     * anything calls a method on a date — `$this->due_at?->toIso8601String()`
+     * in the generator's own `toPanelItem()` is enough. The starter's
+     * hand-written models carry the block; the generated ones did not, so
+     * `composer types:check` broke on the first `make:feature` and the fix
+     * had to be typed out by hand every time.
+     *
+     * Written from the same field list the migration is, so the two cannot
+     * drift.
+     */
+    private function propertyDoc(): string
+    {
+        $lines = [' * @property string $id'];
+
+        foreach ($this->fields as $field) {
+            if ($field['type'] === 'belongsTo') {
+                $name = $this->foreignKey($field['name']);
+                $type = 'string';
+            } else {
+                $name = $field['name'];
+                $type = match ($field['type']) {
+                    'integer' => 'int',
+                    'boolean' => 'bool',
+                    'date', 'datetime' => 'Carbon',
+                    'file', 'image' => 'StoredFile',
+                    default => 'string',
+                };
+            }
+
+            // `belongsTo` writes a required key now, so only the field's
+            // own optionality decides the null.
+            $null = $field['optional'] && $field['type'] !== 'belongsTo' ? '|null' : '';
+
+            $lines[] = " * @property {$type}{$null} \${$name}";
+        }
+
+        $lines[] = ' * @property Carbon|null $created_at';
+        $lines[] = ' * @property Carbon|null $updated_at';
+
+        return "/**\n".implode("\n", $lines)."\n */\n";
+    }
+
     private function fillable(): string
     {
         return implode(', ', array_map(
@@ -1627,8 +1752,11 @@ PHP;
                 // The label, not the stored word: `draft` on screen is a
                 // database value leaking into the interface, and it
                 // cannot be translated.
+                // Through enumLabel, not t() directly: an absent value
+                // made t() answer with the key it was given, and the
+                // reader saw `tickets.status_options.null` in the list.
                 $f['type'] === 'enum' => sprintf(
-                    '{t(`%s.%s_options.${record.%s}`)}',
+                    '{enumLabel(t, \'%s.%s_options\', record.%s)}',
                     $this->snakePlural,
                     $f['name'],
                     $f['name'],

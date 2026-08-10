@@ -19,9 +19,7 @@ return new class extends Migration
         });{{ enumChecks }}
 
         DB::statement('alter table {{ snakePlural }} alter column id set default uuidv7()');
-
-        // Substring search over the first field, matching the users slice.
-        DB::statement('create index {{ snakePlural }}_{{ firstField }}_trgm_idx on {{ snakePlural }} using gin ({{ firstField }} gin_trgm_ops)');
+{{ trigramIndex }}
     }
 
     public function down(): void

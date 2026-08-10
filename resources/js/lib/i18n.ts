@@ -10,6 +10,33 @@ export type Translations = Record<string, string>;
  * An unknown key comes back as itself, so a missing translation shows
  * up on screen instead of becoming a blank.
  */
+/**
+ * The label for one value of an enum column.
+ *
+ * `t()` answers an unknown key with the key itself. That is right for a
+ * missing sentence — somebody sees it and writes it — and wrong for an
+ * enum, where the value comes from a row rather than from the code. A
+ * generated list printed `tickets.status_options.null` at the reader for a
+ * row whose value was absent.
+ *
+ * Absent reads as an em dash. An unrecognised value falls back to itself,
+ * which at least says what is in the database.
+ */
+export function enumLabel(
+    t: (key: string) => string,
+    prefix: string,
+    value: unknown,
+): string {
+    if (value === null || value === undefined || value === '') {
+        return '—';
+    }
+
+    const key = `${prefix}.${String(value)}`;
+    const label = t(key);
+
+    return label === key ? String(value) : label;
+}
+
 export function makeTranslator(translations: Translations) {
     return function t(
         key: string,

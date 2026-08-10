@@ -9,9 +9,9 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-{{ fileTraitImport }}{{ relationImports }}
+{{ carbonImport }}{{ fileTraitImport }}{{ storedFileImport }}{{ relationImports }}
 
-#[Fillable([{{ fillable }}])]
+{{ propertyDoc }}#[Fillable([{{ fillable }}])]
 class {{ studly }} extends Model
 {
 {{ enumConstants }}    /** @use HasFactory<{{ studly }}Factory> */
